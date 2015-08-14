@@ -1,9 +1,5 @@
 # Makefile for the bundlechanges library.
 
-ifndef GOPATH
-$(warning You need to set up a GOPATH.)
-endif
-
 PROJECT := github.com/juju/bundlechanges
 PROJECT_DIR := $(shell go list -e -f '{{.Dir}}' $(PROJECT))
 

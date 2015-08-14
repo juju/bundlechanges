@@ -11,7 +11,7 @@ import (
 )
 
 // FromData generates and returns the set of changes required to deploy the
-// given bundle data.
+// given bundle data. The bundle data is assumed to be already verified.
 func FromData(data *charm.BundleData) []*Change {
 	cs := &changeset{}
 	addedServices := handleServices(cs.add, data.Services)

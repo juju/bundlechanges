@@ -42,7 +42,7 @@ var fromDataTests = []struct {
 		Method: "addCharm",
 		Args:   []interface{}{"django"},
 	}, {
-		Id:     "deploy-1",
+		Id:     "addService-1",
 		Method: "deploy",
 		Args: []interface{}{
 			"django",
@@ -76,7 +76,7 @@ var fromDataTests = []struct {
 		Method: "addCharm",
 		Args:   []interface{}{"cs:precise/mediawiki-10"},
 	}, {
-		Id:     "deploy-1",
+		Id:     "addService-1",
 		Method: "deploy",
 		Args: []interface{}{
 			"cs:precise/mediawiki-10",
@@ -88,17 +88,17 @@ var fromDataTests = []struct {
 		Id:     "setAnnotations-2",
 		Method: "setAnnotations",
 		Args: []interface{}{
-			"$deploy-1",
+			"$addService-1",
 			"service",
 			map[string]string{"gui-x": "609", "gui-y": "-15"},
 		},
-		Requires: []string{"deploy-1"},
+		Requires: []string{"addService-1"},
 	}, {
 		Id:     "addCharm-3",
 		Method: "addCharm",
 		Args:   []interface{}{"cs:precise/mysql-28"},
 	}, {
-		Id:     "deploy-4",
+		Id:     "addService-4",
 		Method: "deploy",
 		Args: []interface{}{
 			"cs:precise/mysql-28",
@@ -106,9 +106,14 @@ var fromDataTests = []struct {
 			map[string]interface{}{},
 		},
 		Requires: []string{"addCharm-3"},
+	}, {
+		Id:       "addRelation-5",
+		Method:   "addRelation",
+		Args:     []interface{}{"addService-1:db", "addService-4:db"},
+		Requires: []string{"addService-1", "addService-4"},
 	}},
 }, {
-	about: "bundle with machines and units placement",
+	about: "machines and units placement",
 	content: `
         services:
             django:
@@ -136,7 +141,7 @@ var fromDataTests = []struct {
 		Method: "addCharm",
 		Args:   []interface{}{"cs:trusty/django-42"},
 	}, {
-		Id:     "deploy-1",
+		Id:     "addService-1",
 		Method: "deploy",
 		Args: []interface{}{
 			"cs:trusty/django-42",
@@ -149,7 +154,7 @@ var fromDataTests = []struct {
 		Method: "addCharm",
 		Args:   []interface{}{"cs:trusty/haproxy-47"},
 	}, {
-		Id:     "deploy-3",
+		Id:     "addService-3",
 		Method: "deploy",
 		Args: []interface{}{
 			"cs:trusty/haproxy-47",
@@ -169,6 +174,95 @@ var fromDataTests = []struct {
 		Args: []interface{}{
 			map[string]string{"series": "", "constraints": ""},
 		},
+	}},
+}, {
+	about: "machines with constraints and annotations",
+	content: `
+        services:
+            django:
+                charm: cs:trusty/django-42
+                num_units: 2
+                to:
+                    - 1
+                    - new
+        machines:
+            1:
+                constraints: "cpu-cores=4"
+                annotations:
+                    foo: bar
+    `,
+	expected: []*bundlechanges.Change{{
+		Id:     "addCharm-0",
+		Method: "addCharm",
+		Args:   []interface{}{"cs:trusty/django-42"},
+	}, {
+		Id:     "addService-1",
+		Method: "deploy",
+		Args: []interface{}{
+			"cs:trusty/django-42",
+			"django",
+			map[string]interface{}{},
+		},
+		Requires: []string{"addCharm-0"},
+	}, {
+		Id:     "addMachines-2",
+		Method: "addMachines",
+		Args: []interface{}{
+			map[string]string{"series": "", "constraints": "cpu-cores=4"},
+		},
+	}, {
+		Id:     "setAnnotations-3",
+		Method: "setAnnotations",
+		Args: []interface{}{
+			"$addMachines-2",
+			"machine",
+			map[string]string{"foo": "bar"},
+		},
+		Requires: []string{"addMachines-2"},
+	}},
+}, {
+	about: "endpoint without relation name",
+	content: `
+        services:
+            mediawiki:
+                charm: cs:precise/mediawiki-10
+            mysql:
+                charm: cs:precise/mysql-28
+        relations:
+            - - mediawiki:db
+              - mysql
+    `,
+	expected: []*bundlechanges.Change{{
+		Id:     "addCharm-0",
+		Method: "addCharm",
+		Args:   []interface{}{"cs:precise/mediawiki-10"},
+	}, {
+		Id:     "addService-1",
+		Method: "deploy",
+		Args: []interface{}{
+			"cs:precise/mediawiki-10",
+			"mediawiki",
+			map[string]interface{}{},
+		},
+		Requires: []string{"addCharm-0"},
+	}, {
+		Id:     "addCharm-2",
+		Method: "addCharm",
+		Args:   []interface{}{"cs:precise/mysql-28"},
+	}, {
+		Id:     "addService-3",
+		Method: "deploy",
+		Args: []interface{}{
+			"cs:precise/mysql-28",
+			"mysql",
+			map[string]interface{}{},
+		},
+		Requires: []string{"addCharm-2"},
+	}, {
+		Id:       "addRelation-4",
+		Method:   "addRelation",
+		Args:     []interface{}{"addService-1:db", "addService-3"},
+		Requires: []string{"addService-1", "addService-3"},
 	}},
 }}
 

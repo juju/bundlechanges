@@ -6,6 +6,7 @@ package bundlechanges
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	"gopkg.in/juju/charm.v6-unstable"
 )
@@ -48,8 +49,14 @@ func (cs *changeset) add(method string, requires []string, args ...interface{}) 
 	if requires == nil {
 		requires = make([]string, 0)
 	}
+	// TODO frankban: current Python bundle lib includes this inconsistency;
+	// break compatibility and just use addService?
+	idPrefix := method
+	if method == "deploy" {
+		idPrefix = "addService"
+	}
 	change := &Change{
-		Id:       fmt.Sprintf("%s-%d", method, len(cs.changes)),
+		Id:       fmt.Sprintf("%s-%d", idPrefix, len(cs.changes)),
 		Method:   method,
 		Args:     args,
 		Requires: requires,
@@ -62,7 +69,7 @@ func (cs *changeset) add(method string, requires []string, args ...interface{}) 
 // is also returned.
 type addChangeFunc func(method string, requires []string, args ...interface{}) *Change
 
-// handleServices populates the change set with "addCharm"/"deploy" records.
+// handleServices populates the change set with "addCharm"/"addService" records.
 // This function also handles adding service annotations.
 func handleServices(add addChangeFunc, services map[string]*charm.ServiceSpec) map[string]string {
 	charms := make(map[string]string, len(services))
@@ -82,7 +89,7 @@ func handleServices(add addChangeFunc, services map[string]*charm.ServiceSpec) m
 			charms[service.Charm] = change.Id
 		}
 
-		// Add the deploy record for this service.
+		// Add the addService record for this service.
 		options := service.Options
 		if options == nil {
 			options = make(map[string]interface{}, 0)
@@ -131,11 +138,49 @@ func handleMachines(add addChangeFunc, machines map[string]*charm.MachineSpec) m
 
 // handleRelations populates the change set with "addRelation" records.
 func handleRelations(add addChangeFunc, relations [][]string, addedServices map[string]string) {
-	// TODO frankban: implement this.
+	for _, relation := range relations {
+		// Add the addRelation record for this relation pair.
+		args := make([]interface{}, 2)
+		requires := make([]string, 2)
+		for i, endpoint := range relation {
+			ep := parseEndpoint(endpoint)
+			service := addedServices[ep.service]
+			requires[i] = service
+			ep.service = service
+			args[i] = ep.String()
+		}
+		add("addRelation", requires, args...)
+	}
 }
 
 // handleUnits populates the change set with "addUnit" records.
 // It also handles adding machine containers where to place units if required.
 func handleUnits(add addChangeFunc, services map[string]*charm.ServiceSpec, addedServices, addedMachines map[string]string) {
 	// TODO frankban: implement this.
+}
+
+// parseEndpoint creates an endpoint from its string representation.
+func parseEndpoint(e string) *endpoint {
+	parts := strings.SplitN(e, ":", 2)
+	ep := &endpoint{
+		service: parts[0],
+	}
+	if len(parts) == 2 {
+		ep.relation = parts[1]
+	}
+	return ep
+}
+
+// endpoint holds a relation endpoint.
+type endpoint struct {
+	service  string
+	relation string
+}
+
+// String returns the string representation of an endpoint.
+func (ep endpoint) String() string {
+	if ep.relation == "" {
+		return ep.service
+	}
+	return fmt.Sprintf("%s:%s", ep.service, ep.relation)
 }

@@ -161,7 +161,7 @@ func handleUnits(add addChangeFunc, services map[string]*charm.ServiceSpec, adde
 
 // parseEndpoint creates an endpoint from its string representation.
 func parseEndpoint(e string) *endpoint {
-	parts := strings.Split(e, ":")
+	parts := strings.SplitN(e, ":", 2)
 	ep := &endpoint{
 		service: parts[0],
 	}

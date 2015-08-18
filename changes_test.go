@@ -111,6 +111,16 @@ var fromDataTests = []struct {
 		Method:   "addRelation",
 		Args:     []interface{}{"addService-1:db", "addService-4:db"},
 		Requires: []string{"addService-1", "addService-4"},
+	}, {
+		Id:       "addUnit-6",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-1", 1, nil},
+		Requires: []string{"addService-1"},
+	}, {
+		Id:       "addUnit-7",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-4", 1, nil},
+		Requires: []string{"addService-4"},
 	}},
 }, {
 	about: "machines and units placement",
@@ -174,6 +184,45 @@ var fromDataTests = []struct {
 		Args: []interface{}{
 			map[string]string{"series": "", "constraints": ""},
 		},
+	}, {
+		Id:       "addUnit-6",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-1", 1, "$addMachines-4"},
+		Requires: []string{"addService-1", "addMachines-4"},
+	}, {
+		Id:       "addUnit-7",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-1", 1, "$addMachines-10"},
+		Requires: []string{"addService-1", "addMachines-10"},
+	}, {
+		Id:       "addUnit-8",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-3", 1, "$addMachines-11"},
+		Requires: []string{"addService-3", "addMachines-11"},
+	}, {
+		Id:       "addUnit-9",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-3", 1, "$addMachines-12"},
+		Requires: []string{"addService-3", "addMachines-12"},
+	}, {
+		Id:     "addMachines-10",
+		Method: "addMachines",
+		Args: []interface{}{map[string]string{
+			"containerType": "lxc",
+			"parentId":      "$addMachines-5",
+		}},
+		Requires: []string{"addMachines-5"},
+	}, {
+		Id:     "addMachines-11",
+		Method: "addMachines",
+		Args: []interface{}{map[string]string{
+			"containerType": "lxc",
+			"parentId":      "$addUnit-6",
+		}},
+		Requires: []string{"addUnit-6"},
+	}, {
+		Id:     "addMachines-12",
+		Method: "addMachines",
 	}},
 }, {
 	about: "machines with constraints and annotations",
@@ -219,6 +268,19 @@ var fromDataTests = []struct {
 			map[string]string{"foo": "bar"},
 		},
 		Requires: []string{"addMachines-2"},
+	}, {
+		Id:       "addUnit-4",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-1", 1, "$addMachines-2"},
+		Requires: []string{"addService-1", "addMachines-2"},
+	}, {
+		Id:       "addUnit-5",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-1", 1, "$addMachines-6"},
+		Requires: []string{"addService-1", "addMachines-6"},
+	}, {
+		Id:     "addMachines-6",
+		Method: "addMachines",
 	}},
 }, {
 	about: "endpoint without relation name",
@@ -263,6 +325,324 @@ var fromDataTests = []struct {
 		Method:   "addRelation",
 		Args:     []interface{}{"addService-1:db", "addService-3"},
 		Requires: []string{"addService-1", "addService-3"},
+	}},
+}, {
+	about: "unit placed in service",
+	content: `
+        services:
+            wordpress:
+                charm: wordpress
+                num_units: 3
+            django:
+                charm: cs:trusty/django-42
+                num_units: 2
+                to: [wordpress]
+    `,
+	expected: []*bundlechanges.Change{{
+		Id:     "addCharm-0",
+		Method: "addCharm",
+		Args:   []interface{}{"cs:trusty/django-42"},
+	}, {
+		Id:     "addService-1",
+		Method: "deploy",
+		Args: []interface{}{
+			"cs:trusty/django-42",
+			"django",
+			map[string]interface{}{},
+		},
+		Requires: []string{"addCharm-0"},
+	}, {
+		Id:     "addCharm-2",
+		Method: "addCharm",
+		Args:   []interface{}{"wordpress"},
+	}, {
+		Id:     "addService-3",
+		Method: "deploy",
+		Args: []interface{}{
+			"wordpress",
+			"wordpress",
+			map[string]interface{}{},
+		},
+		Requires: []string{"addCharm-2"},
+	}, {
+		Id:       "addUnit-4",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-1", 1, "$addUnit-6"},
+		Requires: []string{"addService-1", "addUnit-6"},
+	}, {
+		Id:       "addUnit-5",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-1", 1, "$addUnit-7"},
+		Requires: []string{"addService-1", "addUnit-7"},
+	}, {
+		Id:       "addUnit-6",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-3", 1, nil},
+		Requires: []string{"addService-3"},
+	}, {
+		Id:       "addUnit-7",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-3", 1, nil},
+		Requires: []string{"addService-3"},
+	}, {
+		Id:       "addUnit-8",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-3", 1, nil},
+		Requires: []string{"addService-3"},
+	}},
+}, {
+	about: "unit co-location with other units",
+	content: `
+        services:
+            memcached:
+                charm: cs:trusty/mem-47
+                num_units: 3
+                to: [1, new]
+            django:
+                charm: cs:trusty/django-42
+                num_units: 5
+                to:
+                    - memcached/0
+                    - lxc:memcached/1
+                    - lxc:memcached/2
+                    - kvm:ror
+            ror:
+                charm: vivid/rails
+                num_units: 2
+                to:
+                    - new
+                    - 1
+        machines:
+            1:
+                series: trusty
+    `,
+	expected: []*bundlechanges.Change{{
+		Id:     "addCharm-0",
+		Method: "addCharm",
+		Args:   []interface{}{"cs:trusty/django-42"},
+	}, {
+		Id:     "addService-1",
+		Method: "deploy",
+		Args: []interface{}{
+			"cs:trusty/django-42",
+			"django",
+			map[string]interface{}{},
+		},
+		Requires: []string{"addCharm-0"},
+	}, {
+		Id:     "addCharm-2",
+		Method: "addCharm",
+		Args:   []interface{}{"cs:trusty/mem-47"},
+	}, {
+		Id:     "addService-3",
+		Method: "deploy",
+		Args: []interface{}{
+			"cs:trusty/mem-47",
+			"memcached",
+			map[string]interface{}{},
+		},
+		Requires: []string{"addCharm-2"},
+	}, {
+		Id:     "addCharm-4",
+		Method: "addCharm",
+		Args:   []interface{}{"vivid/rails"},
+	}, {
+		Id:     "addService-5",
+		Method: "deploy",
+		Args: []interface{}{
+			"vivid/rails",
+			"ror",
+			map[string]interface{}{},
+		},
+		Requires: []string{"addCharm-4"},
+	}, {
+		Id:     "addMachines-6",
+		Method: "addMachines",
+		Args: []interface{}{map[string]string{
+			"series":      "trusty",
+			"constraints": "",
+		}},
+	}, {
+		Id:       "addUnit-7",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-1", 1, "$addUnit-12"},
+		Requires: []string{"addService-1", "addUnit-12"},
+	}, {
+		Id:       "addUnit-8",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-1", 1, "$addMachines-17"},
+		Requires: []string{"addService-1", "addMachines-17"},
+	}, {
+		Id:       "addUnit-9",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-1", 1, "$addMachines-18"},
+		Requires: []string{"addService-1", "addMachines-18"},
+	}, {
+		Id:       "addUnit-10",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-1", 1, "$addMachines-19"},
+		Requires: []string{"addService-1", "addMachines-19"},
+	}, {
+		Id:       "addUnit-11",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-1", 1, "$addMachines-20"},
+		Requires: []string{"addService-1", "addMachines-20"},
+	}, {
+		Id:       "addUnit-12",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-3", 1, "$addMachines-6"},
+		Requires: []string{"addService-3", "addMachines-6"},
+	}, {
+		Id:       "addUnit-13",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-3", 1, "$addMachines-21"},
+		Requires: []string{"addService-3", "addMachines-21"},
+	}, {
+		Id:       "addUnit-14",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-3", 1, "$addMachines-22"},
+		Requires: []string{"addService-3", "addMachines-22"},
+	}, {
+		Id:       "addUnit-15",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-5", 1, "$addMachines-23"},
+		Requires: []string{"addService-5", "addMachines-23"},
+	}, {
+		Id:       "addUnit-16",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-5", 1, "$addMachines-6"},
+		Requires: []string{"addService-5", "addMachines-6"},
+	}, {
+		Id:     "addMachines-17",
+		Method: "addMachines",
+		Args: []interface{}{map[string]string{
+			"containerType": "lxc",
+			"parentId":      "$addUnit-13",
+		}},
+		Requires: []string{"addUnit-13"},
+	}, {
+		Id:     "addMachines-18",
+		Method: "addMachines",
+		Args: []interface{}{map[string]string{
+			"containerType": "lxc",
+			"parentId":      "$addUnit-14",
+		}},
+		Requires: []string{"addUnit-14"},
+	}, {
+		Id:     "addMachines-19",
+		Method: "addMachines",
+		Args: []interface{}{map[string]string{
+			"containerType": "kvm",
+			"parentId":      "$addUnit-15",
+		}},
+		Requires: []string{"addUnit-15"},
+	}, {
+		Id:     "addMachines-20",
+		Method: "addMachines",
+		Args: []interface{}{map[string]string{
+			"containerType": "kvm",
+			"parentId":      "$addUnit-16",
+		}},
+		Requires: []string{"addUnit-16"},
+	}, {
+		Id:     "addMachines-21",
+		Method: "addMachines",
+	}, {
+		Id:     "addMachines-22",
+		Method: "addMachines",
+	}, {
+		Id:     "addMachines-23",
+		Method: "addMachines",
+	}},
+}, {
+	about: "unit placed to machines",
+	content: `
+        services:
+            django:
+                charm: cs:trusty/django-42
+                num_units: 5
+                to:
+                    - new
+                    - 4
+                    - kvm:8
+                    - lxc:new
+        machines:
+            4:
+                constraints: "cpu-cores=4"
+            8:
+                constraints: "cpu-cores=8"
+    `,
+	expected: []*bundlechanges.Change{{
+		Id:     "addCharm-0",
+		Method: "addCharm",
+		Args:   []interface{}{"cs:trusty/django-42"},
+	}, {
+		Id:     "addService-1",
+		Method: "deploy",
+		Args: []interface{}{
+			"cs:trusty/django-42",
+			"django",
+			map[string]interface{}{},
+		},
+		Requires: []string{"addCharm-0"},
+	}, {
+		Id:     "addMachines-2",
+		Method: "addMachines",
+		Args: []interface{}{map[string]string{
+			"series":      "",
+			"constraints": "cpu-cores=4",
+		}},
+	}, {
+		Id:     "addMachines-3",
+		Method: "addMachines",
+		Args: []interface{}{map[string]string{
+			"series":      "",
+			"constraints": "cpu-cores=8",
+		}},
+	}, {
+		Id:       "addUnit-4",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-1", 1, "$addMachines-9"},
+		Requires: []string{"addService-1", "addMachines-9"},
+	}, {
+		Id:       "addUnit-5",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-1", 1, "$addMachines-2"},
+		Requires: []string{"addService-1", "addMachines-2"},
+	}, {
+		Id:       "addUnit-6",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-1", 1, "$addMachines-10"},
+		Requires: []string{"addService-1", "addMachines-10"},
+	}, {
+		Id:       "addUnit-7",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-1", 1, "$addMachines-11"},
+		Requires: []string{"addService-1", "addMachines-11"},
+	}, {
+		Id:       "addUnit-8",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-1", 1, "$addMachines-12"},
+		Requires: []string{"addService-1", "addMachines-12"},
+	}, {
+		Id:     "addMachines-9",
+		Method: "addMachines",
+	}, {
+		Id:     "addMachines-10",
+		Method: "addMachines",
+		Args: []interface{}{map[string]string{
+			"containerType": "kvm",
+			"parentId":      "$addMachines-3",
+		}},
+		Requires: []string{"addMachines-3"},
+	}, {
+		Id:     "addMachines-11",
+		Method: "addMachines",
+		Args:   []interface{}{map[string]string{"containerType": "lxc"}},
+	}, {
+		Id:     "addMachines-12",
+		Method: "addMachines",
+		Args:   []interface{}{map[string]string{"containerType": "lxc"}},
 	}},
 }}
 

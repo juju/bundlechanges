@@ -81,6 +81,8 @@ mainloop:
 		changes = changes[1:]
 		for _, r := range change.Requires {
 			if !records[r] {
+				// This change requires a change which is not yet listed.
+				// Push this change at the end of the list and retry later.
 				changes = append(changes, change)
 				continue mainloop
 			}

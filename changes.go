@@ -147,7 +147,7 @@ func handleRelations(add addChangeFunc, relations [][]string, addedServices map[
 			service := addedServices[ep.service]
 			requires[i] = service
 			ep.service = service
-			args[i] = ep.String()
+			args[i] = "$" + ep.String()
 		}
 		add("addRelation", requires, args...)
 	}

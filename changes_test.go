@@ -109,7 +109,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:       "addRelation-5",
 		Method:   "addRelation",
-		Args:     []interface{}{"addService-1:db", "addService-4:db"},
+		Args:     []interface{}{"$addService-1:db", "$addService-4:db"},
 		Requires: []string{"addService-1", "addService-4"},
 	}, {
 		Id:       "addUnit-6",
@@ -323,7 +323,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:       "addRelation-4",
 		Method:   "addRelation",
-		Args:     []interface{}{"addService-1:db", "addService-3"},
+		Args:     []interface{}{"$addService-1:db", "$addService-3"},
 		Requires: []string{"addService-1", "addService-3"},
 	}},
 }, {

@@ -11,15 +11,16 @@ import (
 	"gopkg.in/juju/charm.v6-unstable"
 )
 
-// FromData generates and returns the set of changes required to deploy the
-// given bundle data. The bundle data is assumed to be already verified.
+// FromData generates and returns the list of changes required to deploy the
+// given bundle data. The changes are sorted by requirements, so that they can
+// be applied in order. The bundle data is assumed to be already verified.
 func FromData(data *charm.BundleData) []*Change {
 	cs := &changeset{}
 	addedServices := handleServices(cs.add, data.Services)
 	addedMachines := handleMachines(cs.add, data.Machines)
 	handleRelations(cs.add, data.Relations, addedServices)
 	handleUnits(cs.add, data.Services, addedServices, addedMachines)
-	return cs.changes
+	return cs.sorted()
 }
 
 // Change holds a single change required to deploy a bundle.
@@ -63,6 +64,33 @@ func (cs *changeset) add(method string, requires []string, args ...interface{}) 
 	}
 	cs.changes = append(cs.changes, change)
 	return change
+}
+
+// sorted returns the changes sorted by requirements, required first.
+func (cs *changeset) sorted() []*Change {
+	numChanges := len(cs.changes)
+	records := make(map[string]bool, numChanges)
+	sorted := make([]*Change, 0, numChanges)
+	changes := make([]*Change, numChanges, numChanges*2)
+	copy(changes, cs.changes)
+mainloop:
+	for len(changes) != 0 {
+		// Note that all valid bundles have at least two changes
+		// (add one charm and deploy one service).
+		change := changes[0]
+		changes = changes[1:]
+		for _, r := range change.Requires {
+			if !records[r] {
+				// This change requires a change which is not yet listed.
+				// Push this change at the end of the list and retry later.
+				changes = append(changes, change)
+				continue mainloop
+			}
+		}
+		records[change.Id] = true
+		sorted = append(sorted, change)
+	}
+	return sorted
 }
 
 // addChangeFunc is used to add a change to a change set. The resulting change

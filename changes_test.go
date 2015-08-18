@@ -190,21 +190,6 @@ var fromDataTests = []struct {
 		Args:     []interface{}{"$addService-1", 1, "$addMachines-4"},
 		Requires: []string{"addService-1", "addMachines-4"},
 	}, {
-		Id:       "addUnit-7",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-1", 1, "$addMachines-10"},
-		Requires: []string{"addService-1", "addMachines-10"},
-	}, {
-		Id:       "addUnit-8",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-3", 1, "$addMachines-11"},
-		Requires: []string{"addService-3", "addMachines-11"},
-	}, {
-		Id:       "addUnit-9",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-3", 1, "$addMachines-12"},
-		Requires: []string{"addService-3", "addMachines-12"},
-	}, {
 		Id:     "addMachines-10",
 		Method: "addMachines",
 		Args: []interface{}{map[string]string{
@@ -223,6 +208,21 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addMachines-12",
 		Method: "addMachines",
+	}, {
+		Id:       "addUnit-7",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-1", 1, "$addMachines-10"},
+		Requires: []string{"addService-1", "addMachines-10"},
+	}, {
+		Id:       "addUnit-8",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-3", 1, "$addMachines-11"},
+		Requires: []string{"addService-3", "addMachines-11"},
+	}, {
+		Id:       "addUnit-9",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-3", 1, "$addMachines-12"},
+		Requires: []string{"addService-3", "addMachines-12"},
 	}},
 }, {
 	about: "machines with constraints and annotations",
@@ -274,13 +274,13 @@ var fromDataTests = []struct {
 		Args:     []interface{}{"$addService-1", 1, "$addMachines-2"},
 		Requires: []string{"addService-1", "addMachines-2"},
 	}, {
+		Id:     "addMachines-6",
+		Method: "addMachines",
+	}, {
 		Id:       "addUnit-5",
 		Method:   "addUnit",
 		Args:     []interface{}{"$addService-1", 1, "$addMachines-6"},
 		Requires: []string{"addService-1", "addMachines-6"},
-	}, {
-		Id:     "addMachines-6",
-		Method: "addMachines",
 	}},
 }, {
 	about: "endpoint without relation name",
@@ -365,16 +365,6 @@ var fromDataTests = []struct {
 		},
 		Requires: []string{"addCharm-2"},
 	}, {
-		Id:       "addUnit-4",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-1", 1, "$addUnit-6"},
-		Requires: []string{"addService-1", "addUnit-6"},
-	}, {
-		Id:       "addUnit-5",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-1", 1, "$addUnit-7"},
-		Requires: []string{"addService-1", "addUnit-7"},
-	}, {
 		Id:       "addUnit-6",
 		Method:   "addUnit",
 		Args:     []interface{}{"$addService-3", 1, nil},
@@ -389,6 +379,16 @@ var fromDataTests = []struct {
 		Method:   "addUnit",
 		Args:     []interface{}{"$addService-3", 1, nil},
 		Requires: []string{"addService-3"},
+	}, {
+		Id:       "addUnit-4",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-1", 1, "$addUnit-6"},
+		Requires: []string{"addService-1", "addUnit-6"},
+	}, {
+		Id:       "addUnit-5",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-1", 1, "$addUnit-7"},
+		Requires: []string{"addService-1", "addUnit-7"},
 	}},
 }, {
 	about: "unit co-location with other units",
@@ -463,35 +463,42 @@ var fromDataTests = []struct {
 			"constraints": "",
 		}},
 	}, {
+		Id:       "addUnit-12",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-3", 1, "$addMachines-6"},
+		Requires: []string{"addService-3", "addMachines-6"},
+	}, {
+		Id:       "addUnit-16",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-5", 1, "$addMachines-6"},
+		Requires: []string{"addService-5", "addMachines-6"},
+	}, {
+		Id:     "addMachines-20",
+		Method: "addMachines",
+		Args: []interface{}{map[string]string{
+			"containerType": "kvm",
+			"parentId":      "$addUnit-16",
+		}},
+		Requires: []string{"addUnit-16"},
+	}, {
+		Id:     "addMachines-21",
+		Method: "addMachines",
+	}, {
+		Id:     "addMachines-22",
+		Method: "addMachines",
+	}, {
+		Id:     "addMachines-23",
+		Method: "addMachines",
+	}, {
 		Id:       "addUnit-7",
 		Method:   "addUnit",
 		Args:     []interface{}{"$addService-1", 1, "$addUnit-12"},
 		Requires: []string{"addService-1", "addUnit-12"},
 	}, {
-		Id:       "addUnit-8",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-1", 1, "$addMachines-17"},
-		Requires: []string{"addService-1", "addMachines-17"},
-	}, {
-		Id:       "addUnit-9",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-1", 1, "$addMachines-18"},
-		Requires: []string{"addService-1", "addMachines-18"},
-	}, {
-		Id:       "addUnit-10",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-1", 1, "$addMachines-19"},
-		Requires: []string{"addService-1", "addMachines-19"},
-	}, {
 		Id:       "addUnit-11",
 		Method:   "addUnit",
 		Args:     []interface{}{"$addService-1", 1, "$addMachines-20"},
 		Requires: []string{"addService-1", "addMachines-20"},
-	}, {
-		Id:       "addUnit-12",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-3", 1, "$addMachines-6"},
-		Requires: []string{"addService-3", "addMachines-6"},
 	}, {
 		Id:       "addUnit-13",
 		Method:   "addUnit",
@@ -507,11 +514,6 @@ var fromDataTests = []struct {
 		Method:   "addUnit",
 		Args:     []interface{}{"$addService-5", 1, "$addMachines-23"},
 		Requires: []string{"addService-5", "addMachines-23"},
-	}, {
-		Id:       "addUnit-16",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-5", 1, "$addMachines-6"},
-		Requires: []string{"addService-5", "addMachines-6"},
 	}, {
 		Id:     "addMachines-17",
 		Method: "addMachines",
@@ -537,22 +539,20 @@ var fromDataTests = []struct {
 		}},
 		Requires: []string{"addUnit-15"},
 	}, {
-		Id:     "addMachines-20",
-		Method: "addMachines",
-		Args: []interface{}{map[string]string{
-			"containerType": "kvm",
-			"parentId":      "$addUnit-16",
-		}},
-		Requires: []string{"addUnit-16"},
+		Id:       "addUnit-8",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-1", 1, "$addMachines-17"},
+		Requires: []string{"addService-1", "addMachines-17"},
 	}, {
-		Id:     "addMachines-21",
-		Method: "addMachines",
+		Id:       "addUnit-9",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-1", 1, "$addMachines-18"},
+		Requires: []string{"addService-1", "addMachines-18"},
 	}, {
-		Id:     "addMachines-22",
-		Method: "addMachines",
-	}, {
-		Id:     "addMachines-23",
-		Method: "addMachines",
+		Id:       "addUnit-10",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-1", 1, "$addMachines-19"},
+		Requires: []string{"addService-1", "addMachines-19"},
 	}},
 }, {
 	about: "unit placed to machines",
@@ -600,30 +600,10 @@ var fromDataTests = []struct {
 			"constraints": "cpu-cores=8",
 		}},
 	}, {
-		Id:       "addUnit-4",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-1", 1, "$addMachines-9"},
-		Requires: []string{"addService-1", "addMachines-9"},
-	}, {
 		Id:       "addUnit-5",
 		Method:   "addUnit",
 		Args:     []interface{}{"$addService-1", 1, "$addMachines-2"},
 		Requires: []string{"addService-1", "addMachines-2"},
-	}, {
-		Id:       "addUnit-6",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-1", 1, "$addMachines-10"},
-		Requires: []string{"addService-1", "addMachines-10"},
-	}, {
-		Id:       "addUnit-7",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-1", 1, "$addMachines-11"},
-		Requires: []string{"addService-1", "addMachines-11"},
-	}, {
-		Id:       "addUnit-8",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-1", 1, "$addMachines-12"},
-		Requires: []string{"addService-1", "addMachines-12"},
 	}, {
 		Id:     "addMachines-9",
 		Method: "addMachines",
@@ -643,6 +623,26 @@ var fromDataTests = []struct {
 		Id:     "addMachines-12",
 		Method: "addMachines",
 		Args:   []interface{}{map[string]string{"containerType": "lxc"}},
+	}, {
+		Id:       "addUnit-4",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-1", 1, "$addMachines-9"},
+		Requires: []string{"addService-1", "addMachines-9"},
+	}, {
+		Id:       "addUnit-6",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-1", 1, "$addMachines-10"},
+		Requires: []string{"addService-1", "addMachines-10"},
+	}, {
+		Id:       "addUnit-7",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-1", 1, "$addMachines-11"},
+		Requires: []string{"addService-1", "addMachines-11"},
+	}, {
+		Id:       "addUnit-8",
+		Method:   "addUnit",
+		Args:     []interface{}{"$addService-1", 1, "$addMachines-12"},
+		Requires: []string{"addService-1", "addMachines-12"},
 	}},
 }}
 

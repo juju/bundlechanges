@@ -52,7 +52,7 @@ func (ch *changeInfo) Id() string {
 // Requires implements Change.Requires.
 func (ch *changeInfo) Requires() []string {
 	if ch.requires == nil {
-		return make([]string, 0)
+		return []string{}
 	}
 	return ch.requires
 }

@@ -29,7 +29,7 @@ var fromDataTests = []struct {
 	// content is the YAML encoded bundle content.
 	content string
 	// expected holds the expected changes required to deploy the bundle.
-	expected []*bundlechanges.Change
+	expected []record
 }{{
 	about: "minimal bundle",
 	content: `
@@ -37,14 +37,21 @@ var fromDataTests = []struct {
             django:
                 charm: django
     `,
-	expected: []*bundlechanges.Change{{
+	expected: []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
-		Args:   []interface{}{"django"},
+		Args: bundlechanges.AddCharmArgs{
+			Charm: "django",
+		},
+		GUIArgs: []interface{}{"django"},
 	}, {
-		Id:     "addService-1",
+		Id:     "deploy-1",
 		Method: "deploy",
-		Args: []interface{}{
+		Args: bundlechanges.AddServiceArgs{
+			Charm:   "django",
+			Service: "django",
+		},
+		GUIArgs: []interface{}{
 			"django",
 			"django",
 			map[string]interface{}{},
@@ -71,14 +78,21 @@ var fromDataTests = []struct {
             - - mediawiki:db
               - mysql:db
     `,
-	expected: []*bundlechanges.Change{{
+	expected: []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
-		Args:   []interface{}{"cs:precise/mediawiki-10"},
+		Args: bundlechanges.AddCharmArgs{
+			Charm: "cs:precise/mediawiki-10",
+		},
+		GUIArgs: []interface{}{"cs:precise/mediawiki-10"},
 	}, {
-		Id:     "addService-1",
+		Id:     "deploy-1",
 		Method: "deploy",
-		Args: []interface{}{
+		Args: bundlechanges.AddServiceArgs{
+			Charm:   "cs:precise/mediawiki-10",
+			Service: "mediawiki",
+			Options: map[string]interface{}{"debug": false}},
+		GUIArgs: []interface{}{
 			"cs:precise/mediawiki-10",
 			"mediawiki",
 			map[string]interface{}{"debug": false},
@@ -87,40 +101,62 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "setAnnotations-2",
 		Method: "setAnnotations",
-		Args: []interface{}{
-			"$addService-1",
+		Args: bundlechanges.SetAnnotationsArgs{
+			Id:          "$deploy-1",
+			EntityType:  "service",
+			Annotations: map[string]string{"gui-x": "609", "gui-y": "-15"},
+		},
+		GUIArgs: []interface{}{
+			"$deploy-1",
 			"service",
 			map[string]string{"gui-x": "609", "gui-y": "-15"},
 		},
-		Requires: []string{"addService-1"},
+		Requires: []string{"deploy-1"},
 	}, {
 		Id:     "addCharm-3",
 		Method: "addCharm",
-		Args:   []interface{}{"cs:precise/mysql-28"},
+		Args: bundlechanges.AddCharmArgs{
+			Charm: "cs:precise/mysql-28",
+		},
+		GUIArgs: []interface{}{"cs:precise/mysql-28"},
 	}, {
-		Id:     "addService-4",
+		Id:     "deploy-4",
 		Method: "deploy",
-		Args: []interface{}{
+		Args: bundlechanges.AddServiceArgs{
+			Charm:   "cs:precise/mysql-28",
+			Service: "mysql",
+		},
+		GUIArgs: []interface{}{
 			"cs:precise/mysql-28",
 			"mysql",
 			map[string]interface{}{},
 		},
 		Requires: []string{"addCharm-3"},
 	}, {
-		Id:       "addRelation-5",
-		Method:   "addRelation",
-		Args:     []interface{}{"$addService-1:db", "$addService-4:db"},
-		Requires: []string{"addService-1", "addService-4"},
+		Id:     "addRelation-5",
+		Method: "addRelation",
+		Args: bundlechanges.AddRelationArgs{
+			Endpoint1: "$deploy-1:db",
+			Endpoint2: "$deploy-4:db",
+		},
+		GUIArgs:  []interface{}{"$deploy-1:db", "$deploy-4:db"},
+		Requires: []string{"deploy-1", "deploy-4"},
 	}, {
-		Id:       "addUnit-6",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-1", 1, nil},
-		Requires: []string{"addService-1"},
+		Id:     "addUnit-6",
+		Method: "addUnit",
+		Args: bundlechanges.AddUnitArgs{
+			Service: "$deploy-1",
+		},
+		GUIArgs:  []interface{}{"$deploy-1", 1, nil},
+		Requires: []string{"deploy-1"},
 	}, {
-		Id:       "addUnit-7",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-4", 1, nil},
-		Requires: []string{"addService-4"},
+		Id:     "addUnit-7",
+		Method: "addUnit",
+		Args: bundlechanges.AddUnitArgs{
+			Service: "$deploy-4",
+		},
+		GUIArgs:  []interface{}{"$deploy-4", 1, nil},
+		Requires: []string{"deploy-4"},
 	}},
 }, {
 	about: "machines and units placement",
@@ -146,14 +182,21 @@ var fromDataTests = []struct {
                 series: trusty
             2:
     `,
-	expected: []*bundlechanges.Change{{
+	expected: []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
-		Args:   []interface{}{"cs:trusty/django-42"},
+		Args: bundlechanges.AddCharmArgs{
+			Charm: "cs:trusty/django-42",
+		},
+		GUIArgs: []interface{}{"cs:trusty/django-42"},
 	}, {
-		Id:     "addService-1",
+		Id:     "deploy-1",
 		Method: "deploy",
-		Args: []interface{}{
+		Args: bundlechanges.AddServiceArgs{
+			Charm:   "cs:trusty/django-42",
+			Service: "django",
+		},
+		GUIArgs: []interface{}{
 			"cs:trusty/django-42",
 			"django",
 			map[string]interface{}{},
@@ -162,11 +205,19 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addCharm-2",
 		Method: "addCharm",
-		Args:   []interface{}{"cs:trusty/haproxy-47"},
+		Args: bundlechanges.AddCharmArgs{
+			Charm: "cs:trusty/haproxy-47",
+		},
+		GUIArgs: []interface{}{"cs:trusty/haproxy-47"},
 	}, {
-		Id:     "addService-3",
+		Id:     "deploy-3",
 		Method: "deploy",
-		Args: []interface{}{
+		Args: bundlechanges.AddServiceArgs{
+			Charm:   "cs:trusty/haproxy-47",
+			Service: "haproxy",
+			Options: map[string]interface{}{"bad": "wolf", "number": 42.47},
+		},
+		GUIArgs: []interface{}{
 			"cs:trusty/haproxy-47",
 			"haproxy",
 			map[string]interface{}{"bad": "wolf", "number": 42.47},
@@ -175,54 +226,90 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addMachines-4",
 		Method: "addMachines",
-		Args: []interface{}{
-			map[string]string{"series": "trusty", "constraints": ""},
+		Args: bundlechanges.AddMachineArgs{
+			Series: "trusty",
+		},
+		GUIArgs: []interface{}{
+			bundlechanges.AddMachineOptions{Series: "trusty"},
 		},
 	}, {
 		Id:     "addMachines-5",
 		Method: "addMachines",
-		Args: []interface{}{
-			map[string]string{"series": "", "constraints": ""},
+		Args:   bundlechanges.AddMachineArgs{},
+		GUIArgs: []interface{}{
+			bundlechanges.AddMachineOptions{},
 		},
 	}, {
-		Id:       "addUnit-6",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-1", 1, "$addMachines-4"},
-		Requires: []string{"addService-1", "addMachines-4"},
+		Id:     "addUnit-6",
+		Method: "addUnit",
+		Args: bundlechanges.AddUnitArgs{
+			Service: "$deploy-1",
+			To:      "$addMachines-4",
+		},
+		GUIArgs:  []interface{}{"$deploy-1", 1, "$addMachines-4"},
+		Requires: []string{"deploy-1", "addMachines-4"},
 	}, {
 		Id:     "addMachines-10",
 		Method: "addMachines",
-		Args: []interface{}{map[string]string{
-			"containerType": "lxc",
-			"parentId":      "$addMachines-5",
-		}},
+		Args: bundlechanges.AddMachineArgs{
+			ContainerType: "lxc",
+			ParentId:      "$addMachines-5",
+		},
+		GUIArgs: []interface{}{
+			bundlechanges.AddMachineOptions{
+				ContainerType: "lxc",
+				ParentId:      "$addMachines-5",
+			},
+		},
 		Requires: []string{"addMachines-5"},
 	}, {
 		Id:     "addMachines-11",
 		Method: "addMachines",
-		Args: []interface{}{map[string]string{
-			"containerType": "lxc",
-			"parentId":      "$addUnit-6",
-		}},
+		Args: bundlechanges.AddMachineArgs{
+			ContainerType: "lxc",
+			ParentId:      "$addUnit-6",
+		},
+		GUIArgs: []interface{}{
+			bundlechanges.AddMachineOptions{
+				ContainerType: "lxc",
+				ParentId:      "$addUnit-6",
+			},
+		},
 		Requires: []string{"addUnit-6"},
 	}, {
 		Id:     "addMachines-12",
 		Method: "addMachines",
+		Args:   bundlechanges.AddMachineArgs{},
+		GUIArgs: []interface{}{
+			bundlechanges.AddMachineOptions{},
+		},
 	}, {
-		Id:       "addUnit-7",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-1", 1, "$addMachines-10"},
-		Requires: []string{"addService-1", "addMachines-10"},
+		Id:     "addUnit-7",
+		Method: "addUnit",
+		Args: bundlechanges.AddUnitArgs{
+			Service: "$deploy-1",
+			To:      "$addMachines-10",
+		},
+		GUIArgs:  []interface{}{"$deploy-1", 1, "$addMachines-10"},
+		Requires: []string{"deploy-1", "addMachines-10"},
 	}, {
-		Id:       "addUnit-8",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-3", 1, "$addMachines-11"},
-		Requires: []string{"addService-3", "addMachines-11"},
+		Id:     "addUnit-8",
+		Method: "addUnit",
+		Args: bundlechanges.AddUnitArgs{
+			Service: "$deploy-3",
+			To:      "$addMachines-11",
+		},
+		GUIArgs:  []interface{}{"$deploy-3", 1, "$addMachines-11"},
+		Requires: []string{"deploy-3", "addMachines-11"},
 	}, {
-		Id:       "addUnit-9",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-3", 1, "$addMachines-12"},
-		Requires: []string{"addService-3", "addMachines-12"},
+		Id:     "addUnit-9",
+		Method: "addUnit",
+		Args: bundlechanges.AddUnitArgs{
+			Service: "$deploy-3",
+			To:      "$addMachines-12",
+		},
+		GUIArgs:  []interface{}{"$deploy-3", 1, "$addMachines-12"},
+		Requires: []string{"deploy-3", "addMachines-12"},
 	}},
 }, {
 	about: "machines with constraints and annotations",
@@ -240,14 +327,21 @@ var fromDataTests = []struct {
                 annotations:
                     foo: bar
     `,
-	expected: []*bundlechanges.Change{{
+	expected: []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
-		Args:   []interface{}{"cs:trusty/django-42"},
+		Args: bundlechanges.AddCharmArgs{
+			Charm: "cs:trusty/django-42",
+		},
+		GUIArgs: []interface{}{"cs:trusty/django-42"},
 	}, {
-		Id:     "addService-1",
+		Id:     "deploy-1",
 		Method: "deploy",
-		Args: []interface{}{
+		Args: bundlechanges.AddServiceArgs{
+			Charm:   "cs:trusty/django-42",
+			Service: "django",
+		},
+		GUIArgs: []interface{}{
 			"cs:trusty/django-42",
 			"django",
 			map[string]interface{}{},
@@ -256,31 +350,51 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addMachines-2",
 		Method: "addMachines",
-		Args: []interface{}{
-			map[string]string{"series": "", "constraints": "cpu-cores=4"},
+		Args: bundlechanges.AddMachineArgs{
+			Constraints: "cpu-cores=4",
+		},
+		GUIArgs: []interface{}{
+			bundlechanges.AddMachineOptions{Constraints: "cpu-cores=4"},
 		},
 	}, {
 		Id:     "setAnnotations-3",
 		Method: "setAnnotations",
-		Args: []interface{}{
+		Args: bundlechanges.SetAnnotationsArgs{
+			Id:          "$addMachines-2",
+			EntityType:  "machine",
+			Annotations: map[string]string{"foo": "bar"},
+		},
+		GUIArgs: []interface{}{
 			"$addMachines-2",
 			"machine",
 			map[string]string{"foo": "bar"},
 		},
 		Requires: []string{"addMachines-2"},
 	}, {
-		Id:       "addUnit-4",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-1", 1, "$addMachines-2"},
-		Requires: []string{"addService-1", "addMachines-2"},
+		Id:     "addUnit-4",
+		Method: "addUnit",
+		Args: bundlechanges.AddUnitArgs{
+			Service: "$deploy-1",
+			To:      "$addMachines-2",
+		},
+		GUIArgs:  []interface{}{"$deploy-1", 1, "$addMachines-2"},
+		Requires: []string{"deploy-1", "addMachines-2"},
 	}, {
 		Id:     "addMachines-6",
 		Method: "addMachines",
+		Args:   bundlechanges.AddMachineArgs{},
+		GUIArgs: []interface{}{
+			bundlechanges.AddMachineOptions{},
+		},
 	}, {
-		Id:       "addUnit-5",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-1", 1, "$addMachines-6"},
-		Requires: []string{"addService-1", "addMachines-6"},
+		Id:     "addUnit-5",
+		Method: "addUnit",
+		Args: bundlechanges.AddUnitArgs{
+			Service: "$deploy-1",
+			To:      "$addMachines-6",
+		},
+		GUIArgs:  []interface{}{"$deploy-1", 1, "$addMachines-6"},
+		Requires: []string{"deploy-1", "addMachines-6"},
 	}},
 }, {
 	about: "endpoint without relation name",
@@ -294,14 +408,21 @@ var fromDataTests = []struct {
             - - mediawiki:db
               - mysql
     `,
-	expected: []*bundlechanges.Change{{
+	expected: []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
-		Args:   []interface{}{"cs:precise/mediawiki-10"},
+		Args: bundlechanges.AddCharmArgs{
+			Charm: "cs:precise/mediawiki-10",
+		},
+		GUIArgs: []interface{}{"cs:precise/mediawiki-10"},
 	}, {
-		Id:     "addService-1",
+		Id:     "deploy-1",
 		Method: "deploy",
-		Args: []interface{}{
+		Args: bundlechanges.AddServiceArgs{
+			Charm:   "cs:precise/mediawiki-10",
+			Service: "mediawiki",
+		},
+		GUIArgs: []interface{}{
 			"cs:precise/mediawiki-10",
 			"mediawiki",
 			map[string]interface{}{},
@@ -310,21 +431,32 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addCharm-2",
 		Method: "addCharm",
-		Args:   []interface{}{"cs:precise/mysql-28"},
+		Args: bundlechanges.AddCharmArgs{
+			Charm: "cs:precise/mysql-28",
+		},
+		GUIArgs: []interface{}{"cs:precise/mysql-28"},
 	}, {
-		Id:     "addService-3",
+		Id:     "deploy-3",
 		Method: "deploy",
-		Args: []interface{}{
+		Args: bundlechanges.AddServiceArgs{
+			Charm:   "cs:precise/mysql-28",
+			Service: "mysql",
+		},
+		GUIArgs: []interface{}{
 			"cs:precise/mysql-28",
 			"mysql",
 			map[string]interface{}{},
 		},
 		Requires: []string{"addCharm-2"},
 	}, {
-		Id:       "addRelation-4",
-		Method:   "addRelation",
-		Args:     []interface{}{"$addService-1:db", "$addService-3"},
-		Requires: []string{"addService-1", "addService-3"},
+		Id:     "addRelation-4",
+		Method: "addRelation",
+		Args: bundlechanges.AddRelationArgs{
+			Endpoint1: "$deploy-1:db",
+			Endpoint2: "$deploy-3",
+		},
+		GUIArgs:  []interface{}{"$deploy-1:db", "$deploy-3"},
+		Requires: []string{"deploy-1", "deploy-3"},
 	}},
 }, {
 	about: "unit placed in service",
@@ -338,14 +470,21 @@ var fromDataTests = []struct {
                 num_units: 2
                 to: [wordpress]
     `,
-	expected: []*bundlechanges.Change{{
+	expected: []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
-		Args:   []interface{}{"cs:trusty/django-42"},
+		Args: bundlechanges.AddCharmArgs{
+			Charm: "cs:trusty/django-42",
+		},
+		GUIArgs: []interface{}{"cs:trusty/django-42"},
 	}, {
-		Id:     "addService-1",
+		Id:     "deploy-1",
 		Method: "deploy",
-		Args: []interface{}{
+		Args: bundlechanges.AddServiceArgs{
+			Charm:   "cs:trusty/django-42",
+			Service: "django",
+		},
+		GUIArgs: []interface{}{
 			"cs:trusty/django-42",
 			"django",
 			map[string]interface{}{},
@@ -354,41 +493,65 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addCharm-2",
 		Method: "addCharm",
-		Args:   []interface{}{"wordpress"},
+		Args: bundlechanges.AddCharmArgs{
+			Charm: "wordpress",
+		},
+		GUIArgs: []interface{}{"wordpress"},
 	}, {
-		Id:     "addService-3",
+		Id:     "deploy-3",
 		Method: "deploy",
-		Args: []interface{}{
+		Args: bundlechanges.AddServiceArgs{
+			Charm:   "wordpress",
+			Service: "wordpress",
+		},
+		GUIArgs: []interface{}{
 			"wordpress",
 			"wordpress",
 			map[string]interface{}{},
 		},
 		Requires: []string{"addCharm-2"},
 	}, {
-		Id:       "addUnit-6",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-3", 1, nil},
-		Requires: []string{"addService-3"},
+		Id:     "addUnit-6",
+		Method: "addUnit",
+		Args: bundlechanges.AddUnitArgs{
+			Service: "$deploy-3",
+		},
+		GUIArgs:  []interface{}{"$deploy-3", 1, nil},
+		Requires: []string{"deploy-3"},
 	}, {
-		Id:       "addUnit-7",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-3", 1, nil},
-		Requires: []string{"addService-3"},
+		Id:     "addUnit-7",
+		Method: "addUnit",
+		Args: bundlechanges.AddUnitArgs{
+			Service: "$deploy-3",
+		},
+		GUIArgs:  []interface{}{"$deploy-3", 1, nil},
+		Requires: []string{"deploy-3"},
 	}, {
-		Id:       "addUnit-8",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-3", 1, nil},
-		Requires: []string{"addService-3"},
+		Id:     "addUnit-8",
+		Method: "addUnit",
+		Args: bundlechanges.AddUnitArgs{
+			Service: "$deploy-3",
+		},
+		GUIArgs:  []interface{}{"$deploy-3", 1, nil},
+		Requires: []string{"deploy-3"},
 	}, {
-		Id:       "addUnit-4",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-1", 1, "$addUnit-6"},
-		Requires: []string{"addService-1", "addUnit-6"},
+		Id:     "addUnit-4",
+		Method: "addUnit",
+		Args: bundlechanges.AddUnitArgs{
+			Service: "$deploy-1",
+			To:      "$addUnit-6",
+		},
+		GUIArgs:  []interface{}{"$deploy-1", 1, "$addUnit-6"},
+		Requires: []string{"deploy-1", "addUnit-6"},
 	}, {
-		Id:       "addUnit-5",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-1", 1, "$addUnit-7"},
-		Requires: []string{"addService-1", "addUnit-7"},
+		Id:     "addUnit-5",
+		Method: "addUnit",
+		Args: bundlechanges.AddUnitArgs{
+			Service: "$deploy-1",
+			To:      "$addUnit-7",
+		},
+		GUIArgs:  []interface{}{"$deploy-1", 1, "$addUnit-7"},
+		Requires: []string{"deploy-1", "addUnit-7"},
 	}},
 }, {
 	about: "unit co-location with other units",
@@ -416,14 +579,21 @@ var fromDataTests = []struct {
             1:
                 series: trusty
     `,
-	expected: []*bundlechanges.Change{{
+	expected: []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
-		Args:   []interface{}{"cs:trusty/django-42"},
+		Args: bundlechanges.AddCharmArgs{
+			Charm: "cs:trusty/django-42",
+		},
+		GUIArgs: []interface{}{"cs:trusty/django-42"},
 	}, {
-		Id:     "addService-1",
+		Id:     "deploy-1",
 		Method: "deploy",
-		Args: []interface{}{
+		Args: bundlechanges.AddServiceArgs{
+			Charm:   "cs:trusty/django-42",
+			Service: "django",
+		},
+		GUIArgs: []interface{}{
 			"cs:trusty/django-42",
 			"django",
 			map[string]interface{}{},
@@ -432,11 +602,18 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addCharm-2",
 		Method: "addCharm",
-		Args:   []interface{}{"cs:trusty/mem-47"},
+		Args: bundlechanges.AddCharmArgs{
+			Charm: "cs:trusty/mem-47",
+		},
+		GUIArgs: []interface{}{"cs:trusty/mem-47"},
 	}, {
-		Id:     "addService-3",
+		Id:     "deploy-3",
 		Method: "deploy",
-		Args: []interface{}{
+		Args: bundlechanges.AddServiceArgs{
+			Charm:   "cs:trusty/mem-47",
+			Service: "memcached",
+		},
+		GUIArgs: []interface{}{
 			"cs:trusty/mem-47",
 			"memcached",
 			map[string]interface{}{},
@@ -445,11 +622,18 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addCharm-4",
 		Method: "addCharm",
-		Args:   []interface{}{"vivid/rails"},
+		Args: bundlechanges.AddCharmArgs{
+			Charm: "vivid/rails",
+		},
+		GUIArgs: []interface{}{"vivid/rails"},
 	}, {
-		Id:     "addService-5",
+		Id:     "deploy-5",
 		Method: "deploy",
-		Args: []interface{}{
+		Args: bundlechanges.AddServiceArgs{
+			Charm:   "vivid/rails",
+			Service: "ror",
+		},
+		GUIArgs: []interface{}{
 			"vivid/rails",
 			"ror",
 			map[string]interface{}{},
@@ -458,101 +642,182 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addMachines-6",
 		Method: "addMachines",
-		Args: []interface{}{map[string]string{
-			"series":      "trusty",
-			"constraints": "",
-		}},
+		Args: bundlechanges.AddMachineArgs{
+			Series: "trusty",
+		},
+		GUIArgs: []interface{}{
+			bundlechanges.AddMachineOptions{
+				Series:      "trusty",
+				Constraints: "",
+			},
+		},
 	}, {
-		Id:       "addUnit-12",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-3", 1, "$addMachines-6"},
-		Requires: []string{"addService-3", "addMachines-6"},
+		Id:     "addUnit-12",
+		Method: "addUnit",
+		Args: bundlechanges.AddUnitArgs{
+			Service: "$deploy-3",
+			To:      "$addMachines-6",
+		},
+		GUIArgs:  []interface{}{"$deploy-3", 1, "$addMachines-6"},
+		Requires: []string{"deploy-3", "addMachines-6"},
 	}, {
-		Id:       "addUnit-16",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-5", 1, "$addMachines-6"},
-		Requires: []string{"addService-5", "addMachines-6"},
+		Id:     "addUnit-16",
+		Method: "addUnit",
+		Args: bundlechanges.AddUnitArgs{
+			Service: "$deploy-5",
+			To:      "$addMachines-6",
+		},
+		GUIArgs:  []interface{}{"$deploy-5", 1, "$addMachines-6"},
+		Requires: []string{"deploy-5", "addMachines-6"},
 	}, {
 		Id:     "addMachines-20",
 		Method: "addMachines",
-		Args: []interface{}{map[string]string{
-			"containerType": "kvm",
-			"parentId":      "$addUnit-16",
-		}},
+		Args: bundlechanges.AddMachineArgs{
+			ContainerType: "kvm",
+			ParentId:      "$addUnit-16",
+		},
+		GUIArgs: []interface{}{
+			bundlechanges.AddMachineOptions{
+				ContainerType: "kvm",
+				ParentId:      "$addUnit-16",
+			},
+		},
 		Requires: []string{"addUnit-16"},
 	}, {
 		Id:     "addMachines-21",
 		Method: "addMachines",
+		Args:   bundlechanges.AddMachineArgs{},
+		GUIArgs: []interface{}{
+			bundlechanges.AddMachineOptions{},
+		},
 	}, {
 		Id:     "addMachines-22",
 		Method: "addMachines",
+		Args:   bundlechanges.AddMachineArgs{},
+		GUIArgs: []interface{}{
+			bundlechanges.AddMachineOptions{},
+		},
 	}, {
 		Id:     "addMachines-23",
 		Method: "addMachines",
+		Args:   bundlechanges.AddMachineArgs{},
+		GUIArgs: []interface{}{
+			bundlechanges.AddMachineOptions{},
+		},
 	}, {
-		Id:       "addUnit-7",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-1", 1, "$addUnit-12"},
-		Requires: []string{"addService-1", "addUnit-12"},
+		Id:     "addUnit-7",
+		Method: "addUnit",
+		Args: bundlechanges.AddUnitArgs{
+			Service: "$deploy-1",
+			To:      "$addUnit-12",
+		},
+		GUIArgs:  []interface{}{"$deploy-1", 1, "$addUnit-12"},
+		Requires: []string{"deploy-1", "addUnit-12"},
 	}, {
-		Id:       "addUnit-11",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-1", 1, "$addMachines-20"},
-		Requires: []string{"addService-1", "addMachines-20"},
+		Id:     "addUnit-11",
+		Method: "addUnit",
+		Args: bundlechanges.AddUnitArgs{
+			Service: "$deploy-1",
+			To:      "$addMachines-20",
+		},
+		GUIArgs:  []interface{}{"$deploy-1", 1, "$addMachines-20"},
+		Requires: []string{"deploy-1", "addMachines-20"},
 	}, {
-		Id:       "addUnit-13",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-3", 1, "$addMachines-21"},
-		Requires: []string{"addService-3", "addMachines-21"},
+		Id:     "addUnit-13",
+		Method: "addUnit",
+		Args: bundlechanges.AddUnitArgs{
+			Service: "$deploy-3",
+			To:      "$addMachines-21",
+		},
+		GUIArgs:  []interface{}{"$deploy-3", 1, "$addMachines-21"},
+		Requires: []string{"deploy-3", "addMachines-21"},
 	}, {
-		Id:       "addUnit-14",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-3", 1, "$addMachines-22"},
-		Requires: []string{"addService-3", "addMachines-22"},
+		Id:     "addUnit-14",
+		Method: "addUnit",
+		Args: bundlechanges.AddUnitArgs{
+			Service: "$deploy-3",
+			To:      "$addMachines-22",
+		},
+		GUIArgs:  []interface{}{"$deploy-3", 1, "$addMachines-22"},
+		Requires: []string{"deploy-3", "addMachines-22"},
 	}, {
-		Id:       "addUnit-15",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-5", 1, "$addMachines-23"},
-		Requires: []string{"addService-5", "addMachines-23"},
+		Id:     "addUnit-15",
+		Method: "addUnit",
+		Args: bundlechanges.AddUnitArgs{
+			Service: "$deploy-5",
+			To:      "$addMachines-23",
+		},
+		GUIArgs:  []interface{}{"$deploy-5", 1, "$addMachines-23"},
+		Requires: []string{"deploy-5", "addMachines-23"},
 	}, {
 		Id:     "addMachines-17",
 		Method: "addMachines",
-		Args: []interface{}{map[string]string{
-			"containerType": "lxc",
-			"parentId":      "$addUnit-13",
-		}},
+		Args: bundlechanges.AddMachineArgs{
+			ContainerType: "lxc",
+			ParentId:      "$addUnit-13",
+		},
+		GUIArgs: []interface{}{
+			bundlechanges.AddMachineOptions{
+				ContainerType: "lxc",
+				ParentId:      "$addUnit-13",
+			},
+		},
 		Requires: []string{"addUnit-13"},
 	}, {
 		Id:     "addMachines-18",
 		Method: "addMachines",
-		Args: []interface{}{map[string]string{
-			"containerType": "lxc",
-			"parentId":      "$addUnit-14",
-		}},
+		Args: bundlechanges.AddMachineArgs{
+			ContainerType: "lxc",
+			ParentId:      "$addUnit-14",
+		},
+		GUIArgs: []interface{}{
+			bundlechanges.AddMachineOptions{
+				ContainerType: "lxc",
+				ParentId:      "$addUnit-14",
+			},
+		},
 		Requires: []string{"addUnit-14"},
 	}, {
 		Id:     "addMachines-19",
 		Method: "addMachines",
-		Args: []interface{}{map[string]string{
-			"containerType": "kvm",
-			"parentId":      "$addUnit-15",
-		}},
+		Args: bundlechanges.AddMachineArgs{
+			ContainerType: "kvm",
+			ParentId:      "$addUnit-15",
+		},
+		GUIArgs: []interface{}{
+			bundlechanges.AddMachineOptions{
+				ContainerType: "kvm",
+				ParentId:      "$addUnit-15",
+			},
+		},
 		Requires: []string{"addUnit-15"},
 	}, {
-		Id:       "addUnit-8",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-1", 1, "$addMachines-17"},
-		Requires: []string{"addService-1", "addMachines-17"},
+		Id:     "addUnit-8",
+		Method: "addUnit",
+		Args: bundlechanges.AddUnitArgs{
+			Service: "$deploy-1",
+			To:      "$addMachines-17",
+		},
+		GUIArgs:  []interface{}{"$deploy-1", 1, "$addMachines-17"},
+		Requires: []string{"deploy-1", "addMachines-17"},
 	}, {
-		Id:       "addUnit-9",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-1", 1, "$addMachines-18"},
-		Requires: []string{"addService-1", "addMachines-18"},
+		Id:     "addUnit-9",
+		Method: "addUnit",
+		Args: bundlechanges.AddUnitArgs{
+			Service: "$deploy-1",
+			To:      "$addMachines-18",
+		},
+		GUIArgs:  []interface{}{"$deploy-1", 1, "$addMachines-18"},
+		Requires: []string{"deploy-1", "addMachines-18"},
 	}, {
-		Id:       "addUnit-10",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-1", 1, "$addMachines-19"},
-		Requires: []string{"addService-1", "addMachines-19"},
+		Id:     "addUnit-10",
+		Method: "addUnit",
+		Args: bundlechanges.AddUnitArgs{
+			Service: "$deploy-1",
+			To:      "$addMachines-19",
+		},
+		GUIArgs:  []interface{}{"$deploy-1", 1, "$addMachines-19"},
+		Requires: []string{"deploy-1", "addMachines-19"},
 	}},
 }, {
 	about: "unit placed to machines",
@@ -572,14 +837,21 @@ var fromDataTests = []struct {
             8:
                 constraints: "cpu-cores=8"
     `,
-	expected: []*bundlechanges.Change{{
+	expected: []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
-		Args:   []interface{}{"cs:trusty/django-42"},
+		Args: bundlechanges.AddCharmArgs{
+			Charm: "cs:trusty/django-42",
+		},
+		GUIArgs: []interface{}{"cs:trusty/django-42"},
 	}, {
-		Id:     "addService-1",
+		Id:     "deploy-1",
 		Method: "deploy",
-		Args: []interface{}{
+		Args: bundlechanges.AddServiceArgs{
+			Charm:   "cs:trusty/django-42",
+			Service: "django",
+		},
+		GUIArgs: []interface{}{
 			"cs:trusty/django-42",
 			"django",
 			map[string]interface{}{},
@@ -588,61 +860,113 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addMachines-2",
 		Method: "addMachines",
-		Args: []interface{}{map[string]string{
-			"series":      "",
-			"constraints": "cpu-cores=4",
-		}},
+		Args: bundlechanges.AddMachineArgs{
+			Constraints: "cpu-cores=4",
+		},
+		GUIArgs: []interface{}{
+			bundlechanges.AddMachineOptions{
+				Constraints: "cpu-cores=4",
+			},
+		},
 	}, {
 		Id:     "addMachines-3",
 		Method: "addMachines",
-		Args: []interface{}{map[string]string{
-			"series":      "",
-			"constraints": "cpu-cores=8",
-		}},
+		Args: bundlechanges.AddMachineArgs{
+			Constraints: "cpu-cores=8",
+		},
+		GUIArgs: []interface{}{
+			bundlechanges.AddMachineOptions{
+				Constraints: "cpu-cores=8",
+			},
+		},
 	}, {
-		Id:       "addUnit-5",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-1", 1, "$addMachines-2"},
-		Requires: []string{"addService-1", "addMachines-2"},
+		Id:     "addUnit-5",
+		Method: "addUnit",
+		Args: bundlechanges.AddUnitArgs{
+			Service: "$deploy-1",
+			To:      "$addMachines-2",
+		},
+		GUIArgs:  []interface{}{"$deploy-1", 1, "$addMachines-2"},
+		Requires: []string{"deploy-1", "addMachines-2"},
 	}, {
 		Id:     "addMachines-9",
 		Method: "addMachines",
+		Args:   bundlechanges.AddMachineArgs{},
+		GUIArgs: []interface{}{
+			bundlechanges.AddMachineOptions{},
+		},
 	}, {
 		Id:     "addMachines-10",
 		Method: "addMachines",
-		Args: []interface{}{map[string]string{
-			"containerType": "kvm",
-			"parentId":      "$addMachines-3",
-		}},
+		Args: bundlechanges.AddMachineArgs{
+			ContainerType: "kvm",
+			ParentId:      "$addMachines-3",
+		},
+		GUIArgs: []interface{}{
+			bundlechanges.AddMachineOptions{
+				ContainerType: "kvm",
+				ParentId:      "$addMachines-3",
+			},
+		},
 		Requires: []string{"addMachines-3"},
 	}, {
 		Id:     "addMachines-11",
 		Method: "addMachines",
-		Args:   []interface{}{map[string]string{"containerType": "lxc"}},
+		Args: bundlechanges.AddMachineArgs{
+			ContainerType: "lxc",
+		},
+		GUIArgs: []interface{}{
+			bundlechanges.AddMachineOptions{
+				ContainerType: "lxc",
+			},
+		},
 	}, {
 		Id:     "addMachines-12",
 		Method: "addMachines",
-		Args:   []interface{}{map[string]string{"containerType": "lxc"}},
+		Args: bundlechanges.AddMachineArgs{
+			ContainerType: "lxc",
+		},
+		GUIArgs: []interface{}{
+			bundlechanges.AddMachineOptions{
+				ContainerType: "lxc",
+			},
+		},
 	}, {
-		Id:       "addUnit-4",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-1", 1, "$addMachines-9"},
-		Requires: []string{"addService-1", "addMachines-9"},
+		Id:     "addUnit-4",
+		Method: "addUnit",
+		Args: bundlechanges.AddUnitArgs{
+			Service: "$deploy-1",
+			To:      "$addMachines-9",
+		},
+		GUIArgs:  []interface{}{"$deploy-1", 1, "$addMachines-9"},
+		Requires: []string{"deploy-1", "addMachines-9"},
 	}, {
-		Id:       "addUnit-6",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-1", 1, "$addMachines-10"},
-		Requires: []string{"addService-1", "addMachines-10"},
+		Id:     "addUnit-6",
+		Method: "addUnit",
+		Args: bundlechanges.AddUnitArgs{
+			Service: "$deploy-1",
+			To:      "$addMachines-10",
+		},
+		GUIArgs:  []interface{}{"$deploy-1", 1, "$addMachines-10"},
+		Requires: []string{"deploy-1", "addMachines-10"},
 	}, {
-		Id:       "addUnit-7",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-1", 1, "$addMachines-11"},
-		Requires: []string{"addService-1", "addMachines-11"},
+		Id:     "addUnit-7",
+		Method: "addUnit",
+		Args: bundlechanges.AddUnitArgs{
+			Service: "$deploy-1",
+			To:      "$addMachines-11",
+		},
+		GUIArgs:  []interface{}{"$deploy-1", 1, "$addMachines-11"},
+		Requires: []string{"deploy-1", "addMachines-11"},
 	}, {
-		Id:       "addUnit-8",
-		Method:   "addUnit",
-		Args:     []interface{}{"$addService-1", 1, "$addMachines-12"},
-		Requires: []string{"addService-1", "addMachines-12"},
+		Id:     "addUnit-8",
+		Method: "addUnit",
+		Args: bundlechanges.AddUnitArgs{
+			Service: "$deploy-1",
+			To:      "$addMachines-12",
+		},
+		GUIArgs:  []interface{}{"$deploy-1", 1, "$addMachines-12"},
+		Requires: []string{"deploy-1", "addMachines-12"},
 	}},
 }}
 
@@ -656,11 +980,49 @@ func (s *changesSuite) TestFromData(c *gc.C) {
 		err = data.Verify(nil)
 		c.Assert(err, jc.ErrorIsNil)
 
-		// Check that the changes are what we expect.
+		// Retrieve the changes, and convert them to a sequence of records.
 		changes := bundlechanges.FromData(data)
-		b, err := json.MarshalIndent(changes, "", "  ")
+		records := make([]record, len(changes))
+		for i, change := range changes {
+			r := record{
+				Id:       change.Id(),
+				Requires: change.Requires(),
+				Method:   change.Method(),
+				GUIArgs:  change.GUIArgs(),
+			}
+			switch change := change.(type) {
+			case *bundlechanges.AddCharmChange:
+				r.Args = change.Args
+			case *bundlechanges.AddMachineChange:
+				r.Args = change.Args
+			case *bundlechanges.AddRelationChange:
+				r.Args = change.Args
+			case *bundlechanges.AddServiceChange:
+				r.Args = change.Args
+			case *bundlechanges.AddUnitChange:
+				r.Args = change.Args
+			case *bundlechanges.SetAnnotationsChange:
+				r.Args = change.Args
+			default:
+				c.Fatalf("unsupported change type %T", change)
+			}
+			records[i] = r
+		}
+
+		// Output the records for debugging.
+		b, err := json.MarshalIndent(records, "", "  ")
 		c.Assert(err, jc.ErrorIsNil)
-		c.Logf("obtained changes: %s", b)
-		c.Assert(changes, jc.DeepEquals, test.expected)
+		c.Logf("obtained records: %s", b)
+
+		// Check that the obtained records are what we expect.
+		c.Assert(records, jc.DeepEquals, test.expected)
 	}
+}
+
+type record struct {
+	Id       string
+	Requires []string
+	Method   string
+	Args     interface{}
+	GUIArgs  []interface{}
 }

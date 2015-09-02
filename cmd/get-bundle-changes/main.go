@@ -57,12 +57,36 @@ func process(r io.Reader, w io.Writer) error {
 	if err := data.Verify(nil); err != nil {
 		return err
 	}
-	// Generate and print the changes.
+	// Generate the changes and convert them to the standard form.
 	changes := bundlechanges.FromData(data)
-	content, err := json.MarshalIndent(changes, "", "  ")
+	records := make([]*record, len(changes))
+	for i, change := range changes {
+		records[i] = &record{
+			Id:       change.Id(),
+			Requires: change.Requires(),
+			Method:   change.Method(),
+			Args:     change.GUIArgs(),
+		}
+	}
+	// Serialize and print the records.
+	content, err := json.MarshalIndent(records, "", "  ")
 	if err != nil {
 		return err
 	}
 	fmt.Fprintln(w, string(content))
 	return nil
+}
+
+// record holds the JSON representation of a change.
+type record struct {
+	// Id is the unique identifier for this change.
+	Id string `json:"id"`
+	// Method is the action to be performed to apply this change.
+	Method string `json:"method"`
+	// Args holds a list of arguments to pass to the method.
+	Args []interface{} `json:"args"`
+	// Requires holds a list of dependencies for this change. Each dependency
+	// is represented by the corresponding change id, and must be applied
+	// before this change is applied.
+	Requires []string `json:"requires"`
 }

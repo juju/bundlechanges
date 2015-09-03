@@ -11,13 +11,9 @@ import (
 	"gopkg.in/juju/charm.v6-unstable"
 )
 
-// addChangeFunc is used to add a change to a change set. The resulting change
-// is also returned.
-type addChangeFunc func(method string, requires []string, args ...interface{}) *Change
-
 // handleServices populates the change set with "addCharm"/"addService" records.
 // This function also handles adding service annotations.
-func handleServices(add addChangeFunc, services map[string]*charm.ServiceSpec) map[string]string {
+func handleServices(add func(Change), services map[string]*charm.ServiceSpec) map[string]string {
 	charms := make(map[string]string, len(services))
 	addedServices := make(map[string]string, len(services))
 	// Iterate over the map using its sorted keys so that results are
@@ -27,25 +23,34 @@ func handleServices(add addChangeFunc, services map[string]*charm.ServiceSpec) m
 		names = append(names, name)
 	}
 	sort.Strings(names)
+	var change Change
 	for _, name := range names {
 		service := services[name]
 		// Add the addCharm record if one hasn't been added yet.
 		if charms[service.Charm] == "" {
-			change := add("addCharm", nil, service.Charm)
-			charms[service.Charm] = change.Id
+			change = newAddCharmChange(AddCharmParams{
+				Charm: service.Charm,
+			})
+			add(change)
+			charms[service.Charm] = change.Id()
 		}
 
 		// Add the addService record for this service.
-		options := service.Options
-		if options == nil {
-			options = make(map[string]interface{}, 0)
-		}
-		change := add("deploy", []string{charms[service.Charm]}, service.Charm, name, options)
-		addedServices[name] = change.Id
+		change = newAddServiceChange(AddServiceParams{
+			Charm:   service.Charm,
+			Service: name,
+			Options: service.Options,
+		}, charms[service.Charm])
+		add(change)
+		addedServices[name] = change.Id()
 
 		// Add service annotations.
 		if len(service.Annotations) > 0 {
-			add("setAnnotations", []string{change.Id}, "$"+change.Id, "service", service.Annotations)
+			add(newSetAnnotationsChange(SetAnnotationsParams{
+				EntityType:  "service",
+				Id:          "$" + change.Id(),
+				Annotations: service.Annotations,
+			}, change.Id()))
 		}
 	}
 	return addedServices
@@ -53,7 +58,7 @@ func handleServices(add addChangeFunc, services map[string]*charm.ServiceSpec) m
 
 // handleMachines populates the change set with "addMachines" records.
 // This function also handles adding machine annotations.
-func handleMachines(add addChangeFunc, machines map[string]*charm.MachineSpec) map[string]string {
+func handleMachines(add func(Change), machines map[string]*charm.MachineSpec) map[string]string {
 	addedMachines := make(map[string]string, len(machines))
 	// Iterate over the map using its sorted keys so that results are
 	// deterministic and easier to test.
@@ -62,31 +67,37 @@ func handleMachines(add addChangeFunc, machines map[string]*charm.MachineSpec) m
 		names = append(names, name)
 	}
 	sort.Strings(names)
+	var change Change
 	for _, name := range names {
 		machine := machines[name]
 		if machine == nil {
 			machine = &charm.MachineSpec{}
 		}
 		// Add the addMachines record for this machine.
-		change := add("addMachines", nil, map[string]string{
-			"series":      machine.Series,
-			"constraints": machine.Constraints,
+		change = newAddMachineChange(AddMachineParams{
+			Series:      machine.Series,
+			Constraints: machine.Constraints,
 		})
-		addedMachines[name] = change.Id
+		add(change)
+		addedMachines[name] = change.Id()
 
 		// Add machine annotations.
 		if len(machine.Annotations) > 0 {
-			add("setAnnotations", []string{change.Id}, "$"+change.Id, "machine", machine.Annotations)
+			add(newSetAnnotationsChange(SetAnnotationsParams{
+				EntityType:  "machine",
+				Id:          "$" + change.Id(),
+				Annotations: machine.Annotations,
+			}, change.Id()))
 		}
 	}
 	return addedMachines
 }
 
 // handleRelations populates the change set with "addRelation" records.
-func handleRelations(add addChangeFunc, relations [][]string, addedServices map[string]string) {
+func handleRelations(add func(Change), relations [][]string, addedServices map[string]string) {
 	for _, relation := range relations {
 		// Add the addRelation record for this relation pair.
-		args := make([]interface{}, 2)
+		args := make([]string, 2)
 		requires := make([]string, 2)
 		for i, endpoint := range relation {
 			ep := parseEndpoint(endpoint)
@@ -95,14 +106,17 @@ func handleRelations(add addChangeFunc, relations [][]string, addedServices map[
 			ep.service = service
 			args[i] = "$" + ep.String()
 		}
-		add("addRelation", requires, args...)
+		add(newAddRelationChange(AddRelationParams{
+			Endpoint1: args[0],
+			Endpoint2: args[1],
+		}, requires...))
 	}
 }
 
 // handleUnits populates the change set with "addUnit" records.
 // It also handles adding machine containers where to place units if required.
-func handleUnits(add addChangeFunc, services map[string]*charm.ServiceSpec, addedServices, addedMachines map[string]string) {
-	records := make(map[string]*Change)
+func handleUnits(add func(Change), services map[string]*charm.ServiceSpec, addedServices, addedMachines map[string]string) {
+	records := make(map[string]*AddUnitChange)
 	// Iterate over the map using its sorted keys so that results are
 	// deterministic and easier to test.
 	names := make([]string, 0, len(services))
@@ -116,7 +130,10 @@ func handleUnits(add addChangeFunc, services map[string]*charm.ServiceSpec, adde
 		service := services[name]
 		for i := 0; i < service.NumUnits; i++ {
 			addedService := addedServices[name]
-			change := add("addUnit", []string{addedService}, "$"+addedService, 1, nil)
+			change := newAddUnitChange(AddUnitParams{
+				Service: "$" + addedService,
+			}, addedService)
+			add(change)
 			records[fmt.Sprintf("%s/%d", name, i)] = change
 		}
 	}
@@ -148,13 +165,13 @@ func handleUnits(add addChangeFunc, services map[string]*charm.ServiceSpec, adde
 			// Retrieve and modify the original "addUnit" change to add the
 			// new parent requirement and placement target.
 			change := records[fmt.Sprintf("%s/%d", name, i)]
-			change.Requires = append(change.Requires, parentId)
-			change.Args[2] = "$" + parentId
+			change.requires = append(change.requires, parentId)
+			change.Params.To = "$" + parentId
 		}
 	}
 }
 
-func unitParent(add addChangeFunc, p string, records map[string]*Change, addedMachines map[string]string, servicePlacedUnits map[string]int) (parentId string) {
+func unitParent(add func(Change), p string, records map[string]*AddUnitChange, addedMachines map[string]string, servicePlacedUnits map[string]int) (parentId string) {
 	placement, err := charm.ParsePlacement(p)
 	if err != nil {
 		// Since the bundle is already verified, this should never happen.
@@ -162,13 +179,11 @@ func unitParent(add addChangeFunc, p string, records map[string]*Change, addedMa
 	}
 	if placement.Machine == "new" {
 		// The unit is placed to a new machine.
-		var args []interface{}
-		if placement.ContainerType != "" {
-			args = []interface{}{
-				map[string]string{"containerType": placement.ContainerType},
-			}
-		}
-		return add("addMachines", nil, args...).Id
+		change := newAddMachineChange(AddMachineParams{
+			ContainerType: placement.ContainerType,
+		})
+		add(change)
+		return change.Id()
 	}
 	if placement.Machine != "" {
 		// The unit is placed to a machine declared in the bundle.
@@ -191,19 +206,20 @@ func unitParent(add addChangeFunc, p string, records map[string]*Change, addedMa
 		servicePlacedUnits[placement.Service] = number
 	}
 	otherUnit := fmt.Sprintf("%s/%d", placement.Service, number)
-	parentId = records[otherUnit].Id
+	parentId = records[otherUnit].Id()
 	if placement.ContainerType != "" {
 		parentId = addContainer(add, placement.ContainerType, parentId)
 	}
 	return parentId
 }
 
-func addContainer(add addChangeFunc, containerType, parentId string) string {
-	change := add("addMachines", []string{parentId}, map[string]string{
-		"containerType": containerType,
-		"parentId":      "$" + parentId,
-	})
-	return change.Id
+func addContainer(add func(Change), containerType, parentId string) string {
+	change := newAddMachineChange(AddMachineParams{
+		ContainerType: containerType,
+		ParentId:      "$" + parentId,
+	}, parentId)
+	add(change)
+	return change.Id()
 }
 
 // parseEndpoint creates an endpoint from its string representation.

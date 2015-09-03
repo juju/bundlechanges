@@ -25,19 +25,20 @@ func FromData(data *charm.BundleData) []Change {
 type Change interface {
 	// Id returns the unique identifier for this change.
 	Id() string
-	// Requires returns a list of dependencies for this change. Each dependency
-	// is represented by the corresponding change id, and must be applied
-	// before this change is applied.
+	// Requires returns the ids of all the changes that must
+	// be applied before this one.
 	Requires() []string
 	// Method returns the action to be performed to apply this change.
 	Method() string
 	// GUIArgs returns positional arguments to pass to the method, suitable for
-	// being serialized and sent to the Juju GUI.
+	// being JSON-serialized and sent to the Juju GUI.
 	GUIArgs() []interface{}
 	// setId is used to set the identifier for the change.
 	setId(string)
 }
 
+// changeInfo holds information on a change, suitable for embedding into a more
+// specific change type.
 type changeInfo struct {
 	id       string
 	requires []string
@@ -51,6 +52,8 @@ func (ch *changeInfo) Id() string {
 
 // Requires implements Change.Requires.
 func (ch *changeInfo) Requires() []string {
+	// Avoid returning a nil interface because so that avoid returning a slice
+	// that will serialize to JSON null.
 	if ch.requires == nil {
 		return []string{}
 	}
@@ -68,59 +71,59 @@ func (ch *changeInfo) setId(id string) {
 }
 
 // newAddCharmChange creates a new change for adding a charm.
-func newAddCharmChange(args AddCharmArgs, requires ...string) *AddCharmChange {
+func newAddCharmChange(params AddCharmParams, requires ...string) *AddCharmChange {
 	return &AddCharmChange{
 		changeInfo: changeInfo{
 			requires: requires,
 			method:   "addCharm",
 		},
-		Args: args,
+		Params: params,
 	}
 }
 
 // AddCharmChange holds a change for adding a charm to the environment.
 type AddCharmChange struct {
 	changeInfo
-	// Args holds parameters for adding a charm.
-	Args AddCharmArgs
+	// Params holds parameters for adding a charm.
+	Params AddCharmParams
 }
 
 // GUIArgs implements Change.GUIArgs.
 func (ch *AddCharmChange) GUIArgs() []interface{} {
-	return []interface{}{ch.Args.Charm}
+	return []interface{}{ch.Params.Charm}
 }
 
-// AddCharmArgs holds parameters for adding a charm to the environment.
-type AddCharmArgs struct {
+// AddCharmParams holds parameters for adding a charm to the environment.
+type AddCharmParams struct {
 	// Charm holds the URL of the charm to be added.
 	Charm string
 }
 
 // newAddMachineChange creates a new change for adding a machine or container.
-func newAddMachineChange(args AddMachineArgs, requires ...string) *AddMachineChange {
+func newAddMachineChange(params AddMachineParams, requires ...string) *AddMachineChange {
 	return &AddMachineChange{
 		changeInfo: changeInfo{
 			requires: requires,
 			method:   "addMachines",
 		},
-		Args: args,
+		Params: params,
 	}
 }
 
 // AddMachineChange holds a change for adding a machine or container.
 type AddMachineChange struct {
 	changeInfo
-	// Args holds parameters for adding a machine.
-	Args AddMachineArgs
+	// Params holds parameters for adding a machine.
+	Params AddMachineParams
 }
 
 // GUIArgs implements Change.GUIArgs.
 func (ch *AddMachineChange) GUIArgs() []interface{} {
 	options := AddMachineOptions{
-		Series:        ch.Args.Series,
-		Constraints:   ch.Args.Constraints,
-		ContainerType: ch.Args.ContainerType,
-		ParentId:      ch.Args.ParentId,
+		Series:        ch.Params.Series,
+		Constraints:   ch.Params.Constraints,
+		ContainerType: ch.Params.ContainerType,
+		ParentId:      ch.Params.ParentId,
 	}
 	return []interface{}{options}
 }
@@ -137,8 +140,8 @@ type AddMachineOptions struct {
 	ParentId string `json:"parentId,omitempty"`
 }
 
-// AddMachineArgs holds parameters for adding a machine or container.
-type AddMachineArgs struct {
+// AddMachineParams holds parameters for adding a machine or container.
+type AddMachineParams struct {
 	// Series holds the optional machine OS series.
 	Series string
 	// Constraints holds the optional machine constraints.
@@ -153,66 +156,67 @@ type AddMachineArgs struct {
 }
 
 // newAddRelationChange creates a new change for adding a relation.
-func newAddRelationChange(args AddRelationArgs, requires ...string) *AddRelationChange {
+func newAddRelationChange(params AddRelationParams, requires ...string) *AddRelationChange {
 	return &AddRelationChange{
 		changeInfo: changeInfo{
 			requires: requires,
 			method:   "addRelation",
 		},
-		Args: args,
+		Params: params,
 	}
 }
 
 // AddRelationChange holds a change for adding a relation between two services.
 type AddRelationChange struct {
 	changeInfo
-	// Args holds parameters for adding a relation.
-	Args AddRelationArgs
+	// Params holds parameters for adding a relation.
+	Params AddRelationParams
 }
 
 // GUIArgs implements Change.GUIArgs.
 func (ch *AddRelationChange) GUIArgs() []interface{} {
-	return []interface{}{ch.Args.Endpoint1, ch.Args.Endpoint2}
+	return []interface{}{ch.Params.Endpoint1, ch.Params.Endpoint2}
 }
 
-// AddRelationArgs holds parameters for adding a relation between two services.
-type AddRelationArgs struct {
-	// Endpoint1 and Endpoint2 hold relation endpoints, like "$deploy-1:web" or
-	// just "$deploy-1". The service part of the endpoint is always a
-	// placeholder pointing to a service change.
+// AddRelationParams holds parameters for adding a relation between two services.
+type AddRelationParams struct {
+	// Endpoint1 and Endpoint2 hold relation endpoints in the
+	// "service:interface" form, where the service is always a placeholder
+	// pointing to a service change, and the interface is optional. Examples
+	// are "$deploy-42:web" or just "$deploy-42".
 	Endpoint1 string
 	Endpoint2 string
 }
 
 // newAddServiceChange creates a new change for adding a service.
-func newAddServiceChange(args AddServiceArgs, requires ...string) *AddServiceChange {
+func newAddServiceChange(params AddServiceParams, requires ...string) *AddServiceChange {
 	return &AddServiceChange{
 		changeInfo: changeInfo{
 			requires: requires,
 			method:   "deploy",
 		},
-		Args: args,
+		Params: params,
 	}
 }
 
 // AddServiceChange holds a change for deploying a Juju service.
 type AddServiceChange struct {
 	changeInfo
-	// Args holds parameters for adding a service.
-	Args AddServiceArgs
+	// Params holds parameters for adding a service.
+	Params AddServiceParams
 }
 
 // GUIArgs implements Change.GUIArgs.
 func (ch *AddServiceChange) GUIArgs() []interface{} {
-	options := ch.Args.Options
+	options := ch.Params.Options
 	if options == nil {
 		options = make(map[string]interface{}, 0)
 	}
-	return []interface{}{ch.Args.Charm, ch.Args.Service, options}
+	return []interface{}{ch.Params.Charm, ch.Params.Service, options}
 }
 
-// AddServiceArgs holds parameters for deploying a Juju service.
-type AddServiceArgs struct {
+// AddServiceParams holds parameters for deploying a Juju service.
+type AddServiceParams struct {
 	// Charm holds the URL of the charm to be used to deploy this service.
 	Charm string
 	// Service holds the service name.
@@ -223,34 +227,34 @@ type AddServiceArgs struct {
 }
 
 // newAddUnitChange creates a new change for adding a service unit.
-func newAddUnitChange(args AddUnitArgs, requires ...string) *AddUnitChange {
+func newAddUnitChange(params AddUnitParams, requires ...string) *AddUnitChange {
 	return &AddUnitChange{
 		changeInfo: changeInfo{
 			requires: requires,
 			method:   "addUnit",
 		},
-		Args: args,
+		Params: params,
 	}
 }
 
 // AddUnitChange holds a change for adding a service unit.
 type AddUnitChange struct {
 	changeInfo
-	// Args holds parameters for adding a unit.
-	Args AddUnitArgs
+	// Params holds parameters for adding a unit.
+	Params AddUnitParams
 }
 
 // GUIArgs implements Change.GUIArgs.
 func (ch *AddUnitChange) GUIArgs() []interface{} {
-	args := []interface{}{ch.Args.Service, 1, nil}
-	if ch.Args.To != "" {
-		args[2] = ch.Args.To
+	args := []interface{}{ch.Params.Service, 1, nil}
+	if ch.Params.To != "" {
+		args[2] = ch.Params.To
 	}
 	return args
 }
 
-// AddUnitArgs holds parameters for adding a service unit.
-type AddUnitArgs struct {
+// AddUnitParams holds parameters for adding a service unit.
+type AddUnitParams struct {
 	// Service holds the service placeholder name for which a unit is added.
 	Service string
 	// To holds the optional location where to add the unit, as a placeholder
@@ -259,13 +263,13 @@ type AddUnitArgs struct {
 }
 
 // newSetAnnotationsChange creates a new change for setting annotations.
-func newSetAnnotationsChange(args SetAnnotationsArgs, requires ...string) *SetAnnotationsChange {
+func newSetAnnotationsChange(params SetAnnotationsParams, requires ...string) *SetAnnotationsChange {
 	return &SetAnnotationsChange{
 		changeInfo: changeInfo{
 			requires: requires,
 			method:   "setAnnotations",
 		},
-		Args: args,
+		Params: params,
 	}
 }
 
@@ -273,17 +277,17 @@ func newSetAnnotationsChange(args SetAnnotationsArgs, requires ...string) *SetAn
 // annotations.
 type SetAnnotationsChange struct {
 	changeInfo
-	// Args holds parameters for setting annotations.
-	Args SetAnnotationsArgs
+	// Params holds parameters for setting annotations.
+	Params SetAnnotationsParams
 }
 
 // GUIArgs implements Change.GUIArgs.
 func (ch *SetAnnotationsChange) GUIArgs() []interface{} {
-	return []interface{}{ch.Args.Id, ch.Args.EntityType, ch.Args.Annotations}
+	return []interface{}{ch.Params.Id, ch.Params.EntityType, ch.Params.Annotations}
 }
 
-// AddServiceArgs holds parameters for setting annotations.
-type SetAnnotationsArgs struct {
+// SetAnnotationsParams holds parameters for setting annotations.
+type SetAnnotationsParams struct {
 	// Id is the placeholder for the service or machine change corresponding to
 	// the entity to be annotated.
 	Id string

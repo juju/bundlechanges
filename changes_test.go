@@ -5,6 +5,7 @@ package bundlechanges_test
 
 import (
 	"encoding/json"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -21,6 +22,15 @@ var _ = gc.Suite(&changesSuite{})
 
 func TestPackage(t *testing.T) {
 	gc.TestingT(t)
+}
+
+// record holds expected information about the contents of a change value.
+type record struct {
+	Id       string
+	Requires []string
+	Method   string
+	Params   interface{}
+	GUIArgs  []interface{}
 }
 
 var fromDataTests = []struct {
@@ -40,14 +50,14 @@ var fromDataTests = []struct {
 	expected: []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
-		Args: bundlechanges.AddCharmArgs{
+		Params: bundlechanges.AddCharmParams{
 			Charm: "django",
 		},
 		GUIArgs: []interface{}{"django"},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
-		Args: bundlechanges.AddServiceArgs{
+		Params: bundlechanges.AddServiceParams{
 			Charm:   "django",
 			Service: "django",
 		},
@@ -81,14 +91,14 @@ var fromDataTests = []struct {
 	expected: []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
-		Args: bundlechanges.AddCharmArgs{
+		Params: bundlechanges.AddCharmParams{
 			Charm: "cs:precise/mediawiki-10",
 		},
 		GUIArgs: []interface{}{"cs:precise/mediawiki-10"},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
-		Args: bundlechanges.AddServiceArgs{
+		Params: bundlechanges.AddServiceParams{
 			Charm:   "cs:precise/mediawiki-10",
 			Service: "mediawiki",
 			Options: map[string]interface{}{"debug": false}},
@@ -101,7 +111,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "setAnnotations-2",
 		Method: "setAnnotations",
-		Args: bundlechanges.SetAnnotationsArgs{
+		Params: bundlechanges.SetAnnotationsParams{
 			Id:          "$deploy-1",
 			EntityType:  "service",
 			Annotations: map[string]string{"gui-x": "609", "gui-y": "-15"},
@@ -115,14 +125,14 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addCharm-3",
 		Method: "addCharm",
-		Args: bundlechanges.AddCharmArgs{
+		Params: bundlechanges.AddCharmParams{
 			Charm: "cs:precise/mysql-28",
 		},
 		GUIArgs: []interface{}{"cs:precise/mysql-28"},
 	}, {
 		Id:     "deploy-4",
 		Method: "deploy",
-		Args: bundlechanges.AddServiceArgs{
+		Params: bundlechanges.AddServiceParams{
 			Charm:   "cs:precise/mysql-28",
 			Service: "mysql",
 		},
@@ -135,7 +145,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addRelation-5",
 		Method: "addRelation",
-		Args: bundlechanges.AddRelationArgs{
+		Params: bundlechanges.AddRelationParams{
 			Endpoint1: "$deploy-1:db",
 			Endpoint2: "$deploy-4:db",
 		},
@@ -144,7 +154,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addUnit-6",
 		Method: "addUnit",
-		Args: bundlechanges.AddUnitArgs{
+		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-1",
 		},
 		GUIArgs:  []interface{}{"$deploy-1", 1, nil},
@@ -152,7 +162,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addUnit-7",
 		Method: "addUnit",
-		Args: bundlechanges.AddUnitArgs{
+		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-4",
 		},
 		GUIArgs:  []interface{}{"$deploy-4", 1, nil},
@@ -185,14 +195,14 @@ var fromDataTests = []struct {
 	expected: []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
-		Args: bundlechanges.AddCharmArgs{
+		Params: bundlechanges.AddCharmParams{
 			Charm: "cs:trusty/django-42",
 		},
 		GUIArgs: []interface{}{"cs:trusty/django-42"},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
-		Args: bundlechanges.AddServiceArgs{
+		Params: bundlechanges.AddServiceParams{
 			Charm:   "cs:trusty/django-42",
 			Service: "django",
 		},
@@ -205,14 +215,14 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addCharm-2",
 		Method: "addCharm",
-		Args: bundlechanges.AddCharmArgs{
+		Params: bundlechanges.AddCharmParams{
 			Charm: "cs:trusty/haproxy-47",
 		},
 		GUIArgs: []interface{}{"cs:trusty/haproxy-47"},
 	}, {
 		Id:     "deploy-3",
 		Method: "deploy",
-		Args: bundlechanges.AddServiceArgs{
+		Params: bundlechanges.AddServiceParams{
 			Charm:   "cs:trusty/haproxy-47",
 			Service: "haproxy",
 			Options: map[string]interface{}{"bad": "wolf", "number": 42.47},
@@ -226,7 +236,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addMachines-4",
 		Method: "addMachines",
-		Args: bundlechanges.AddMachineArgs{
+		Params: bundlechanges.AddMachineParams{
 			Series: "trusty",
 		},
 		GUIArgs: []interface{}{
@@ -235,14 +245,14 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addMachines-5",
 		Method: "addMachines",
-		Args:   bundlechanges.AddMachineArgs{},
+		Params: bundlechanges.AddMachineParams{},
 		GUIArgs: []interface{}{
 			bundlechanges.AddMachineOptions{},
 		},
 	}, {
 		Id:     "addUnit-6",
 		Method: "addUnit",
-		Args: bundlechanges.AddUnitArgs{
+		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-1",
 			To:      "$addMachines-4",
 		},
@@ -251,7 +261,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addMachines-10",
 		Method: "addMachines",
-		Args: bundlechanges.AddMachineArgs{
+		Params: bundlechanges.AddMachineParams{
 			ContainerType: "lxc",
 			ParentId:      "$addMachines-5",
 		},
@@ -265,7 +275,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addMachines-11",
 		Method: "addMachines",
-		Args: bundlechanges.AddMachineArgs{
+		Params: bundlechanges.AddMachineParams{
 			ContainerType: "lxc",
 			ParentId:      "$addUnit-6",
 		},
@@ -279,14 +289,14 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addMachines-12",
 		Method: "addMachines",
-		Args:   bundlechanges.AddMachineArgs{},
+		Params: bundlechanges.AddMachineParams{},
 		GUIArgs: []interface{}{
 			bundlechanges.AddMachineOptions{},
 		},
 	}, {
 		Id:     "addUnit-7",
 		Method: "addUnit",
-		Args: bundlechanges.AddUnitArgs{
+		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-1",
 			To:      "$addMachines-10",
 		},
@@ -295,7 +305,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addUnit-8",
 		Method: "addUnit",
-		Args: bundlechanges.AddUnitArgs{
+		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-3",
 			To:      "$addMachines-11",
 		},
@@ -304,7 +314,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addUnit-9",
 		Method: "addUnit",
-		Args: bundlechanges.AddUnitArgs{
+		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-3",
 			To:      "$addMachines-12",
 		},
@@ -330,14 +340,14 @@ var fromDataTests = []struct {
 	expected: []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
-		Args: bundlechanges.AddCharmArgs{
+		Params: bundlechanges.AddCharmParams{
 			Charm: "cs:trusty/django-42",
 		},
 		GUIArgs: []interface{}{"cs:trusty/django-42"},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
-		Args: bundlechanges.AddServiceArgs{
+		Params: bundlechanges.AddServiceParams{
 			Charm:   "cs:trusty/django-42",
 			Service: "django",
 		},
@@ -350,7 +360,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addMachines-2",
 		Method: "addMachines",
-		Args: bundlechanges.AddMachineArgs{
+		Params: bundlechanges.AddMachineParams{
 			Constraints: "cpu-cores=4",
 		},
 		GUIArgs: []interface{}{
@@ -359,7 +369,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "setAnnotations-3",
 		Method: "setAnnotations",
-		Args: bundlechanges.SetAnnotationsArgs{
+		Params: bundlechanges.SetAnnotationsParams{
 			Id:          "$addMachines-2",
 			EntityType:  "machine",
 			Annotations: map[string]string{"foo": "bar"},
@@ -373,7 +383,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addUnit-4",
 		Method: "addUnit",
-		Args: bundlechanges.AddUnitArgs{
+		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-1",
 			To:      "$addMachines-2",
 		},
@@ -382,14 +392,14 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addMachines-6",
 		Method: "addMachines",
-		Args:   bundlechanges.AddMachineArgs{},
+		Params: bundlechanges.AddMachineParams{},
 		GUIArgs: []interface{}{
 			bundlechanges.AddMachineOptions{},
 		},
 	}, {
 		Id:     "addUnit-5",
 		Method: "addUnit",
-		Args: bundlechanges.AddUnitArgs{
+		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-1",
 			To:      "$addMachines-6",
 		},
@@ -411,14 +421,14 @@ var fromDataTests = []struct {
 	expected: []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
-		Args: bundlechanges.AddCharmArgs{
+		Params: bundlechanges.AddCharmParams{
 			Charm: "cs:precise/mediawiki-10",
 		},
 		GUIArgs: []interface{}{"cs:precise/mediawiki-10"},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
-		Args: bundlechanges.AddServiceArgs{
+		Params: bundlechanges.AddServiceParams{
 			Charm:   "cs:precise/mediawiki-10",
 			Service: "mediawiki",
 		},
@@ -431,14 +441,14 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addCharm-2",
 		Method: "addCharm",
-		Args: bundlechanges.AddCharmArgs{
+		Params: bundlechanges.AddCharmParams{
 			Charm: "cs:precise/mysql-28",
 		},
 		GUIArgs: []interface{}{"cs:precise/mysql-28"},
 	}, {
 		Id:     "deploy-3",
 		Method: "deploy",
-		Args: bundlechanges.AddServiceArgs{
+		Params: bundlechanges.AddServiceParams{
 			Charm:   "cs:precise/mysql-28",
 			Service: "mysql",
 		},
@@ -451,7 +461,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addRelation-4",
 		Method: "addRelation",
-		Args: bundlechanges.AddRelationArgs{
+		Params: bundlechanges.AddRelationParams{
 			Endpoint1: "$deploy-1:db",
 			Endpoint2: "$deploy-3",
 		},
@@ -473,14 +483,14 @@ var fromDataTests = []struct {
 	expected: []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
-		Args: bundlechanges.AddCharmArgs{
+		Params: bundlechanges.AddCharmParams{
 			Charm: "cs:trusty/django-42",
 		},
 		GUIArgs: []interface{}{"cs:trusty/django-42"},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
-		Args: bundlechanges.AddServiceArgs{
+		Params: bundlechanges.AddServiceParams{
 			Charm:   "cs:trusty/django-42",
 			Service: "django",
 		},
@@ -493,14 +503,14 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addCharm-2",
 		Method: "addCharm",
-		Args: bundlechanges.AddCharmArgs{
+		Params: bundlechanges.AddCharmParams{
 			Charm: "wordpress",
 		},
 		GUIArgs: []interface{}{"wordpress"},
 	}, {
 		Id:     "deploy-3",
 		Method: "deploy",
-		Args: bundlechanges.AddServiceArgs{
+		Params: bundlechanges.AddServiceParams{
 			Charm:   "wordpress",
 			Service: "wordpress",
 		},
@@ -513,7 +523,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addUnit-6",
 		Method: "addUnit",
-		Args: bundlechanges.AddUnitArgs{
+		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-3",
 		},
 		GUIArgs:  []interface{}{"$deploy-3", 1, nil},
@@ -521,7 +531,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addUnit-7",
 		Method: "addUnit",
-		Args: bundlechanges.AddUnitArgs{
+		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-3",
 		},
 		GUIArgs:  []interface{}{"$deploy-3", 1, nil},
@@ -529,7 +539,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addUnit-8",
 		Method: "addUnit",
-		Args: bundlechanges.AddUnitArgs{
+		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-3",
 		},
 		GUIArgs:  []interface{}{"$deploy-3", 1, nil},
@@ -537,7 +547,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addUnit-4",
 		Method: "addUnit",
-		Args: bundlechanges.AddUnitArgs{
+		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-1",
 			To:      "$addUnit-6",
 		},
@@ -546,7 +556,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addUnit-5",
 		Method: "addUnit",
-		Args: bundlechanges.AddUnitArgs{
+		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-1",
 			To:      "$addUnit-7",
 		},
@@ -582,14 +592,14 @@ var fromDataTests = []struct {
 	expected: []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
-		Args: bundlechanges.AddCharmArgs{
+		Params: bundlechanges.AddCharmParams{
 			Charm: "cs:trusty/django-42",
 		},
 		GUIArgs: []interface{}{"cs:trusty/django-42"},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
-		Args: bundlechanges.AddServiceArgs{
+		Params: bundlechanges.AddServiceParams{
 			Charm:   "cs:trusty/django-42",
 			Service: "django",
 		},
@@ -602,14 +612,14 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addCharm-2",
 		Method: "addCharm",
-		Args: bundlechanges.AddCharmArgs{
+		Params: bundlechanges.AddCharmParams{
 			Charm: "cs:trusty/mem-47",
 		},
 		GUIArgs: []interface{}{"cs:trusty/mem-47"},
 	}, {
 		Id:     "deploy-3",
 		Method: "deploy",
-		Args: bundlechanges.AddServiceArgs{
+		Params: bundlechanges.AddServiceParams{
 			Charm:   "cs:trusty/mem-47",
 			Service: "memcached",
 		},
@@ -622,14 +632,14 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addCharm-4",
 		Method: "addCharm",
-		Args: bundlechanges.AddCharmArgs{
+		Params: bundlechanges.AddCharmParams{
 			Charm: "vivid/rails",
 		},
 		GUIArgs: []interface{}{"vivid/rails"},
 	}, {
 		Id:     "deploy-5",
 		Method: "deploy",
-		Args: bundlechanges.AddServiceArgs{
+		Params: bundlechanges.AddServiceParams{
 			Charm:   "vivid/rails",
 			Service: "ror",
 		},
@@ -642,7 +652,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addMachines-6",
 		Method: "addMachines",
-		Args: bundlechanges.AddMachineArgs{
+		Params: bundlechanges.AddMachineParams{
 			Series: "trusty",
 		},
 		GUIArgs: []interface{}{
@@ -654,7 +664,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addUnit-12",
 		Method: "addUnit",
-		Args: bundlechanges.AddUnitArgs{
+		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-3",
 			To:      "$addMachines-6",
 		},
@@ -663,7 +673,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addUnit-16",
 		Method: "addUnit",
-		Args: bundlechanges.AddUnitArgs{
+		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-5",
 			To:      "$addMachines-6",
 		},
@@ -672,7 +682,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addMachines-20",
 		Method: "addMachines",
-		Args: bundlechanges.AddMachineArgs{
+		Params: bundlechanges.AddMachineParams{
 			ContainerType: "kvm",
 			ParentId:      "$addUnit-16",
 		},
@@ -686,28 +696,28 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addMachines-21",
 		Method: "addMachines",
-		Args:   bundlechanges.AddMachineArgs{},
+		Params: bundlechanges.AddMachineParams{},
 		GUIArgs: []interface{}{
 			bundlechanges.AddMachineOptions{},
 		},
 	}, {
 		Id:     "addMachines-22",
 		Method: "addMachines",
-		Args:   bundlechanges.AddMachineArgs{},
+		Params: bundlechanges.AddMachineParams{},
 		GUIArgs: []interface{}{
 			bundlechanges.AddMachineOptions{},
 		},
 	}, {
 		Id:     "addMachines-23",
 		Method: "addMachines",
-		Args:   bundlechanges.AddMachineArgs{},
+		Params: bundlechanges.AddMachineParams{},
 		GUIArgs: []interface{}{
 			bundlechanges.AddMachineOptions{},
 		},
 	}, {
 		Id:     "addUnit-7",
 		Method: "addUnit",
-		Args: bundlechanges.AddUnitArgs{
+		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-1",
 			To:      "$addUnit-12",
 		},
@@ -716,7 +726,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addUnit-11",
 		Method: "addUnit",
-		Args: bundlechanges.AddUnitArgs{
+		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-1",
 			To:      "$addMachines-20",
 		},
@@ -725,7 +735,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addUnit-13",
 		Method: "addUnit",
-		Args: bundlechanges.AddUnitArgs{
+		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-3",
 			To:      "$addMachines-21",
 		},
@@ -734,7 +744,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addUnit-14",
 		Method: "addUnit",
-		Args: bundlechanges.AddUnitArgs{
+		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-3",
 			To:      "$addMachines-22",
 		},
@@ -743,7 +753,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addUnit-15",
 		Method: "addUnit",
-		Args: bundlechanges.AddUnitArgs{
+		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-5",
 			To:      "$addMachines-23",
 		},
@@ -752,7 +762,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addMachines-17",
 		Method: "addMachines",
-		Args: bundlechanges.AddMachineArgs{
+		Params: bundlechanges.AddMachineParams{
 			ContainerType: "lxc",
 			ParentId:      "$addUnit-13",
 		},
@@ -766,7 +776,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addMachines-18",
 		Method: "addMachines",
-		Args: bundlechanges.AddMachineArgs{
+		Params: bundlechanges.AddMachineParams{
 			ContainerType: "lxc",
 			ParentId:      "$addUnit-14",
 		},
@@ -780,7 +790,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addMachines-19",
 		Method: "addMachines",
-		Args: bundlechanges.AddMachineArgs{
+		Params: bundlechanges.AddMachineParams{
 			ContainerType: "kvm",
 			ParentId:      "$addUnit-15",
 		},
@@ -794,7 +804,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addUnit-8",
 		Method: "addUnit",
-		Args: bundlechanges.AddUnitArgs{
+		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-1",
 			To:      "$addMachines-17",
 		},
@@ -803,7 +813,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addUnit-9",
 		Method: "addUnit",
-		Args: bundlechanges.AddUnitArgs{
+		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-1",
 			To:      "$addMachines-18",
 		},
@@ -812,7 +822,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addUnit-10",
 		Method: "addUnit",
-		Args: bundlechanges.AddUnitArgs{
+		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-1",
 			To:      "$addMachines-19",
 		},
@@ -840,14 +850,14 @@ var fromDataTests = []struct {
 	expected: []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
-		Args: bundlechanges.AddCharmArgs{
+		Params: bundlechanges.AddCharmParams{
 			Charm: "cs:trusty/django-42",
 		},
 		GUIArgs: []interface{}{"cs:trusty/django-42"},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
-		Args: bundlechanges.AddServiceArgs{
+		Params: bundlechanges.AddServiceParams{
 			Charm:   "cs:trusty/django-42",
 			Service: "django",
 		},
@@ -860,7 +870,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addMachines-2",
 		Method: "addMachines",
-		Args: bundlechanges.AddMachineArgs{
+		Params: bundlechanges.AddMachineParams{
 			Constraints: "cpu-cores=4",
 		},
 		GUIArgs: []interface{}{
@@ -871,7 +881,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addMachines-3",
 		Method: "addMachines",
-		Args: bundlechanges.AddMachineArgs{
+		Params: bundlechanges.AddMachineParams{
 			Constraints: "cpu-cores=8",
 		},
 		GUIArgs: []interface{}{
@@ -882,7 +892,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addUnit-5",
 		Method: "addUnit",
-		Args: bundlechanges.AddUnitArgs{
+		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-1",
 			To:      "$addMachines-2",
 		},
@@ -891,14 +901,14 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addMachines-9",
 		Method: "addMachines",
-		Args:   bundlechanges.AddMachineArgs{},
+		Params: bundlechanges.AddMachineParams{},
 		GUIArgs: []interface{}{
 			bundlechanges.AddMachineOptions{},
 		},
 	}, {
 		Id:     "addMachines-10",
 		Method: "addMachines",
-		Args: bundlechanges.AddMachineArgs{
+		Params: bundlechanges.AddMachineParams{
 			ContainerType: "kvm",
 			ParentId:      "$addMachines-3",
 		},
@@ -912,7 +922,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addMachines-11",
 		Method: "addMachines",
-		Args: bundlechanges.AddMachineArgs{
+		Params: bundlechanges.AddMachineParams{
 			ContainerType: "lxc",
 		},
 		GUIArgs: []interface{}{
@@ -923,7 +933,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addMachines-12",
 		Method: "addMachines",
-		Args: bundlechanges.AddMachineArgs{
+		Params: bundlechanges.AddMachineParams{
 			ContainerType: "lxc",
 		},
 		GUIArgs: []interface{}{
@@ -934,7 +944,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addUnit-4",
 		Method: "addUnit",
-		Args: bundlechanges.AddUnitArgs{
+		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-1",
 			To:      "$addMachines-9",
 		},
@@ -943,7 +953,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addUnit-6",
 		Method: "addUnit",
-		Args: bundlechanges.AddUnitArgs{
+		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-1",
 			To:      "$addMachines-10",
 		},
@@ -952,7 +962,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addUnit-7",
 		Method: "addUnit",
-		Args: bundlechanges.AddUnitArgs{
+		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-1",
 			To:      "$addMachines-11",
 		},
@@ -961,7 +971,7 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addUnit-8",
 		Method: "addUnit",
-		Args: bundlechanges.AddUnitArgs{
+		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-1",
 			To:      "$addMachines-12",
 		},
@@ -990,22 +1000,7 @@ func (s *changesSuite) TestFromData(c *gc.C) {
 				Method:   change.Method(),
 				GUIArgs:  change.GUIArgs(),
 			}
-			switch change := change.(type) {
-			case *bundlechanges.AddCharmChange:
-				r.Args = change.Args
-			case *bundlechanges.AddMachineChange:
-				r.Args = change.Args
-			case *bundlechanges.AddRelationChange:
-				r.Args = change.Args
-			case *bundlechanges.AddServiceChange:
-				r.Args = change.Args
-			case *bundlechanges.AddUnitChange:
-				r.Args = change.Args
-			case *bundlechanges.SetAnnotationsChange:
-				r.Args = change.Args
-			default:
-				c.Fatalf("unsupported change type %T", change)
-			}
+			r.Params = reflect.ValueOf(change).Elem().FieldByName("Params").Interface()
 			records[i] = r
 		}
 
@@ -1017,12 +1012,4 @@ func (s *changesSuite) TestFromData(c *gc.C) {
 		// Check that the obtained records are what we expect.
 		c.Assert(records, jc.DeepEquals, test.expected)
 	}
-}
-
-type record struct {
-	Id       string
-	Requires []string
-	Method   string
-	Args     interface{}
-	GUIArgs  []interface{}
 }

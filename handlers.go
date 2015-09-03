@@ -28,7 +28,7 @@ func handleServices(add func(Change), services map[string]*charm.ServiceSpec) ma
 		service := services[name]
 		// Add the addCharm record if one hasn't been added yet.
 		if charms[service.Charm] == "" {
-			change = newAddCharmChange(AddCharmArgs{
+			change = newAddCharmChange(AddCharmParams{
 				Charm: service.Charm,
 			})
 			add(change)
@@ -36,7 +36,7 @@ func handleServices(add func(Change), services map[string]*charm.ServiceSpec) ma
 		}
 
 		// Add the addService record for this service.
-		change = newAddServiceChange(AddServiceArgs{
+		change = newAddServiceChange(AddServiceParams{
 			Charm:   service.Charm,
 			Service: name,
 			Options: service.Options,
@@ -46,7 +46,7 @@ func handleServices(add func(Change), services map[string]*charm.ServiceSpec) ma
 
 		// Add service annotations.
 		if len(service.Annotations) > 0 {
-			add(newSetAnnotationsChange(SetAnnotationsArgs{
+			add(newSetAnnotationsChange(SetAnnotationsParams{
 				EntityType:  "service",
 				Id:          "$" + change.Id(),
 				Annotations: service.Annotations,
@@ -74,7 +74,7 @@ func handleMachines(add func(Change), machines map[string]*charm.MachineSpec) ma
 			machine = &charm.MachineSpec{}
 		}
 		// Add the addMachines record for this machine.
-		change = newAddMachineChange(AddMachineArgs{
+		change = newAddMachineChange(AddMachineParams{
 			Series:      machine.Series,
 			Constraints: machine.Constraints,
 		})
@@ -83,7 +83,7 @@ func handleMachines(add func(Change), machines map[string]*charm.MachineSpec) ma
 
 		// Add machine annotations.
 		if len(machine.Annotations) > 0 {
-			add(newSetAnnotationsChange(SetAnnotationsArgs{
+			add(newSetAnnotationsChange(SetAnnotationsParams{
 				EntityType:  "machine",
 				Id:          "$" + change.Id(),
 				Annotations: machine.Annotations,
@@ -106,7 +106,7 @@ func handleRelations(add func(Change), relations [][]string, addedServices map[s
 			ep.service = service
 			args[i] = "$" + ep.String()
 		}
-		add(newAddRelationChange(AddRelationArgs{
+		add(newAddRelationChange(AddRelationParams{
 			Endpoint1: args[0],
 			Endpoint2: args[1],
 		}, requires...))
@@ -130,7 +130,7 @@ func handleUnits(add func(Change), services map[string]*charm.ServiceSpec, added
 		service := services[name]
 		for i := 0; i < service.NumUnits; i++ {
 			addedService := addedServices[name]
-			change := newAddUnitChange(AddUnitArgs{
+			change := newAddUnitChange(AddUnitParams{
 				Service: "$" + addedService,
 			}, addedService)
 			add(change)
@@ -166,7 +166,7 @@ func handleUnits(add func(Change), services map[string]*charm.ServiceSpec, added
 			// new parent requirement and placement target.
 			change := records[fmt.Sprintf("%s/%d", name, i)]
 			change.requires = append(change.requires, parentId)
-			change.Args.To = "$" + parentId
+			change.Params.To = "$" + parentId
 		}
 	}
 }
@@ -179,7 +179,7 @@ func unitParent(add func(Change), p string, records map[string]*AddUnitChange, a
 	}
 	if placement.Machine == "new" {
 		// The unit is placed to a new machine.
-		change := newAddMachineChange(AddMachineArgs{
+		change := newAddMachineChange(AddMachineParams{
 			ContainerType: placement.ContainerType,
 		})
 		add(change)
@@ -214,7 +214,7 @@ func unitParent(add func(Change), p string, records map[string]*AddUnitChange, a
 }
 
 func addContainer(add func(Change), containerType, parentId string) string {
-	change := newAddMachineChange(AddMachineArgs{
+	change := newAddMachineChange(AddMachineParams{
 		ContainerType: containerType,
 		ParentId:      "$" + parentId,
 	}, parentId)

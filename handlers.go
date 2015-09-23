@@ -47,7 +47,7 @@ func handleServices(add func(Change), services map[string]*charm.ServiceSpec) ma
 		// Add service annotations.
 		if len(service.Annotations) > 0 {
 			add(newSetAnnotationsChange(SetAnnotationsParams{
-				EntityType:  "service",
+				EntityType:  ServiceType,
 				Id:          "$" + change.Id(),
 				Annotations: service.Annotations,
 			}, change.Id()))
@@ -84,7 +84,7 @@ func handleMachines(add func(Change), machines map[string]*charm.MachineSpec) ma
 		// Add machine annotations.
 		if len(machine.Annotations) > 0 {
 			add(newSetAnnotationsChange(SetAnnotationsParams{
-				EntityType:  "machine",
+				EntityType:  MachineType,
 				Id:          "$" + change.Id(),
 				Annotations: machine.Annotations,
 			}, change.Id()))

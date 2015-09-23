@@ -283,8 +283,16 @@ type SetAnnotationsChange struct {
 
 // GUIArgs implements Change.GUIArgs.
 func (ch *SetAnnotationsChange) GUIArgs() []interface{} {
-	return []interface{}{ch.Params.Id, ch.Params.EntityType, ch.Params.Annotations}
+	return []interface{}{ch.Params.Id, string(ch.Params.EntityType), ch.Params.Annotations}
 }
+
+// EntityType holds entity types ("service" or "machine").
+type EntityType string
+
+const (
+	ServiceType EntityType = "service"
+	MachineType EntityType = "machine"
+)
 
 // SetAnnotationsParams holds parameters for setting annotations.
 type SetAnnotationsParams struct {
@@ -292,7 +300,7 @@ type SetAnnotationsParams struct {
 	// the entity to be annotated.
 	Id string
 	// EntityType holds the type of the entity, "service" or "machine".
-	EntityType string
+	EntityType EntityType
 	// Annotations holds the annotations as key/value pairs.
 	Annotations map[string]string
 }

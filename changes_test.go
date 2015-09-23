@@ -113,7 +113,7 @@ var fromDataTests = []struct {
 		Method: "setAnnotations",
 		Params: bundlechanges.SetAnnotationsParams{
 			Id:          "$deploy-1",
-			EntityType:  "service",
+			EntityType:  bundlechanges.ServiceType,
 			Annotations: map[string]string{"gui-x": "609", "gui-y": "-15"},
 		},
 		GUIArgs: []interface{}{
@@ -371,7 +371,7 @@ var fromDataTests = []struct {
 		Method: "setAnnotations",
 		Params: bundlechanges.SetAnnotationsParams{
 			Id:          "$addMachines-2",
-			EntityType:  "machine",
+			EntityType:  bundlechanges.MachineType,
 			Annotations: map[string]string{"foo": "bar"},
 		},
 		GUIArgs: []interface{}{

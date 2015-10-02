@@ -66,6 +66,7 @@ var fromDataTests = []struct {
 			"django",
 			map[string]interface{}{},
 			"",
+			map[string]string{},
 		},
 		Requires: []string{"addCharm-0"},
 	}},
@@ -110,6 +111,7 @@ var fromDataTests = []struct {
 			"mediawiki",
 			map[string]interface{}{"debug": false},
 			"",
+			map[string]string{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -153,6 +155,7 @@ var fromDataTests = []struct {
 			"mysql",
 			map[string]interface{}{},
 			"",
+			map[string]string{},
 		},
 		Requires: []string{"addCharm-4"},
 	}, {
@@ -210,6 +213,7 @@ var fromDataTests = []struct {
 			"mediawiki",
 			map[string]interface{}{},
 			"",
+			map[string]string{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -224,6 +228,7 @@ var fromDataTests = []struct {
 			"otherwiki",
 			map[string]interface{}{},
 			"",
+			map[string]string{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -281,6 +286,7 @@ var fromDataTests = []struct {
 			"django",
 			map[string]interface{}{},
 			"cpu-cores=4 cpu-power=42",
+			map[string]string{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -303,6 +309,7 @@ var fromDataTests = []struct {
 			"haproxy",
 			map[string]interface{}{"bad": "wolf", "number": 42.47},
 			"",
+			map[string]string{},
 		},
 		Requires: []string{"addCharm-2"},
 	}, {
@@ -436,6 +443,7 @@ var fromDataTests = []struct {
 			"django",
 			map[string]interface{}{},
 			"",
+			map[string]string{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -519,6 +527,7 @@ var fromDataTests = []struct {
 			"mediawiki",
 			map[string]interface{}{},
 			"",
+			map[string]string{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -541,6 +550,7 @@ var fromDataTests = []struct {
 			"mysql",
 			map[string]interface{}{},
 			"mem=42G",
+			map[string]string{},
 		},
 		Requires: []string{"addCharm-2"},
 	}, {
@@ -584,6 +594,7 @@ var fromDataTests = []struct {
 			"django",
 			map[string]interface{}{},
 			"",
+			map[string]string{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -605,6 +616,7 @@ var fromDataTests = []struct {
 			"wordpress",
 			map[string]interface{}{},
 			"",
+			map[string]string{},
 		},
 		Requires: []string{"addCharm-2"},
 	}, {
@@ -695,6 +707,7 @@ var fromDataTests = []struct {
 			"django",
 			map[string]interface{}{},
 			"",
+			map[string]string{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -716,6 +729,7 @@ var fromDataTests = []struct {
 			"memcached",
 			map[string]interface{}{},
 			"",
+			map[string]string{},
 		},
 		Requires: []string{"addCharm-2"},
 	}, {
@@ -737,6 +751,7 @@ var fromDataTests = []struct {
 			"ror",
 			map[string]interface{}{},
 			"",
+			map[string]string{},
 		},
 		Requires: []string{"addCharm-4"},
 	}, {
@@ -956,6 +971,7 @@ var fromDataTests = []struct {
 			"django",
 			map[string]interface{}{},
 			"",
+			map[string]string{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -1069,6 +1085,63 @@ var fromDataTests = []struct {
 		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-12"},
 		Requires: []string{"deploy-1", "addMachines-12"},
 	}},
+}, {
+	about: "service with storage",
+	content: `
+        services:
+            django:
+                charm: cs:trusty/django-42
+                num_units: 2
+                storage:
+                    osd-devices: 3,30G
+                    tmpfs: tmpfs,1G
+    `,
+	expected: []record{{
+		Id:     "addCharm-0",
+		Method: "addCharm",
+		Params: bundlechanges.AddCharmParams{
+			Charm: "cs:trusty/django-42",
+		},
+		GUIArgs: []interface{}{"cs:trusty/django-42"},
+	}, {
+		Id:     "deploy-1",
+		Method: "deploy",
+		Params: bundlechanges.AddServiceParams{
+			Charm:   "$addCharm-0",
+			Service: "django",
+			Storage: map[string]string{
+				"osd-devices": "3,30G",
+				"tmpfs":       "tmpfs,1G",
+			},
+		},
+		GUIArgs: []interface{}{
+			"$addCharm-0",
+			"django",
+			map[string]interface{}{},
+			"",
+			map[string]string{
+				"osd-devices": "3,30G",
+				"tmpfs":       "tmpfs,1G",
+			},
+		},
+		Requires: []string{"addCharm-0"},
+	}, {
+		Id:     "addUnit-2",
+		Method: "addUnit",
+		Params: bundlechanges.AddUnitParams{
+			Service: "$deploy-1",
+		},
+		GUIArgs:  []interface{}{"$deploy-1", nil},
+		Requires: []string{"deploy-1"},
+	}, {
+		Id:     "addUnit-3",
+		Method: "addUnit",
+		Params: bundlechanges.AddUnitParams{
+			Service: "$deploy-1",
+		},
+		GUIArgs:  []interface{}{"$deploy-1", nil},
+		Requires: []string{"deploy-1"},
+	}},
 }}
 
 func (s *changesSuite) TestFromData(c *gc.C) {
@@ -1078,7 +1151,7 @@ func (s *changesSuite) TestFromData(c *gc.C) {
 		// Retrieve and validate the bundle data.
 		data, err := charm.ReadBundleData(strings.NewReader(test.content))
 		c.Assert(err, jc.ErrorIsNil)
-		err = data.Verify(nil)
+		err = data.Verify(nil, nil)
 		c.Assert(err, jc.ErrorIsNil)
 
 		// Retrieve the changes, and convert them to a sequence of records.

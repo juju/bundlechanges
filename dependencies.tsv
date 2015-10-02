@@ -9,6 +9,6 @@ github.com/juju/testing	git	f521911d9a79aeb62c051fe18e689796369c5564	2015-05-29T
 github.com/juju/utils	git	6f48322bb574b8578e8ecccf689220eac7edad9d	2015-08-10T03:07:18Z
 golang.org/x/crypto	git	c57d4a71915a248dbad846d60825145062b4c18e	2015-03-27T05:11:19Z
 gopkg.in/check.v1	git	b3d3430320d4260e5fea99841af984b3badcea63	2015-06-26T10:50:28Z
-gopkg.in/juju/charm.v6-unstable	git	f93c81467758d7237af01239ffb3fdad89c3f179	2015-11-04T09:35:00Z
+gopkg.in/juju/charm.v6-unstable	git	a3d228ef5292531219d17d47679b260580fba1a8	2015-11-19T07:39:58Z
 gopkg.in/mgo.v2	git	3569c88678d88179dcbd68d02ab081cbca3cd4d0	2015-06-04T15:26:27Z
 gopkg.in/yaml.v1	git	9f9df34309c04878acc86042b16630b0f696e1de	2014-09-24T16:16:07Z

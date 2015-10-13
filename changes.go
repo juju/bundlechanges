@@ -212,7 +212,7 @@ func (ch *AddServiceChange) GUIArgs() []interface{} {
 	if options == nil {
 		options = make(map[string]interface{}, 0)
 	}
-	return []interface{}{ch.Params.Charm, ch.Params.Service, options}
+	return []interface{}{ch.Params.Charm, ch.Params.Service, options, ch.Params.Constraints}
 }
 
 // AddServiceParams holds parameters for deploying a Juju service.
@@ -223,7 +223,8 @@ type AddServiceParams struct {
 	Service string
 	// Options holds service options.
 	Options map[string]interface{}
-	// TODO frankban: add support for service constraints.
+	// Constraints holds the optional service constraints.
+	Constraints string
 }
 
 // newAddUnitChange creates a new change for adding a service unit.
@@ -246,9 +247,9 @@ type AddUnitChange struct {
 
 // GUIArgs implements Change.GUIArgs.
 func (ch *AddUnitChange) GUIArgs() []interface{} {
-	args := []interface{}{ch.Params.Service, 1, nil}
+	args := []interface{}{ch.Params.Service, nil}
 	if ch.Params.To != "" {
-		args[2] = ch.Params.To
+		args[1] = ch.Params.To
 	}
 	return args
 }

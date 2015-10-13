@@ -58,13 +58,14 @@ var fromDataTests = []struct {
 		Id:     "deploy-1",
 		Method: "deploy",
 		Params: bundlechanges.AddServiceParams{
-			Charm:   "django",
+			Charm:   "$addCharm-0",
 			Service: "django",
 		},
 		GUIArgs: []interface{}{
-			"django",
+			"$addCharm-0",
 			"django",
 			map[string]interface{}{},
+			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}},
@@ -99,13 +100,15 @@ var fromDataTests = []struct {
 		Id:     "deploy-1",
 		Method: "deploy",
 		Params: bundlechanges.AddServiceParams{
-			Charm:   "cs:precise/mediawiki-10",
+			Charm:   "$addCharm-0",
 			Service: "mediawiki",
-			Options: map[string]interface{}{"debug": false}},
+			Options: map[string]interface{}{"debug": false},
+		},
 		GUIArgs: []interface{}{
-			"cs:precise/mediawiki-10",
+			"$addCharm-0",
 			"mediawiki",
 			map[string]interface{}{"debug": false},
+			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -133,13 +136,14 @@ var fromDataTests = []struct {
 		Id:     "deploy-4",
 		Method: "deploy",
 		Params: bundlechanges.AddServiceParams{
-			Charm:   "cs:precise/mysql-28",
+			Charm:   "$addCharm-3",
 			Service: "mysql",
 		},
 		GUIArgs: []interface{}{
-			"cs:precise/mysql-28",
+			"$addCharm-3",
 			"mysql",
 			map[string]interface{}{},
+			"",
 		},
 		Requires: []string{"addCharm-3"},
 	}, {
@@ -157,7 +161,7 @@ var fromDataTests = []struct {
 		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-1",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", 1, nil},
+		GUIArgs:  []interface{}{"$deploy-1", nil},
 		Requires: []string{"deploy-1"},
 	}, {
 		Id:     "addUnit-7",
@@ -165,8 +169,62 @@ var fromDataTests = []struct {
 		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-4",
 		},
-		GUIArgs:  []interface{}{"$deploy-4", 1, nil},
+		GUIArgs:  []interface{}{"$deploy-4", nil},
 		Requires: []string{"deploy-4"},
+	}},
+}, {
+	about: "same charm reused",
+	content: `
+        services:
+            mediawiki:
+                charm: precise/mediawiki-10
+                num_units: 1
+            otherwiki:
+                charm: precise/mediawiki-10
+    `,
+	expected: []record{{
+		Id:     "addCharm-0",
+		Method: "addCharm",
+		Params: bundlechanges.AddCharmParams{
+			Charm: "precise/mediawiki-10",
+		},
+		GUIArgs: []interface{}{"precise/mediawiki-10"},
+	}, {
+		Id:     "deploy-1",
+		Method: "deploy",
+		Params: bundlechanges.AddServiceParams{
+			Charm:   "$addCharm-0",
+			Service: "mediawiki",
+		},
+		GUIArgs: []interface{}{
+			"$addCharm-0",
+			"mediawiki",
+			map[string]interface{}{},
+			"",
+		},
+		Requires: []string{"addCharm-0"},
+	}, {
+		Id:     "deploy-2",
+		Method: "deploy",
+		Params: bundlechanges.AddServiceParams{
+			Charm:   "$addCharm-0",
+			Service: "otherwiki",
+		},
+		GUIArgs: []interface{}{
+			"$addCharm-0",
+			"otherwiki",
+			map[string]interface{}{},
+			"",
+		},
+		Requires: []string{"addCharm-0"},
+	}, {
+		Id:     "addUnit-3",
+		Method: "addUnit",
+		Params: bundlechanges.AddUnitParams{
+			Service: "$deploy-1",
+		},
+		GUIArgs:  []interface{}{"$deploy-1", nil},
+		Requires: []string{"deploy-1"},
 	}},
 }, {
 	about: "machines and units placement",
@@ -178,6 +236,7 @@ var fromDataTests = []struct {
                 to:
                     - 1
                     - lxc:2
+                constraints: cpu-cores=4 cpu-power=42
             haproxy:
                 charm: cs:trusty/haproxy-47
                 num_units: 2
@@ -203,13 +262,15 @@ var fromDataTests = []struct {
 		Id:     "deploy-1",
 		Method: "deploy",
 		Params: bundlechanges.AddServiceParams{
-			Charm:   "cs:trusty/django-42",
-			Service: "django",
+			Charm:       "$addCharm-0",
+			Service:     "django",
+			Constraints: "cpu-cores=4 cpu-power=42",
 		},
 		GUIArgs: []interface{}{
-			"cs:trusty/django-42",
+			"$addCharm-0",
 			"django",
 			map[string]interface{}{},
+			"cpu-cores=4 cpu-power=42",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -223,14 +284,15 @@ var fromDataTests = []struct {
 		Id:     "deploy-3",
 		Method: "deploy",
 		Params: bundlechanges.AddServiceParams{
-			Charm:   "cs:trusty/haproxy-47",
+			Charm:   "$addCharm-2",
 			Service: "haproxy",
 			Options: map[string]interface{}{"bad": "wolf", "number": 42.47},
 		},
 		GUIArgs: []interface{}{
-			"cs:trusty/haproxy-47",
+			"$addCharm-2",
 			"haproxy",
 			map[string]interface{}{"bad": "wolf", "number": 42.47},
+			"",
 		},
 		Requires: []string{"addCharm-2"},
 	}, {
@@ -256,7 +318,7 @@ var fromDataTests = []struct {
 			Service: "$deploy-1",
 			To:      "$addMachines-4",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", 1, "$addMachines-4"},
+		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-4"},
 		Requires: []string{"deploy-1", "addMachines-4"},
 	}, {
 		Id:     "addMachines-10",
@@ -300,7 +362,7 @@ var fromDataTests = []struct {
 			Service: "$deploy-1",
 			To:      "$addMachines-10",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", 1, "$addMachines-10"},
+		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-10"},
 		Requires: []string{"deploy-1", "addMachines-10"},
 	}, {
 		Id:     "addUnit-8",
@@ -309,7 +371,7 @@ var fromDataTests = []struct {
 			Service: "$deploy-3",
 			To:      "$addMachines-11",
 		},
-		GUIArgs:  []interface{}{"$deploy-3", 1, "$addMachines-11"},
+		GUIArgs:  []interface{}{"$deploy-3", "$addMachines-11"},
 		Requires: []string{"deploy-3", "addMachines-11"},
 	}, {
 		Id:     "addUnit-9",
@@ -318,7 +380,7 @@ var fromDataTests = []struct {
 			Service: "$deploy-3",
 			To:      "$addMachines-12",
 		},
-		GUIArgs:  []interface{}{"$deploy-3", 1, "$addMachines-12"},
+		GUIArgs:  []interface{}{"$deploy-3", "$addMachines-12"},
 		Requires: []string{"deploy-3", "addMachines-12"},
 	}},
 }, {
@@ -348,13 +410,14 @@ var fromDataTests = []struct {
 		Id:     "deploy-1",
 		Method: "deploy",
 		Params: bundlechanges.AddServiceParams{
-			Charm:   "cs:trusty/django-42",
+			Charm:   "$addCharm-0",
 			Service: "django",
 		},
 		GUIArgs: []interface{}{
-			"cs:trusty/django-42",
+			"$addCharm-0",
 			"django",
 			map[string]interface{}{},
+			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -387,7 +450,7 @@ var fromDataTests = []struct {
 			Service: "$deploy-1",
 			To:      "$addMachines-2",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", 1, "$addMachines-2"},
+		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-2"},
 		Requires: []string{"deploy-1", "addMachines-2"},
 	}, {
 		Id:     "addMachines-6",
@@ -403,7 +466,7 @@ var fromDataTests = []struct {
 			Service: "$deploy-1",
 			To:      "$addMachines-6",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", 1, "$addMachines-6"},
+		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-6"},
 		Requires: []string{"deploy-1", "addMachines-6"},
 	}},
 }, {
@@ -414,6 +477,7 @@ var fromDataTests = []struct {
                 charm: cs:precise/mediawiki-10
             mysql:
                 charm: cs:precise/mysql-28
+                constraints: mem=42G
         relations:
             - - mediawiki:db
               - mysql
@@ -429,13 +493,14 @@ var fromDataTests = []struct {
 		Id:     "deploy-1",
 		Method: "deploy",
 		Params: bundlechanges.AddServiceParams{
-			Charm:   "cs:precise/mediawiki-10",
+			Charm:   "$addCharm-0",
 			Service: "mediawiki",
 		},
 		GUIArgs: []interface{}{
-			"cs:precise/mediawiki-10",
+			"$addCharm-0",
 			"mediawiki",
 			map[string]interface{}{},
+			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -449,13 +514,15 @@ var fromDataTests = []struct {
 		Id:     "deploy-3",
 		Method: "deploy",
 		Params: bundlechanges.AddServiceParams{
-			Charm:   "cs:precise/mysql-28",
-			Service: "mysql",
+			Charm:       "$addCharm-2",
+			Service:     "mysql",
+			Constraints: "mem=42G",
 		},
 		GUIArgs: []interface{}{
-			"cs:precise/mysql-28",
+			"$addCharm-2",
 			"mysql",
 			map[string]interface{}{},
+			"mem=42G",
 		},
 		Requires: []string{"addCharm-2"},
 	}, {
@@ -491,13 +558,14 @@ var fromDataTests = []struct {
 		Id:     "deploy-1",
 		Method: "deploy",
 		Params: bundlechanges.AddServiceParams{
-			Charm:   "cs:trusty/django-42",
+			Charm:   "$addCharm-0",
 			Service: "django",
 		},
 		GUIArgs: []interface{}{
-			"cs:trusty/django-42",
+			"$addCharm-0",
 			"django",
 			map[string]interface{}{},
+			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -511,13 +579,14 @@ var fromDataTests = []struct {
 		Id:     "deploy-3",
 		Method: "deploy",
 		Params: bundlechanges.AddServiceParams{
-			Charm:   "wordpress",
+			Charm:   "$addCharm-2",
 			Service: "wordpress",
 		},
 		GUIArgs: []interface{}{
-			"wordpress",
+			"$addCharm-2",
 			"wordpress",
 			map[string]interface{}{},
+			"",
 		},
 		Requires: []string{"addCharm-2"},
 	}, {
@@ -526,7 +595,7 @@ var fromDataTests = []struct {
 		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-3",
 		},
-		GUIArgs:  []interface{}{"$deploy-3", 1, nil},
+		GUIArgs:  []interface{}{"$deploy-3", nil},
 		Requires: []string{"deploy-3"},
 	}, {
 		Id:     "addUnit-7",
@@ -534,7 +603,7 @@ var fromDataTests = []struct {
 		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-3",
 		},
-		GUIArgs:  []interface{}{"$deploy-3", 1, nil},
+		GUIArgs:  []interface{}{"$deploy-3", nil},
 		Requires: []string{"deploy-3"},
 	}, {
 		Id:     "addUnit-8",
@@ -542,7 +611,7 @@ var fromDataTests = []struct {
 		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-3",
 		},
-		GUIArgs:  []interface{}{"$deploy-3", 1, nil},
+		GUIArgs:  []interface{}{"$deploy-3", nil},
 		Requires: []string{"deploy-3"},
 	}, {
 		Id:     "addUnit-4",
@@ -551,7 +620,7 @@ var fromDataTests = []struct {
 			Service: "$deploy-1",
 			To:      "$addUnit-6",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", 1, "$addUnit-6"},
+		GUIArgs:  []interface{}{"$deploy-1", "$addUnit-6"},
 		Requires: []string{"deploy-1", "addUnit-6"},
 	}, {
 		Id:     "addUnit-5",
@@ -560,7 +629,7 @@ var fromDataTests = []struct {
 			Service: "$deploy-1",
 			To:      "$addUnit-7",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", 1, "$addUnit-7"},
+		GUIArgs:  []interface{}{"$deploy-1", "$addUnit-7"},
 		Requires: []string{"deploy-1", "addUnit-7"},
 	}},
 }, {
@@ -600,13 +669,14 @@ var fromDataTests = []struct {
 		Id:     "deploy-1",
 		Method: "deploy",
 		Params: bundlechanges.AddServiceParams{
-			Charm:   "cs:trusty/django-42",
+			Charm:   "$addCharm-0",
 			Service: "django",
 		},
 		GUIArgs: []interface{}{
-			"cs:trusty/django-42",
+			"$addCharm-0",
 			"django",
 			map[string]interface{}{},
+			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -620,13 +690,14 @@ var fromDataTests = []struct {
 		Id:     "deploy-3",
 		Method: "deploy",
 		Params: bundlechanges.AddServiceParams{
-			Charm:   "cs:trusty/mem-47",
+			Charm:   "$addCharm-2",
 			Service: "memcached",
 		},
 		GUIArgs: []interface{}{
-			"cs:trusty/mem-47",
+			"$addCharm-2",
 			"memcached",
 			map[string]interface{}{},
+			"",
 		},
 		Requires: []string{"addCharm-2"},
 	}, {
@@ -640,13 +711,14 @@ var fromDataTests = []struct {
 		Id:     "deploy-5",
 		Method: "deploy",
 		Params: bundlechanges.AddServiceParams{
-			Charm:   "vivid/rails",
+			Charm:   "$addCharm-4",
 			Service: "ror",
 		},
 		GUIArgs: []interface{}{
-			"vivid/rails",
+			"$addCharm-4",
 			"ror",
 			map[string]interface{}{},
+			"",
 		},
 		Requires: []string{"addCharm-4"},
 	}, {
@@ -668,7 +740,7 @@ var fromDataTests = []struct {
 			Service: "$deploy-3",
 			To:      "$addMachines-6",
 		},
-		GUIArgs:  []interface{}{"$deploy-3", 1, "$addMachines-6"},
+		GUIArgs:  []interface{}{"$deploy-3", "$addMachines-6"},
 		Requires: []string{"deploy-3", "addMachines-6"},
 	}, {
 		Id:     "addUnit-16",
@@ -677,7 +749,7 @@ var fromDataTests = []struct {
 			Service: "$deploy-5",
 			To:      "$addMachines-6",
 		},
-		GUIArgs:  []interface{}{"$deploy-5", 1, "$addMachines-6"},
+		GUIArgs:  []interface{}{"$deploy-5", "$addMachines-6"},
 		Requires: []string{"deploy-5", "addMachines-6"},
 	}, {
 		Id:     "addMachines-20",
@@ -721,7 +793,7 @@ var fromDataTests = []struct {
 			Service: "$deploy-1",
 			To:      "$addUnit-12",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", 1, "$addUnit-12"},
+		GUIArgs:  []interface{}{"$deploy-1", "$addUnit-12"},
 		Requires: []string{"deploy-1", "addUnit-12"},
 	}, {
 		Id:     "addUnit-11",
@@ -730,7 +802,7 @@ var fromDataTests = []struct {
 			Service: "$deploy-1",
 			To:      "$addMachines-20",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", 1, "$addMachines-20"},
+		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-20"},
 		Requires: []string{"deploy-1", "addMachines-20"},
 	}, {
 		Id:     "addUnit-13",
@@ -739,7 +811,7 @@ var fromDataTests = []struct {
 			Service: "$deploy-3",
 			To:      "$addMachines-21",
 		},
-		GUIArgs:  []interface{}{"$deploy-3", 1, "$addMachines-21"},
+		GUIArgs:  []interface{}{"$deploy-3", "$addMachines-21"},
 		Requires: []string{"deploy-3", "addMachines-21"},
 	}, {
 		Id:     "addUnit-14",
@@ -748,7 +820,7 @@ var fromDataTests = []struct {
 			Service: "$deploy-3",
 			To:      "$addMachines-22",
 		},
-		GUIArgs:  []interface{}{"$deploy-3", 1, "$addMachines-22"},
+		GUIArgs:  []interface{}{"$deploy-3", "$addMachines-22"},
 		Requires: []string{"deploy-3", "addMachines-22"},
 	}, {
 		Id:     "addUnit-15",
@@ -757,7 +829,7 @@ var fromDataTests = []struct {
 			Service: "$deploy-5",
 			To:      "$addMachines-23",
 		},
-		GUIArgs:  []interface{}{"$deploy-5", 1, "$addMachines-23"},
+		GUIArgs:  []interface{}{"$deploy-5", "$addMachines-23"},
 		Requires: []string{"deploy-5", "addMachines-23"},
 	}, {
 		Id:     "addMachines-17",
@@ -808,7 +880,7 @@ var fromDataTests = []struct {
 			Service: "$deploy-1",
 			To:      "$addMachines-17",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", 1, "$addMachines-17"},
+		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-17"},
 		Requires: []string{"deploy-1", "addMachines-17"},
 	}, {
 		Id:     "addUnit-9",
@@ -817,7 +889,7 @@ var fromDataTests = []struct {
 			Service: "$deploy-1",
 			To:      "$addMachines-18",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", 1, "$addMachines-18"},
+		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-18"},
 		Requires: []string{"deploy-1", "addMachines-18"},
 	}, {
 		Id:     "addUnit-10",
@@ -826,7 +898,7 @@ var fromDataTests = []struct {
 			Service: "$deploy-1",
 			To:      "$addMachines-19",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", 1, "$addMachines-19"},
+		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-19"},
 		Requires: []string{"deploy-1", "addMachines-19"},
 	}},
 }, {
@@ -858,13 +930,14 @@ var fromDataTests = []struct {
 		Id:     "deploy-1",
 		Method: "deploy",
 		Params: bundlechanges.AddServiceParams{
-			Charm:   "cs:trusty/django-42",
+			Charm:   "$addCharm-0",
 			Service: "django",
 		},
 		GUIArgs: []interface{}{
-			"cs:trusty/django-42",
+			"$addCharm-0",
 			"django",
 			map[string]interface{}{},
+			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -896,7 +969,7 @@ var fromDataTests = []struct {
 			Service: "$deploy-1",
 			To:      "$addMachines-2",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", 1, "$addMachines-2"},
+		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-2"},
 		Requires: []string{"deploy-1", "addMachines-2"},
 	}, {
 		Id:     "addMachines-9",
@@ -948,7 +1021,7 @@ var fromDataTests = []struct {
 			Service: "$deploy-1",
 			To:      "$addMachines-9",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", 1, "$addMachines-9"},
+		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-9"},
 		Requires: []string{"deploy-1", "addMachines-9"},
 	}, {
 		Id:     "addUnit-6",
@@ -957,7 +1030,7 @@ var fromDataTests = []struct {
 			Service: "$deploy-1",
 			To:      "$addMachines-10",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", 1, "$addMachines-10"},
+		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-10"},
 		Requires: []string{"deploy-1", "addMachines-10"},
 	}, {
 		Id:     "addUnit-7",
@@ -966,7 +1039,7 @@ var fromDataTests = []struct {
 			Service: "$deploy-1",
 			To:      "$addMachines-11",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", 1, "$addMachines-11"},
+		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-11"},
 		Requires: []string{"deploy-1", "addMachines-11"},
 	}, {
 		Id:     "addUnit-8",
@@ -975,7 +1048,7 @@ var fromDataTests = []struct {
 			Service: "$deploy-1",
 			To:      "$addMachines-12",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", 1, "$addMachines-12"},
+		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-12"},
 		Requires: []string{"deploy-1", "addMachines-12"},
 	}},
 }}

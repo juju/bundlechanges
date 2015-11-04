@@ -76,6 +76,7 @@ var fromDataTests = []struct {
             mediawiki:
                 charm: cs:precise/mediawiki-10
                 num_units: 1
+                expose: true
                 options:
                     debug: false
                 annotations:
@@ -112,7 +113,15 @@ var fromDataTests = []struct {
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
-		Id:     "setAnnotations-2",
+		Id:     "expose-2",
+		Method: "expose",
+		Params: bundlechanges.ExposeParams{
+			Service: "$deploy-1",
+		},
+		GUIArgs:  []interface{}{"$deploy-1"},
+		Requires: []string{"deploy-1"},
+	}, {
+		Id:     "setAnnotations-3",
 		Method: "setAnnotations",
 		Params: bundlechanges.SetAnnotationsParams{
 			Id:          "$deploy-1",
@@ -126,37 +135,37 @@ var fromDataTests = []struct {
 		},
 		Requires: []string{"deploy-1"},
 	}, {
-		Id:     "addCharm-3",
+		Id:     "addCharm-4",
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
 			Charm: "cs:precise/mysql-28",
 		},
 		GUIArgs: []interface{}{"cs:precise/mysql-28"},
 	}, {
-		Id:     "deploy-4",
+		Id:     "deploy-5",
 		Method: "deploy",
 		Params: bundlechanges.AddServiceParams{
-			Charm:   "$addCharm-3",
+			Charm:   "$addCharm-4",
 			Service: "mysql",
 		},
 		GUIArgs: []interface{}{
-			"$addCharm-3",
+			"$addCharm-4",
 			"mysql",
 			map[string]interface{}{},
 			"",
 		},
-		Requires: []string{"addCharm-3"},
+		Requires: []string{"addCharm-4"},
 	}, {
-		Id:     "addRelation-5",
+		Id:     "addRelation-6",
 		Method: "addRelation",
 		Params: bundlechanges.AddRelationParams{
 			Endpoint1: "$deploy-1:db",
-			Endpoint2: "$deploy-4:db",
+			Endpoint2: "$deploy-5:db",
 		},
-		GUIArgs:  []interface{}{"$deploy-1:db", "$deploy-4:db"},
-		Requires: []string{"deploy-1", "deploy-4"},
+		GUIArgs:  []interface{}{"$deploy-1:db", "$deploy-5:db"},
+		Requires: []string{"deploy-1", "deploy-5"},
 	}, {
-		Id:     "addUnit-6",
+		Id:     "addUnit-7",
 		Method: "addUnit",
 		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-1",
@@ -164,13 +173,13 @@ var fromDataTests = []struct {
 		GUIArgs:  []interface{}{"$deploy-1", nil},
 		Requires: []string{"deploy-1"},
 	}, {
-		Id:     "addUnit-7",
+		Id:     "addUnit-8",
 		Method: "addUnit",
 		Params: bundlechanges.AddUnitParams{
-			Service: "$deploy-4",
+			Service: "$deploy-5",
 		},
-		GUIArgs:  []interface{}{"$deploy-4", nil},
-		Requires: []string{"deploy-4"},
+		GUIArgs:  []interface{}{"$deploy-5", nil},
+		Requires: []string{"deploy-5"},
 	}},
 }, {
 	about: "same charm reused",
@@ -240,6 +249,7 @@ var fromDataTests = []struct {
             haproxy:
                 charm: cs:trusty/haproxy-47
                 num_units: 2
+                expose: yes
                 to:
                     - lxc:django/0
                     - new
@@ -296,7 +306,15 @@ var fromDataTests = []struct {
 		},
 		Requires: []string{"addCharm-2"},
 	}, {
-		Id:     "addMachines-4",
+		Id:     "expose-4",
+		Method: "expose",
+		Params: bundlechanges.ExposeParams{
+			Service: "$deploy-3",
+		},
+		GUIArgs:  []interface{}{"$deploy-3"},
+		Requires: []string{"deploy-3"},
+	}, {
+		Id:     "addMachines-5",
 		Method: "addMachines",
 		Params: bundlechanges.AddMachineParams{
 			Series: "trusty",
@@ -305,51 +323,7 @@ var fromDataTests = []struct {
 			bundlechanges.AddMachineOptions{Series: "trusty"},
 		},
 	}, {
-		Id:     "addMachines-5",
-		Method: "addMachines",
-		Params: bundlechanges.AddMachineParams{},
-		GUIArgs: []interface{}{
-			bundlechanges.AddMachineOptions{},
-		},
-	}, {
-		Id:     "addUnit-6",
-		Method: "addUnit",
-		Params: bundlechanges.AddUnitParams{
-			Service: "$deploy-1",
-			To:      "$addMachines-4",
-		},
-		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-4"},
-		Requires: []string{"deploy-1", "addMachines-4"},
-	}, {
-		Id:     "addMachines-10",
-		Method: "addMachines",
-		Params: bundlechanges.AddMachineParams{
-			ContainerType: "lxc",
-			ParentId:      "$addMachines-5",
-		},
-		GUIArgs: []interface{}{
-			bundlechanges.AddMachineOptions{
-				ContainerType: "lxc",
-				ParentId:      "$addMachines-5",
-			},
-		},
-		Requires: []string{"addMachines-5"},
-	}, {
-		Id:     "addMachines-11",
-		Method: "addMachines",
-		Params: bundlechanges.AddMachineParams{
-			ContainerType: "lxc",
-			ParentId:      "$addUnit-6",
-		},
-		GUIArgs: []interface{}{
-			bundlechanges.AddMachineOptions{
-				ContainerType: "lxc",
-				ParentId:      "$addUnit-6",
-			},
-		},
-		Requires: []string{"addUnit-6"},
-	}, {
-		Id:     "addMachines-12",
+		Id:     "addMachines-6",
 		Method: "addMachines",
 		Params: bundlechanges.AddMachineParams{},
 		GUIArgs: []interface{}{
@@ -360,19 +334,54 @@ var fromDataTests = []struct {
 		Method: "addUnit",
 		Params: bundlechanges.AddUnitParams{
 			Service: "$deploy-1",
-			To:      "$addMachines-10",
+			To:      "$addMachines-5",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-10"},
-		Requires: []string{"deploy-1", "addMachines-10"},
+		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-5"},
+		Requires: []string{"deploy-1", "addMachines-5"},
+	}, {
+		Id:     "addMachines-11",
+		Method: "addMachines",
+		Params: bundlechanges.AddMachineParams{
+			ContainerType: "lxc",
+			ParentId:      "$addMachines-6",
+		},
+		GUIArgs: []interface{}{
+			bundlechanges.AddMachineOptions{
+				ContainerType: "lxc",
+				ParentId:      "$addMachines-6",
+			},
+		},
+		Requires: []string{"addMachines-6"},
+	}, {
+		Id:     "addMachines-12",
+		Method: "addMachines",
+		Params: bundlechanges.AddMachineParams{
+			ContainerType: "lxc",
+			ParentId:      "$addUnit-7",
+		},
+		GUIArgs: []interface{}{
+			bundlechanges.AddMachineOptions{
+				ContainerType: "lxc",
+				ParentId:      "$addUnit-7",
+			},
+		},
+		Requires: []string{"addUnit-7"},
+	}, {
+		Id:     "addMachines-13",
+		Method: "addMachines",
+		Params: bundlechanges.AddMachineParams{},
+		GUIArgs: []interface{}{
+			bundlechanges.AddMachineOptions{},
+		},
 	}, {
 		Id:     "addUnit-8",
 		Method: "addUnit",
 		Params: bundlechanges.AddUnitParams{
-			Service: "$deploy-3",
+			Service: "$deploy-1",
 			To:      "$addMachines-11",
 		},
-		GUIArgs:  []interface{}{"$deploy-3", "$addMachines-11"},
-		Requires: []string{"deploy-3", "addMachines-11"},
+		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-11"},
+		Requires: []string{"deploy-1", "addMachines-11"},
 	}, {
 		Id:     "addUnit-9",
 		Method: "addUnit",
@@ -382,6 +391,15 @@ var fromDataTests = []struct {
 		},
 		GUIArgs:  []interface{}{"$deploy-3", "$addMachines-12"},
 		Requires: []string{"deploy-3", "addMachines-12"},
+	}, {
+		Id:     "addUnit-10",
+		Method: "addUnit",
+		Params: bundlechanges.AddUnitParams{
+			Service: "$deploy-3",
+			To:      "$addMachines-13",
+		},
+		GUIArgs:  []interface{}{"$deploy-3", "$addMachines-13"},
+		Requires: []string{"deploy-3", "addMachines-13"},
 	}},
 }, {
 	about: "machines with constraints and annotations",

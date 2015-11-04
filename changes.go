@@ -263,6 +263,35 @@ type AddUnitParams struct {
 	To string
 }
 
+// newExposeChange creates a new change for exposing a service.
+func newExposeChange(params ExposeParams, requires ...string) *ExposeChange {
+	return &ExposeChange{
+		changeInfo: changeInfo{
+			requires: requires,
+			method:   "expose",
+		},
+		Params: params,
+	}
+}
+
+// ExposeChange holds a change for exposing a service.
+type ExposeChange struct {
+	changeInfo
+	// Params holds parameters for exposing a service.
+	Params ExposeParams
+}
+
+// GUIArgs implements Change.GUIArgs.
+func (ch *ExposeChange) GUIArgs() []interface{} {
+	return []interface{}{ch.Params.Service}
+}
+
+// ExposeParams holds parameters for exposing a service.
+type ExposeParams struct {
+	// Service holds the placeholder name of the service that must be exposed.
+	Service string
+}
+
 // newSetAnnotationsChange creates a new change for setting annotations.
 func newSetAnnotationsChange(params SetAnnotationsParams, requires ...string) *SetAnnotationsChange {
 	return &SetAnnotationsChange{

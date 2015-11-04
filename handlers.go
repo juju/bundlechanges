@@ -43,15 +43,23 @@ func handleServices(add func(Change), services map[string]*charm.ServiceSpec) ma
 			Constraints: service.Constraints,
 		}, charms[service.Charm])
 		add(change)
-		addedServices[name] = change.Id()
+		id := change.Id()
+		addedServices[name] = id
+
+		// Expose the service if required.
+		if service.Expose {
+			add(newExposeChange(ExposeParams{
+				Service: "$" + id,
+			}, id))
+		}
 
 		// Add service annotations.
 		if len(service.Annotations) > 0 {
 			add(newSetAnnotationsChange(SetAnnotationsParams{
 				EntityType:  ServiceType,
-				Id:          "$" + change.Id(),
+				Id:          "$" + id,
 				Annotations: service.Annotations,
-			}, change.Id()))
+			}, id))
 		}
 	}
 	return addedServices

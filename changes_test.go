@@ -67,6 +67,7 @@ var fromDataTests = []struct {
 			map[string]interface{}{},
 			"",
 			map[string]string{},
+			map[string]string{},
 		},
 		Requires: []string{"addCharm-0"},
 	}},
@@ -112,6 +113,7 @@ var fromDataTests = []struct {
 			map[string]interface{}{"debug": false},
 			"",
 			map[string]string{},
+			map[string]string{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -155,6 +157,7 @@ var fromDataTests = []struct {
 			"mysql",
 			map[string]interface{}{},
 			"",
+			map[string]string{},
 			map[string]string{},
 		},
 		Requires: []string{"addCharm-4"},
@@ -214,6 +217,7 @@ var fromDataTests = []struct {
 			map[string]interface{}{},
 			"",
 			map[string]string{},
+			map[string]string{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -228,6 +232,7 @@ var fromDataTests = []struct {
 			"otherwiki",
 			map[string]interface{}{},
 			"",
+			map[string]string{},
 			map[string]string{},
 		},
 		Requires: []string{"addCharm-0"},
@@ -287,6 +292,7 @@ var fromDataTests = []struct {
 			map[string]interface{}{},
 			"cpu-cores=4 cpu-power=42",
 			map[string]string{},
+			map[string]string{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -309,6 +315,7 @@ var fromDataTests = []struct {
 			"haproxy",
 			map[string]interface{}{"bad": "wolf", "number": 42.47},
 			"",
+			map[string]string{},
 			map[string]string{},
 		},
 		Requires: []string{"addCharm-2"},
@@ -444,6 +451,7 @@ var fromDataTests = []struct {
 			map[string]interface{}{},
 			"",
 			map[string]string{},
+			map[string]string{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -528,6 +536,7 @@ var fromDataTests = []struct {
 			map[string]interface{}{},
 			"",
 			map[string]string{},
+			map[string]string{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -550,6 +559,7 @@ var fromDataTests = []struct {
 			"mysql",
 			map[string]interface{}{},
 			"mem=42G",
+			map[string]string{},
 			map[string]string{},
 		},
 		Requires: []string{"addCharm-2"},
@@ -595,6 +605,7 @@ var fromDataTests = []struct {
 			map[string]interface{}{},
 			"",
 			map[string]string{},
+			map[string]string{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -616,6 +627,7 @@ var fromDataTests = []struct {
 			"wordpress",
 			map[string]interface{}{},
 			"",
+			map[string]string{},
 			map[string]string{},
 		},
 		Requires: []string{"addCharm-2"},
@@ -708,6 +720,7 @@ var fromDataTests = []struct {
 			map[string]interface{}{},
 			"",
 			map[string]string{},
+			map[string]string{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -730,6 +743,7 @@ var fromDataTests = []struct {
 			map[string]interface{}{},
 			"",
 			map[string]string{},
+			map[string]string{},
 		},
 		Requires: []string{"addCharm-2"},
 	}, {
@@ -751,6 +765,7 @@ var fromDataTests = []struct {
 			"ror",
 			map[string]interface{}{},
 			"",
+			map[string]string{},
 			map[string]string{},
 		},
 		Requires: []string{"addCharm-4"},
@@ -972,6 +987,7 @@ var fromDataTests = []struct {
 			map[string]interface{}{},
 			"",
 			map[string]string{},
+			map[string]string{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -1123,6 +1139,7 @@ var fromDataTests = []struct {
 				"osd-devices": "3,30G",
 				"tmpfs":       "tmpfs,1G",
 			},
+			map[string]string{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -1141,6 +1158,40 @@ var fromDataTests = []struct {
 		},
 		GUIArgs:  []interface{}{"$deploy-1", nil},
 		Requires: []string{"deploy-1"},
+	}},
+}, {
+	about: "service with endpoint bindings",
+	content: `
+        services:
+            django:
+                charm: django
+                bindings:
+                    foo: bar
+    `,
+	expected: []record{{
+		Id:     "addCharm-0",
+		Method: "addCharm",
+		Params: bundlechanges.AddCharmParams{
+			Charm: "django",
+		},
+		GUIArgs: []interface{}{"django"},
+	}, {
+		Id:     "deploy-1",
+		Method: "deploy",
+		Params: bundlechanges.AddServiceParams{
+			Charm:            "$addCharm-0",
+			Service:          "django",
+			EndpointBindings: map[string]string{"foo": "bar"},
+		},
+		GUIArgs: []interface{}{
+			"$addCharm-0",
+			"django",
+			map[string]interface{}{},
+			"",
+			map[string]string{},
+			map[string]string{"foo": "bar"},
+		},
+		Requires: []string{"addCharm-0"},
 	}},
 }}
 

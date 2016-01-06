@@ -37,11 +37,12 @@ func handleServices(add func(Change), services map[string]*charm.ServiceSpec) ma
 
 		// Add the addService record for this service.
 		change = newAddServiceChange(AddServiceParams{
-			Charm:       "$" + charms[service.Charm],
-			Service:     name,
-			Options:     service.Options,
-			Constraints: service.Constraints,
-			Storage:     service.Storage,
+			Charm:            "$" + charms[service.Charm],
+			Service:          name,
+			Options:          service.Options,
+			Constraints:      service.Constraints,
+			Storage:          service.Storage,
+			EndpointBindings: service.EndpointBindings,
 		}, charms[service.Charm])
 		add(change)
 		id := change.Id()

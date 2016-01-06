@@ -216,7 +216,11 @@ func (ch *AddServiceChange) GUIArgs() []interface{} {
 	if storage == nil {
 		storage = make(map[string]string, 0)
 	}
-	return []interface{}{ch.Params.Charm, ch.Params.Service, options, ch.Params.Constraints, storage}
+	endpointBindings := ch.Params.EndpointBindings
+	if endpointBindings == nil {
+		endpointBindings = make(map[string]string, 0)
+	}
+	return []interface{}{ch.Params.Charm, ch.Params.Service, options, ch.Params.Constraints, storage, endpointBindings}
 }
 
 // AddServiceParams holds parameters for deploying a Juju service.
@@ -231,6 +235,8 @@ type AddServiceParams struct {
 	Constraints string
 	// Storage holds the optional storage constraints.
 	Storage map[string]string
+	// EndpointBindings holds the optional endpoint bindings
+	EndpointBindings map[string]string
 }
 
 // newAddUnitChange creates a new change for adding a service unit.

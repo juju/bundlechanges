@@ -12,3 +12,4 @@ gopkg.in/check.v1	git	b3d3430320d4260e5fea99841af984b3badcea63	2015-06-26T10:50:
 gopkg.in/juju/charm.v6-unstable	git	8edb23ed1f704181179c7af9eb2a0cdddb75686b	2016-03-01T14:35:53Z
 gopkg.in/mgo.v2	git	3569c88678d88179dcbd68d02ab081cbca3cd4d0	2015-06-04T15:26:27Z
 gopkg.in/yaml.v1	git	9f9df34309c04878acc86042b16630b0f696e1de	2014-09-24T16:16:07Z
+gopkg.in/yaml.v2	git	53feefa2559fb8dfa8d81baad31be332c97d6c77	2015-09-24T14:23:14Z

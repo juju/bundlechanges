@@ -97,6 +97,9 @@ func (ch *AddCharmChange) GUIArgs() []interface{} {
 type AddCharmParams struct {
 	// Charm holds the URL of the charm to be added.
 	Charm string
+	// Series holds the series of the charm to be added
+	// if the charm default is not sufficient.
+	Series string
 }
 
 // newAddMachineChange creates a new change for adding a machine or container.

@@ -5,6 +5,7 @@ package bundlechanges_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -52,39 +53,6 @@ var fromDataTests = []struct {
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
 			Charm: "django",
-		},
-		GUIArgs: []interface{}{"django"},
-	}, {
-		Id:     "deploy-1",
-		Method: "deploy",
-		Params: bundlechanges.AddServiceParams{
-			Charm:   "$addCharm-0",
-			Service: "django",
-		},
-		GUIArgs: []interface{}{
-			"$addCharm-0",
-			"django",
-			map[string]interface{}{},
-			"",
-			map[string]string{},
-			map[string]string{},
-		},
-		Requires: []string{"addCharm-0"},
-	}},
-}, {
-	about: "minimal bundle with series",
-	content: `
-        services:
-            django:
-                charm: django
-                series: xenial
-    `,
-	expected: []record{{
-		Id:     "addCharm-0",
-		Method: "addCharm",
-		Params: bundlechanges.AddCharmParams{
-			Charm:  "django",
-			Series: "xenial",
 		},
 		GUIArgs: []interface{}{"django"},
 	}, {
@@ -1228,36 +1196,75 @@ var fromDataTests = []struct {
 	}},
 }}
 
+func (s *changesSuite) assertParseData(c *gc.C, content string, expected []record) {
+	// Retrieve and validate the bundle data.
+	data, err := charm.ReadBundleData(strings.NewReader(content))
+	c.Assert(err, jc.ErrorIsNil)
+	err = data.Verify(nil, nil)
+	c.Assert(err, jc.ErrorIsNil)
+
+	// Retrieve the changes, and convert them to a sequence of records.
+	changes := bundlechanges.FromData(data)
+	records := make([]record, len(changes))
+	for i, change := range changes {
+		r := record{
+			Id:       change.Id(),
+			Requires: change.Requires(),
+			Method:   change.Method(),
+			GUIArgs:  change.GUIArgs(),
+		}
+		r.Params = reflect.ValueOf(change).Elem().FieldByName("Params").Interface()
+		records[i] = r
+	}
+
+	// Output the records for debugging.
+	b, err := json.MarshalIndent(records, "", "  ")
+	c.Assert(err, jc.ErrorIsNil)
+	c.Logf("obtained records: %s", b)
+
+	// Check that the obtained records are what we expect.
+	c.Assert(records, jc.DeepEquals, expected)
+}
+
 func (s *changesSuite) TestFromData(c *gc.C) {
 	for i, test := range fromDataTests {
 		c.Logf("test %d: %s", i, test.about)
-
-		// Retrieve and validate the bundle data.
-		data, err := charm.ReadBundleData(strings.NewReader(test.content))
-		c.Assert(err, jc.ErrorIsNil)
-		err = data.Verify(nil, nil)
-		c.Assert(err, jc.ErrorIsNil)
-
-		// Retrieve the changes, and convert them to a sequence of records.
-		changes := bundlechanges.FromData(data)
-		records := make([]record, len(changes))
-		for i, change := range changes {
-			r := record{
-				Id:       change.Id(),
-				Requires: change.Requires(),
-				Method:   change.Method(),
-				GUIArgs:  change.GUIArgs(),
-			}
-			r.Params = reflect.ValueOf(change).Elem().FieldByName("Params").Interface()
-			records[i] = r
-		}
-
-		// Output the records for debugging.
-		b, err := json.MarshalIndent(records, "", "  ")
-		c.Assert(err, jc.ErrorIsNil)
-		c.Logf("obtained records: %s", b)
-
-		// Check that the obtained records are what we expect.
-		c.Assert(records, jc.DeepEquals, test.expected)
+		s.assertParseData(c, test.content, test.expected)
 	}
+}
+
+func (s *changesSuite) TestLocalCharmWithSeries(c *gc.C) {
+	charmDir := c.MkDir()
+	content := fmt.Sprintf(`
+        services:
+            django:
+                charm: %s
+                series: xenial
+    `, charmDir)
+	expected := []record{{
+		Id:     "addCharm-0",
+		Method: "addCharm",
+		Params: bundlechanges.AddCharmParams{
+			Charm:  charmDir,
+			Series: "xenial",
+		},
+		GUIArgs: []interface{}{charmDir},
+	}, {
+		Id:     "deploy-1",
+		Method: "deploy",
+		Params: bundlechanges.AddServiceParams{
+			Charm:   "$addCharm-0",
+			Service: "django",
+		},
+		GUIArgs: []interface{}{
+			"$addCharm-0",
+			"django",
+			map[string]interface{}{},
+			"",
+			map[string]string{},
+			map[string]string{},
+		},
+		Requires: []string{"addCharm-0"},
+	}}
+	s.assertParseData(c, content, expected)
 }

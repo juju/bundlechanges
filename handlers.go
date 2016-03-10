@@ -29,7 +29,7 @@ func handleServices(add func(Change), services map[string]*charm.ServiceSpec) ma
 		// Add the addCharm record if one hasn't been added yet.
 		if charms[service.Charm] == "" {
 			change = newAddCharmChange(AddCharmParams{
-				Charm: service.Charm,
+				Charm:  service.Charm,
 				Series: service.Series,
 			})
 			add(change)

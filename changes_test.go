@@ -72,6 +72,39 @@ var fromDataTests = []struct {
 		Requires: []string{"addCharm-0"},
 	}},
 }, {
+	about: "minimal bundle with series",
+	content: `
+        services:
+            django:
+                charm: django
+                series: xenial
+    `,
+	expected: []record{{
+		Id:     "addCharm-0",
+		Method: "addCharm",
+		Params: bundlechanges.AddCharmParams{
+			Charm:  "django",
+			Series: "xenial",
+		},
+		GUIArgs: []interface{}{"django"},
+	}, {
+		Id:     "deploy-1",
+		Method: "deploy",
+		Params: bundlechanges.AddServiceParams{
+			Charm:   "$addCharm-0",
+			Service: "django",
+		},
+		GUIArgs: []interface{}{
+			"$addCharm-0",
+			"django",
+			map[string]interface{}{},
+			"",
+			map[string]string{},
+			map[string]string{},
+		},
+		Requires: []string{"addCharm-0"},
+	}},
+}, {
 	about: "simple bundle",
 	content: `
         services:

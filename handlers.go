@@ -30,6 +30,7 @@ func handleServices(add func(Change), services map[string]*charm.ServiceSpec) ma
 		if charms[service.Charm] == "" {
 			change = newAddCharmChange(AddCharmParams{
 				Charm: service.Charm,
+				Series: service.Series,
 			})
 			add(change)
 			charms[service.Charm] = change.Id()

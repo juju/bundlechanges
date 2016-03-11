@@ -32,7 +32,14 @@ func main() {
 		defer r.Close()
 	}
 	if err := process(r, os.Stdout); err != nil {
-		fmt.Fprintf(os.Stderr, "unable to parse bundle: %s\n", err)
+		if verr, ok := err.(*charm.VerificationError); ok {
+			fmt.Fprintf(os.Stderr, "the given bundle is not valid:\n")
+			for _, err := range verr.Errors {
+				fmt.Fprintf(os.Stderr, "%s\n", err)
+			}
+		} else {
+			fmt.Fprintf(os.Stderr, "unable to parse bundle: %s\n", err)
+		}
 		os.Exit(1)
 	}
 }

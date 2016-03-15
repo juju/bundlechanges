@@ -223,7 +223,11 @@ func (ch *AddServiceChange) GUIArgs() []interface{} {
 	if endpointBindings == nil {
 		endpointBindings = make(map[string]string, 0)
 	}
-	return []interface{}{ch.Params.Charm, ch.Params.Service, options, ch.Params.Constraints, storage, endpointBindings}
+	resources := ch.Params.Resources
+	if resources == nil {
+		resources = make(map[string]int, 0)
+	}
+	return []interface{}{ch.Params.Charm, ch.Params.Service, options, ch.Params.Constraints, storage, endpointBindings, resources}
 }
 
 // AddServiceParams holds parameters for deploying a Juju service.

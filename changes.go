@@ -240,6 +240,9 @@ type AddServiceParams struct {
 	Storage map[string]string
 	// EndpointBindings holds the optional endpoint bindings
 	EndpointBindings map[string]string
+	// Resources identifies the revision to use for each resource
+	// of the service's charm.
+	Resources map[string]int
 }
 
 // newAddUnitChange creates a new change for adding a service unit.

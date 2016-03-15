@@ -44,6 +44,7 @@ func handleServices(add func(Change), services map[string]*charm.ServiceSpec) ma
 			Constraints:      service.Constraints,
 			Storage:          service.Storage,
 			EndpointBindings: service.EndpointBindings,
+			Resources:        service.Resources,
 		}, charms[service.Charm])
 		add(change)
 		id := change.Id()

@@ -69,6 +69,7 @@ var fromDataTests = []struct {
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
 	}},
@@ -115,6 +116,7 @@ var fromDataTests = []struct {
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -160,6 +162,7 @@ var fromDataTests = []struct {
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-4"},
 	}, {
@@ -219,6 +222,7 @@ var fromDataTests = []struct {
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -235,6 +239,7 @@ var fromDataTests = []struct {
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -294,6 +299,7 @@ var fromDataTests = []struct {
 			"cpu-cores=4 cpu-power=42",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -318,6 +324,7 @@ var fromDataTests = []struct {
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-2"},
 	}, {
@@ -453,6 +460,7 @@ var fromDataTests = []struct {
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -538,6 +546,7 @@ var fromDataTests = []struct {
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -562,6 +571,7 @@ var fromDataTests = []struct {
 			"mem=42G",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-2"},
 	}, {
@@ -607,6 +617,7 @@ var fromDataTests = []struct {
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -630,6 +641,7 @@ var fromDataTests = []struct {
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-2"},
 	}, {
@@ -722,6 +734,7 @@ var fromDataTests = []struct {
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -745,6 +758,7 @@ var fromDataTests = []struct {
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-2"},
 	}, {
@@ -768,6 +782,7 @@ var fromDataTests = []struct {
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-4"},
 	}, {
@@ -989,6 +1004,7 @@ var fromDataTests = []struct {
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -1141,6 +1157,7 @@ var fromDataTests = []struct {
 				"tmpfs":       "tmpfs,1G",
 			},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -1191,6 +1208,7 @@ var fromDataTests = []struct {
 			"",
 			map[string]string{},
 			map[string]string{"foo": "bar"},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
 	}},
@@ -1263,6 +1281,7 @@ func (s *changesSuite) TestLocalCharmWithSeries(c *gc.C) {
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
 	}}

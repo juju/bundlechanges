@@ -85,6 +85,8 @@ var fromDataTests = []struct {
                 annotations:
                     gui-x: "609"
                     gui-y: "-15"
+                resources:
+                    data: 3
             mysql:
                 charm: cs:precise/mysql-28
                 num_units: 1
@@ -104,9 +106,10 @@ var fromDataTests = []struct {
 		Id:     "deploy-1",
 		Method: "deploy",
 		Params: bundlechanges.AddServiceParams{
-			Charm:   "$addCharm-0",
-			Service: "mediawiki",
-			Options: map[string]interface{}{"debug": false},
+			Charm:     "$addCharm-0",
+			Service:   "mediawiki",
+			Options:   map[string]interface{}{"debug": false},
+			Resources: map[string]int{"data": 3},
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-0",

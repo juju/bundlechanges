@@ -223,6 +223,8 @@ func (ch *AddServiceChange) GUIArgs() []interface{} {
 	if endpointBindings == nil {
 		endpointBindings = make(map[string]string, 0)
 	}
+	// TODO(ericsnow) Add resources to the result (from
+	// ch.Params.Resources) once the GUI is ready.
 	return []interface{}{ch.Params.Charm, ch.Params.Service, options, ch.Params.Constraints, storage, endpointBindings}
 }
 
@@ -240,6 +242,9 @@ type AddServiceParams struct {
 	Storage map[string]string
 	// EndpointBindings holds the optional endpoint bindings
 	EndpointBindings map[string]string
+	// Resources identifies the revision to use for each resource
+	// of the service's charm.
+	Resources map[string]int
 }
 
 // newAddUnitChange creates a new change for adding a service unit.

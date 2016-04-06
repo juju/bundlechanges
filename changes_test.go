@@ -99,7 +99,8 @@ var fromDataTests = []struct {
 		Id:     "addCharm-0",
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
-			Charm: "cs:precise/mediawiki-10",
+			Charm:  "cs:precise/mediawiki-10",
+			Series: "precise",
 		},
 		GUIArgs: []interface{}{"cs:precise/mediawiki-10"},
 	}, {
@@ -146,7 +147,8 @@ var fromDataTests = []struct {
 		Id:     "addCharm-4",
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
-			Charm: "cs:precise/mysql-28",
+			Charm:  "cs:precise/mysql-28",
+			Series: "precise",
 		},
 		GUIArgs: []interface{}{"cs:precise/mysql-28"},
 	}, {
@@ -205,7 +207,8 @@ var fromDataTests = []struct {
 		Id:     "addCharm-0",
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
-			Charm: "precise/mediawiki-10",
+			Charm:  "precise/mediawiki-10",
+			Series: "precise",
 		},
 		GUIArgs: []interface{}{"precise/mediawiki-10"},
 	}, {
@@ -279,7 +282,8 @@ var fromDataTests = []struct {
 		Id:     "addCharm-0",
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
-			Charm: "cs:trusty/django-42",
+			Charm:  "cs:trusty/django-42",
+			Series: "trusty",
 		},
 		GUIArgs: []interface{}{"cs:trusty/django-42"},
 	}, {
@@ -303,7 +307,8 @@ var fromDataTests = []struct {
 		Id:     "addCharm-2",
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
-			Charm: "cs:trusty/haproxy-47",
+			Charm:  "cs:trusty/haproxy-47",
+			Series: "trusty",
 		},
 		GUIArgs: []interface{}{"cs:trusty/haproxy-47"},
 	}, {
@@ -361,11 +366,13 @@ var fromDataTests = []struct {
 		Method: "addMachines",
 		Params: bundlechanges.AddMachineParams{
 			ContainerType: "lxc",
+			Series:        "trusty",
 			ParentId:      "$addMachines-6",
 		},
 		GUIArgs: []interface{}{
 			bundlechanges.AddMachineOptions{
 				ContainerType: "lxc",
+				Series:        "trusty",
 				ParentId:      "$addMachines-6",
 			},
 		},
@@ -375,11 +382,13 @@ var fromDataTests = []struct {
 		Method: "addMachines",
 		Params: bundlechanges.AddMachineParams{
 			ContainerType: "lxc",
+			Series:        "trusty",
 			ParentId:      "$addUnit-7",
 		},
 		GUIArgs: []interface{}{
 			bundlechanges.AddMachineOptions{
 				ContainerType: "lxc",
+				Series:        "trusty",
 				ParentId:      "$addUnit-7",
 			},
 		},
@@ -387,9 +396,13 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addMachines-13",
 		Method: "addMachines",
-		Params: bundlechanges.AddMachineParams{},
+		Params: bundlechanges.AddMachineParams{
+			Series: "trusty",
+		},
 		GUIArgs: []interface{}{
-			bundlechanges.AddMachineOptions{},
+			bundlechanges.AddMachineOptions{
+				Series: "trusty",
+			},
 		},
 	}, {
 		Id:     "addUnit-8",
@@ -439,7 +452,8 @@ var fromDataTests = []struct {
 		Id:     "addCharm-0",
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
-			Charm: "cs:trusty/django-42",
+			Charm:  "cs:trusty/django-42",
+			Series: "trusty",
 		},
 		GUIArgs: []interface{}{"cs:trusty/django-42"},
 	}, {
@@ -465,7 +479,9 @@ var fromDataTests = []struct {
 			Constraints: "cpu-cores=4",
 		},
 		GUIArgs: []interface{}{
-			bundlechanges.AddMachineOptions{Constraints: "cpu-cores=4"},
+			bundlechanges.AddMachineOptions{
+				Constraints: "cpu-cores=4",
+			},
 		},
 	}, {
 		Id:     "setAnnotations-3",
@@ -493,9 +509,13 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addMachines-6",
 		Method: "addMachines",
-		Params: bundlechanges.AddMachineParams{},
+		Params: bundlechanges.AddMachineParams{
+			Series: "trusty",
+		},
 		GUIArgs: []interface{}{
-			bundlechanges.AddMachineOptions{},
+			bundlechanges.AddMachineOptions{
+				Series: "trusty",
+			},
 		},
 	}, {
 		Id:     "addUnit-5",
@@ -524,7 +544,8 @@ var fromDataTests = []struct {
 		Id:     "addCharm-0",
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
-			Charm: "cs:precise/mediawiki-10",
+			Charm:  "cs:precise/mediawiki-10",
+			Series: "precise",
 		},
 		GUIArgs: []interface{}{"cs:precise/mediawiki-10"},
 	}, {
@@ -547,7 +568,8 @@ var fromDataTests = []struct {
 		Id:     "addCharm-2",
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
-			Charm: "cs:precise/mysql-28",
+			Charm:  "cs:precise/mysql-28",
+			Series: "precise",
 		},
 		GUIArgs: []interface{}{"cs:precise/mysql-28"},
 	}, {
@@ -593,7 +615,8 @@ var fromDataTests = []struct {
 		Id:     "addCharm-0",
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
-			Charm: "cs:trusty/django-42",
+			Charm:  "cs:trusty/django-42",
+			Series: "trusty",
 		},
 		GUIArgs: []interface{}{"cs:trusty/django-42"},
 	}, {
@@ -708,7 +731,8 @@ var fromDataTests = []struct {
 		Id:     "addCharm-0",
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
-			Charm: "cs:trusty/django-42",
+			Charm:  "cs:trusty/django-42",
+			Series: "trusty",
 		},
 		GUIArgs: []interface{}{"cs:trusty/django-42"},
 	}, {
@@ -731,7 +755,8 @@ var fromDataTests = []struct {
 		Id:     "addCharm-2",
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
-			Charm: "cs:trusty/mem-47",
+			Charm:  "cs:trusty/mem-47",
+			Series: "trusty",
 		},
 		GUIArgs: []interface{}{"cs:trusty/mem-47"},
 	}, {
@@ -754,7 +779,8 @@ var fromDataTests = []struct {
 		Id:     "addCharm-4",
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
-			Charm: "vivid/rails",
+			Charm:  "vivid/rails",
+			Series: "vivid",
 		},
 		GUIArgs: []interface{}{"vivid/rails"},
 	}, {
@@ -808,11 +834,13 @@ var fromDataTests = []struct {
 		Method: "addMachines",
 		Params: bundlechanges.AddMachineParams{
 			ContainerType: "kvm",
+			Series:        "trusty",
 			ParentId:      "$addUnit-16",
 		},
 		GUIArgs: []interface{}{
 			bundlechanges.AddMachineOptions{
 				ContainerType: "kvm",
+				Series:        "trusty",
 				ParentId:      "$addUnit-16",
 			},
 		},
@@ -820,23 +848,35 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addMachines-21",
 		Method: "addMachines",
-		Params: bundlechanges.AddMachineParams{},
+		Params: bundlechanges.AddMachineParams{
+			Series: "trusty",
+		},
 		GUIArgs: []interface{}{
-			bundlechanges.AddMachineOptions{},
+			bundlechanges.AddMachineOptions{
+				Series: "trusty",
+			},
 		},
 	}, {
 		Id:     "addMachines-22",
 		Method: "addMachines",
-		Params: bundlechanges.AddMachineParams{},
+		Params: bundlechanges.AddMachineParams{
+			Series: "trusty",
+		},
 		GUIArgs: []interface{}{
-			bundlechanges.AddMachineOptions{},
+			bundlechanges.AddMachineOptions{
+				Series: "trusty",
+			},
 		},
 	}, {
 		Id:     "addMachines-23",
 		Method: "addMachines",
-		Params: bundlechanges.AddMachineParams{},
+		Params: bundlechanges.AddMachineParams{
+			Series: "vivid",
+		},
 		GUIArgs: []interface{}{
-			bundlechanges.AddMachineOptions{},
+			bundlechanges.AddMachineOptions{
+				Series: "vivid",
+			},
 		},
 	}, {
 		Id:     "addUnit-7",
@@ -888,11 +928,13 @@ var fromDataTests = []struct {
 		Method: "addMachines",
 		Params: bundlechanges.AddMachineParams{
 			ContainerType: "lxc",
+			Series:        "trusty",
 			ParentId:      "$addUnit-13",
 		},
 		GUIArgs: []interface{}{
 			bundlechanges.AddMachineOptions{
 				ContainerType: "lxc",
+				Series:        "trusty",
 				ParentId:      "$addUnit-13",
 			},
 		},
@@ -902,11 +944,13 @@ var fromDataTests = []struct {
 		Method: "addMachines",
 		Params: bundlechanges.AddMachineParams{
 			ContainerType: "lxc",
+			Series:        "trusty",
 			ParentId:      "$addUnit-14",
 		},
 		GUIArgs: []interface{}{
 			bundlechanges.AddMachineOptions{
 				ContainerType: "lxc",
+				Series:        "trusty",
 				ParentId:      "$addUnit-14",
 			},
 		},
@@ -916,11 +960,13 @@ var fromDataTests = []struct {
 		Method: "addMachines",
 		Params: bundlechanges.AddMachineParams{
 			ContainerType: "kvm",
+			Series:        "trusty",
 			ParentId:      "$addUnit-15",
 		},
 		GUIArgs: []interface{}{
 			bundlechanges.AddMachineOptions{
 				ContainerType: "kvm",
+				Series:        "trusty",
 				ParentId:      "$addUnit-15",
 			},
 		},
@@ -975,7 +1021,8 @@ var fromDataTests = []struct {
 		Id:     "addCharm-0",
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
-			Charm: "cs:trusty/django-42",
+			Charm:  "cs:trusty/django-42",
+			Series: "trusty",
 		},
 		GUIArgs: []interface{}{"cs:trusty/django-42"},
 	}, {
@@ -1028,20 +1075,26 @@ var fromDataTests = []struct {
 	}, {
 		Id:     "addMachines-9",
 		Method: "addMachines",
-		Params: bundlechanges.AddMachineParams{},
+		Params: bundlechanges.AddMachineParams{
+			Series: "trusty",
+		},
 		GUIArgs: []interface{}{
-			bundlechanges.AddMachineOptions{},
+			bundlechanges.AddMachineOptions{
+				Series: "trusty",
+			},
 		},
 	}, {
 		Id:     "addMachines-10",
 		Method: "addMachines",
 		Params: bundlechanges.AddMachineParams{
 			ContainerType: "kvm",
+			Series:        "trusty",
 			ParentId:      "$addMachines-3",
 		},
 		GUIArgs: []interface{}{
 			bundlechanges.AddMachineOptions{
 				ContainerType: "kvm",
+				Series:        "trusty",
 				ParentId:      "$addMachines-3",
 			},
 		},
@@ -1051,10 +1104,12 @@ var fromDataTests = []struct {
 		Method: "addMachines",
 		Params: bundlechanges.AddMachineParams{
 			ContainerType: "lxc",
+			Series:        "trusty",
 		},
 		GUIArgs: []interface{}{
 			bundlechanges.AddMachineOptions{
 				ContainerType: "lxc",
+				Series:        "trusty",
 			},
 		},
 	}, {
@@ -1062,10 +1117,12 @@ var fromDataTests = []struct {
 		Method: "addMachines",
 		Params: bundlechanges.AddMachineParams{
 			ContainerType: "lxc",
+			Series:        "trusty",
 		},
 		GUIArgs: []interface{}{
 			bundlechanges.AddMachineOptions{
 				ContainerType: "lxc",
+				Series:        "trusty",
 			},
 		},
 	}, {
@@ -1120,7 +1177,8 @@ var fromDataTests = []struct {
 		Id:     "addCharm-0",
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
-			Charm: "cs:trusty/django-42",
+			Charm:  "cs:trusty/django-42",
+			Series: "trusty",
 		},
 		GUIArgs: []interface{}{"cs:trusty/django-42"},
 	}, {
@@ -1196,6 +1254,107 @@ var fromDataTests = []struct {
 			map[string]string{"foo": "bar"},
 		},
 		Requires: []string{"addCharm-0"},
+	}},
+}, {
+	about: "service with series",
+	content: `
+series: trusty
+services:
+    gui3:
+        charm: cs:precise/juju-gui
+        num_units: 2
+        to:
+            - new
+            - lxc:1
+machines:
+    1:
+   `,
+	expected: []record{{
+		Id:     "addCharm-0",
+		Method: "addCharm",
+		Params: bundlechanges.AddCharmParams{
+			Charm:  "cs:precise/juju-gui",
+			Series: "precise",
+		},
+		GUIArgs: []interface{}{"cs:precise/juju-gui"},
+	}, {
+		Id:     "deploy-1",
+		Method: "deploy",
+		Params: bundlechanges.AddServiceParams{
+			Charm:   "$addCharm-0",
+			Service: "gui3",
+		},
+		GUIArgs: []interface{}{
+			"$addCharm-0",
+			"gui3",
+			map[string]interface{}{},
+			"",
+			map[string]string{},
+			map[string]string{},
+		},
+		Requires: []string{"addCharm-0"},
+	}, {
+		Id:     "addMachines-2",
+		Method: "addMachines",
+		Params: bundlechanges.AddMachineParams{
+			Series: "trusty",
+		},
+		GUIArgs: []interface{}{
+			bundlechanges.AddMachineOptions{
+				Series: "trusty",
+			},
+		},
+	}, {
+		Id:     "addMachines-5",
+		Method: "addMachines",
+		Params: bundlechanges.AddMachineParams{
+			Series: "precise",
+		},
+		GUIArgs: []interface{}{
+			bundlechanges.AddMachineOptions{
+				Series: "precise",
+			},
+		},
+	}, {
+		Id:       "addMachines-6",
+		Method:   "addMachines",
+		Requires: []string{"addMachines-2"},
+		Params: bundlechanges.AddMachineParams{
+			ContainerType: "lxc",
+			ParentId:      "$addMachines-2",
+			Series:        "precise",
+		},
+		GUIArgs: []interface{}{
+			bundlechanges.AddMachineOptions{
+				ContainerType: "lxc",
+				ParentId:      "$addMachines-2",
+				Series:        "precise",
+			},
+		},
+	}, {
+		Id:       "addUnit-3",
+		Method:   "addUnit",
+		Requires: []string{"deploy-1", "addMachines-5"},
+		Params: bundlechanges.AddUnitParams{
+			Service: "$deploy-1",
+			To:      "$addMachines-5",
+		},
+		GUIArgs: []interface{}{
+			"$deploy-1",
+			"$addMachines-5",
+		},
+	}, {
+		Id:       "addUnit-4",
+		Method:   "addUnit",
+		Requires: []string{"deploy-1", "addMachines-6"},
+		Params: bundlechanges.AddUnitParams{
+			Service: "$deploy-1",
+			To:      "$addMachines-6",
+		},
+		GUIArgs: []interface{}{
+			"$deploy-1",
+			"$addMachines-6",
+		},
 	}},
 }}
 

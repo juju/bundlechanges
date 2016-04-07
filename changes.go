@@ -14,10 +14,10 @@ import (
 // be applied in order. The bundle data is assumed to be already verified.
 func FromData(data *charm.BundleData) []Change {
 	cs := &changeset{}
-	addedServices := handleServices(cs.add, data.Services)
-	addedMachines := handleMachines(cs.add, data.Machines)
+	addedServices := handleServices(cs.add, data.Services, data.Series)
+	addedMachines := handleMachines(cs.add, data.Machines, data.Series)
 	handleRelations(cs.add, data.Relations, addedServices)
-	handleUnits(cs.add, data.Services, addedServices, addedMachines)
+	handleUnits(cs.add, data.Services, addedServices, addedMachines, data.Series)
 	return cs.sorted()
 }
 

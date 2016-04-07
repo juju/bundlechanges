@@ -13,7 +13,7 @@ import (
 
 // handleServices populates the change set with "addCharm"/"addService" records.
 // This function also handles adding service annotations.
-func handleServices(add func(Change), services map[string]*charm.ServiceSpec) map[string]string {
+func handleServices(add func(Change), services map[string]*charm.ServiceSpec, defaultSeries string) map[string]string {
 	charms := make(map[string]string, len(services))
 	addedServices := make(map[string]string, len(services))
 	// Iterate over the map using its sorted keys so that results are
@@ -30,7 +30,7 @@ func handleServices(add func(Change), services map[string]*charm.ServiceSpec) ma
 		if charms[service.Charm] == "" {
 			change = newAddCharmChange(AddCharmParams{
 				Charm:  service.Charm,
-				Series: service.Series,
+				Series: getSeries(service, defaultSeries),
 			})
 			add(change)
 			charms[service.Charm] = change.Id()
@@ -71,7 +71,7 @@ func handleServices(add func(Change), services map[string]*charm.ServiceSpec) ma
 
 // handleMachines populates the change set with "addMachines" records.
 // This function also handles adding machine annotations.
-func handleMachines(add func(Change), machines map[string]*charm.MachineSpec) map[string]string {
+func handleMachines(add func(Change), machines map[string]*charm.MachineSpec, defaultSeries string) map[string]string {
 	addedMachines := make(map[string]string, len(machines))
 	// Iterate over the map using its sorted keys so that results are
 	// deterministic and easier to test.
@@ -86,9 +86,13 @@ func handleMachines(add func(Change), machines map[string]*charm.MachineSpec) ma
 		if machine == nil {
 			machine = &charm.MachineSpec{}
 		}
+		series := machine.Series
+		if series == "" {
+			series = defaultSeries
+		}
 		// Add the addMachines record for this machine.
 		change = newAddMachineChange(AddMachineParams{
-			Series:      machine.Series,
+			Series:      series,
 			Constraints: machine.Constraints,
 		})
 		add(change)
@@ -128,7 +132,7 @@ func handleRelations(add func(Change), relations [][]string, addedServices map[s
 
 // handleUnits populates the change set with "addUnit" records.
 // It also handles adding machine containers where to place units if required.
-func handleUnits(add func(Change), services map[string]*charm.ServiceSpec, addedServices, addedMachines map[string]string) {
+func handleUnits(add func(Change), services map[string]*charm.ServiceSpec, addedServices, addedMachines map[string]string, defaultSeries string) {
 	records := make(map[string]*AddUnitChange)
 	// Iterate over the map using its sorted keys so that results are
 	// deterministic and easier to test.
@@ -174,7 +178,7 @@ func handleUnits(add func(Change), services map[string]*charm.ServiceSpec, added
 			}
 			// Generate the changes required in order to place this unit, and
 			// retrieve the identifier of the parent change.
-			parentId := unitParent(add, p, records, addedMachines, servicePlacedUnits)
+			parentId := unitParent(add, p, records, addedMachines, servicePlacedUnits, getSeries(service, defaultSeries))
 			// Retrieve and modify the original "addUnit" change to add the
 			// new parent requirement and placement target.
 			change := records[fmt.Sprintf("%s/%d", name, i)]
@@ -184,7 +188,7 @@ func handleUnits(add func(Change), services map[string]*charm.ServiceSpec, added
 	}
 }
 
-func unitParent(add func(Change), p string, records map[string]*AddUnitChange, addedMachines map[string]string, servicePlacedUnits map[string]int) (parentId string) {
+func unitParent(add func(Change), p string, records map[string]*AddUnitChange, addedMachines map[string]string, servicePlacedUnits map[string]int, series string) (parentId string) {
 	placement, err := charm.ParsePlacement(p)
 	if err != nil {
 		// Since the bundle is already verified, this should never happen.
@@ -194,6 +198,7 @@ func unitParent(add func(Change), p string, records map[string]*AddUnitChange, a
 		// The unit is placed to a new machine.
 		change := newAddMachineChange(AddMachineParams{
 			ContainerType: placement.ContainerType,
+			Series:        series,
 		})
 		add(change)
 		return change.Id()
@@ -202,7 +207,7 @@ func unitParent(add func(Change), p string, records map[string]*AddUnitChange, a
 		// The unit is placed to a machine declared in the bundle.
 		parentId = addedMachines[placement.Machine]
 		if placement.ContainerType != "" {
-			parentId = addContainer(add, placement.ContainerType, parentId)
+			parentId = addContainer(add, placement.ContainerType, parentId, series)
 		}
 		return parentId
 	}
@@ -221,18 +226,34 @@ func unitParent(add func(Change), p string, records map[string]*AddUnitChange, a
 	otherUnit := fmt.Sprintf("%s/%d", placement.Service, number)
 	parentId = records[otherUnit].Id()
 	if placement.ContainerType != "" {
-		parentId = addContainer(add, placement.ContainerType, parentId)
+		parentId = addContainer(add, placement.ContainerType, parentId, series)
 	}
 	return parentId
 }
 
-func addContainer(add func(Change), containerType, parentId string) string {
+func addContainer(add func(Change), containerType, parentId string, series string) string {
 	change := newAddMachineChange(AddMachineParams{
 		ContainerType: containerType,
 		ParentId:      "$" + parentId,
+		Series:        series,
 	}, parentId)
 	add(change)
 	return change.Id()
+}
+
+// getSeries retrieves the series of a service from the ServiceSpec or from the
+// charm URL if provided, otherwise falling back on a default series.
+func getSeries(service *charm.ServiceSpec, defaultSeries string) string {
+	if service.Series != "" {
+		return service.Series
+	}
+	// The following is safe because the bundle data is assumed to be already
+	// verified, and therefore this must be a valid charm URL.
+	series := charm.MustParseURL(service.Charm).Series
+	if series != "" {
+		return series
+	}
+	return defaultSeries
 }
 
 // parseEndpoint creates an endpoint from its string representation.

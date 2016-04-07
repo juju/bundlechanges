@@ -28,17 +28,9 @@ func handleServices(add func(Change), services map[string]*charm.ServiceSpec, de
 		service := services[name]
 		// Add the addCharm record if one hasn't been added yet.
 		if charms[service.Charm] == "" {
-			series := service.Series
-			if series == "" {
-				serviceCharm := charm.MustParseURL(service.Charm)
-				series = serviceCharm.Series
-				if series == "" {
-					series = defaultSeries
-				}
-			}
 			change = newAddCharmChange(AddCharmParams{
 				Charm:  service.Charm,
-				Series: series,
+				Series: getSeries(service, defaultSeries),
 			})
 			add(change)
 			charms[service.Charm] = change.Id()
@@ -94,7 +86,7 @@ func handleMachines(add func(Change), machines map[string]*charm.MachineSpec, de
 		if machine == nil {
 			machine = &charm.MachineSpec{}
 		}
-		var series = machine.Series
+		series := machine.Series
 		if series == "" {
 			series = defaultSeries
 		}
@@ -184,17 +176,9 @@ func handleUnits(add func(Change), services map[string]*charm.ServiceSpec, added
 			if i < numPlaced {
 				p = service.To[i]
 			}
-			var series = service.Series
-			if series == "" {
-				serviceCharm := charm.MustParseURL(service.Charm)
-				series = serviceCharm.Series
-				if series == "" {
-					series = defaultSeries
-				}
-			}
 			// Generate the changes required in order to place this unit, and
 			// retrieve the identifier of the parent change.
-			parentId := unitParent(add, p, records, addedMachines, servicePlacedUnits, series)
+			parentId := unitParent(add, p, records, addedMachines, servicePlacedUnits, getSeries(service, defaultSeries))
 			// Retrieve and modify the original "addUnit" change to add the
 			// new parent requirement and placement target.
 			change := records[fmt.Sprintf("%s/%d", name, i)]
@@ -255,6 +239,21 @@ func addContainer(add func(Change), containerType, parentId string, series strin
 	}, parentId)
 	add(change)
 	return change.Id()
+}
+
+// getSeries retrieves the series of a service from the ServiceSpec or from the
+// charm URL if provided, otherwise falling back on a default series.
+func getSeries(service *charm.ServiceSpec, defaultSeries string) string {
+	if service.Series != "" {
+		return service.Series
+	}
+	// The following is safe because the bundle data is assumed to be already
+	// verified, and therefore this must be a valid charm URL.
+	series := charm.MustParseURL(service.Charm).Series
+	if series != "" {
+		return series
+	}
+	return defaultSeries
 }
 
 // parseEndpoint creates an endpoint from its string representation.

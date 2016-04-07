@@ -1256,7 +1256,7 @@ var fromDataTests = []struct {
 		Requires: []string{"addCharm-0"},
 	}},
 }, {
-	about: "service with series",
+	about: "service with non-default series and placements ",
 	content: `
 series: trusty
 services:

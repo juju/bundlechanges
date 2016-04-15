@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"gopkg.in/juju/charm.v6-unstable"
+	"gopkg.in/juju/charmrepo.v2-unstable"
 )
 
 // handleServices populates the change set with "addCharm"/"addService" records.
@@ -242,10 +243,20 @@ func addContainer(add func(Change), containerType, parentId string, series strin
 }
 
 // getSeries retrieves the series of a service from the ServiceSpec or from the
-// charm URL if provided, otherwise falling back on a default series.
+// charm path or URL if provided, otherwise falling back on a default series.
 func getSeries(service *charm.ServiceSpec, defaultSeries string) string {
 	if service.Series != "" {
 		return service.Series
+	}
+	// We may have a local charm path.
+	_, curl, err := charmrepo.NewCharmAtPath(service.Charm, "")
+	if charm.IsMissingSeriesError(err) {
+		// local charm path is valid but the charm doesn't declare a default series.
+		return defaultSeries
+	}
+	if err == nil {
+		// Return the default series from the local charm.
+		return curl.Series
 	}
 	// The following is safe because the bundle data is assumed to be already
 	// verified, and therefore this must be a valid charm URL.

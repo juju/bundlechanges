@@ -6,6 +6,8 @@ package bundlechanges_test
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -1395,20 +1397,13 @@ func (s *changesSuite) TestFromData(c *gc.C) {
 	}
 }
 
-func (s *changesSuite) TestLocalCharmWithSeries(c *gc.C) {
-	charmDir := c.MkDir()
-	content := fmt.Sprintf(`
-        services:
-            django:
-                charm: %s
-                series: xenial
-    `, charmDir)
+func (s *changesSuite) assertLocalBundleChanges(c *gc.C, charmDir, bundleContent, series string) {
 	expected := []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
 			Charm:  charmDir,
-			Series: "xenial",
+			Series: series,
 		},
 		GUIArgs: []interface{}{charmDir},
 	}, {
@@ -1428,5 +1423,38 @@ func (s *changesSuite) TestLocalCharmWithSeries(c *gc.C) {
 		},
 		Requires: []string{"addCharm-0"},
 	}}
-	s.assertParseData(c, content, expected)
+	s.assertParseData(c, bundleContent, expected)
+}
+
+func (s *changesSuite) TestLocalCharmWithExplicitSeries(c *gc.C) {
+	charmDir := c.MkDir()
+	bundleContent := fmt.Sprintf(`
+        services:
+            django:
+                charm: %s
+                series: xenial
+    `, charmDir)
+	s.assertLocalBundleChanges(c, charmDir, bundleContent, "xenial")
+}
+
+func (s *changesSuite) TestLocalCharmWithSeriesFromCharm(c *gc.C) {
+	charmDir := c.MkDir()
+	bundleContent := fmt.Sprintf(`
+        services:
+            django:
+                charm: %s
+    `, charmDir)
+	charmMeta := `
+name: multi-series
+summary: "That's a dummy charm with multi-series."
+description: |
+    This is a longer description which
+    potentially contains multiple lines.
+series:
+    - precise
+    - trusty
+`[1:]
+	err := ioutil.WriteFile(filepath.Join(charmDir, "metadata.yaml"), []byte(charmMeta), 0644)
+	c.Assert(err, jc.ErrorIsNil)
+	s.assertLocalBundleChanges(c, charmDir, bundleContent, "precise")
 }

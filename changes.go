@@ -232,6 +232,9 @@ func (ch *AddServiceChange) GUIArgs() []interface{} {
 type AddServiceParams struct {
 	// Charm holds the URL of the charm to be used to deploy this service.
 	Charm string
+	// Series holds the series of the service to be deployed
+	// if the charm default is not sufficient.
+	Series string
 	// Service holds the service name.
 	Service string
 	// Options holds service options.

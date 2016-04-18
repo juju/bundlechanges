@@ -27,11 +27,12 @@ func handleServices(add func(Change), services map[string]*charm.ServiceSpec, de
 	var change Change
 	for _, name := range names {
 		service := services[name]
+		series := getSeries(service, defaultSeries)
 		// Add the addCharm record if one hasn't been added yet.
 		if charms[service.Charm] == "" {
 			change = newAddCharmChange(AddCharmParams{
 				Charm:  service.Charm,
-				Series: getSeries(service, defaultSeries),
+				Series: series,
 			})
 			add(change)
 			charms[service.Charm] = change.Id()
@@ -40,6 +41,7 @@ func handleServices(add func(Change), services map[string]*charm.ServiceSpec, de
 		// Add the addService record for this service.
 		change = newAddServiceChange(AddServiceParams{
 			Charm:            "$" + charms[service.Charm],
+			Series:           series,
 			Service:          name,
 			Options:          service.Options,
 			Constraints:      service.Constraints,

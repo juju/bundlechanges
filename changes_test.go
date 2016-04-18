@@ -111,6 +111,7 @@ var fromDataTests = []struct {
 		Params: bundlechanges.AddServiceParams{
 			Charm:     "$addCharm-0",
 			Service:   "mediawiki",
+			Series:    "precise",
 			Options:   map[string]interface{}{"debug": false},
 			Resources: map[string]int{"data": 3},
 		},
@@ -159,6 +160,7 @@ var fromDataTests = []struct {
 		Params: bundlechanges.AddServiceParams{
 			Charm:   "$addCharm-4",
 			Service: "mysql",
+			Series:  "precise",
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-4",
@@ -219,6 +221,7 @@ var fromDataTests = []struct {
 		Params: bundlechanges.AddServiceParams{
 			Charm:   "$addCharm-0",
 			Service: "mediawiki",
+			Series:  "precise",
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-0",
@@ -235,6 +238,7 @@ var fromDataTests = []struct {
 		Params: bundlechanges.AddServiceParams{
 			Charm:   "$addCharm-0",
 			Service: "otherwiki",
+			Series:  "precise",
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-0",
@@ -294,6 +298,7 @@ var fromDataTests = []struct {
 		Params: bundlechanges.AddServiceParams{
 			Charm:       "$addCharm-0",
 			Service:     "django",
+			Series:      "trusty",
 			Constraints: "cpu-cores=4 cpu-power=42",
 		},
 		GUIArgs: []interface{}{
@@ -319,6 +324,7 @@ var fromDataTests = []struct {
 		Params: bundlechanges.AddServiceParams{
 			Charm:   "$addCharm-2",
 			Service: "haproxy",
+			Series:  "trusty",
 			Options: map[string]interface{}{"bad": "wolf", "number": 42.47},
 		},
 		GUIArgs: []interface{}{
@@ -464,6 +470,7 @@ var fromDataTests = []struct {
 		Params: bundlechanges.AddServiceParams{
 			Charm:   "$addCharm-0",
 			Service: "django",
+			Series:  "trusty",
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-0",
@@ -556,6 +563,7 @@ var fromDataTests = []struct {
 		Params: bundlechanges.AddServiceParams{
 			Charm:   "$addCharm-0",
 			Service: "mediawiki",
+			Series:  "precise",
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-0",
@@ -580,6 +588,7 @@ var fromDataTests = []struct {
 		Params: bundlechanges.AddServiceParams{
 			Charm:       "$addCharm-2",
 			Service:     "mysql",
+			Series:      "precise",
 			Constraints: "mem=42G",
 		},
 		GUIArgs: []interface{}{
@@ -627,6 +636,7 @@ var fromDataTests = []struct {
 		Params: bundlechanges.AddServiceParams{
 			Charm:   "$addCharm-0",
 			Service: "django",
+			Series:  "trusty",
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-0",
@@ -743,6 +753,7 @@ var fromDataTests = []struct {
 		Params: bundlechanges.AddServiceParams{
 			Charm:   "$addCharm-0",
 			Service: "django",
+			Series:  "trusty",
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-0",
@@ -767,6 +778,7 @@ var fromDataTests = []struct {
 		Params: bundlechanges.AddServiceParams{
 			Charm:   "$addCharm-2",
 			Service: "memcached",
+			Series:  "trusty",
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-2",
@@ -791,6 +803,7 @@ var fromDataTests = []struct {
 		Params: bundlechanges.AddServiceParams{
 			Charm:   "$addCharm-4",
 			Service: "ror",
+			Series:  "vivid",
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-4",
@@ -1033,6 +1046,7 @@ var fromDataTests = []struct {
 		Params: bundlechanges.AddServiceParams{
 			Charm:   "$addCharm-0",
 			Service: "django",
+			Series:  "trusty",
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-0",
@@ -1189,6 +1203,7 @@ var fromDataTests = []struct {
 		Params: bundlechanges.AddServiceParams{
 			Charm:   "$addCharm-0",
 			Service: "django",
+			Series:  "trusty",
 			Storage: map[string]string{
 				"osd-devices": "3,30G",
 				"tmpfs":       "tmpfs,1G",
@@ -1285,6 +1300,7 @@ machines:
 		Params: bundlechanges.AddServiceParams{
 			Charm:   "$addCharm-0",
 			Service: "gui3",
+			Series:  "precise",
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-0",
@@ -1412,6 +1428,7 @@ func (s *changesSuite) assertLocalBundleChanges(c *gc.C, charmDir, bundleContent
 		Params: bundlechanges.AddServiceParams{
 			Charm:   "$addCharm-0",
 			Service: "django",
+			Series:  series,
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-0",

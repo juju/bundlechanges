@@ -14,10 +14,10 @@ import (
 // be applied in order. The bundle data is assumed to be already verified.
 func FromData(data *charm.BundleData) []Change {
 	cs := &changeset{}
-	addedServices := handleServices(cs.add, data.Services, data.Series)
+	addedServices := handleServices(cs.add, data.Applications, data.Series)
 	addedMachines := handleMachines(cs.add, data.Machines, data.Series)
 	handleRelations(cs.add, data.Relations, addedServices)
-	handleUnits(cs.add, data.Services, addedServices, addedMachines, data.Series)
+	handleUnits(cs.add, data.Applications, addedServices, addedMachines, data.Series)
 	return cs.sorted()
 }
 
@@ -169,7 +169,7 @@ func newAddRelationChange(params AddRelationParams, requires ...string) *AddRela
 	}
 }
 
-// AddRelationChange holds a change for adding a relation between two services.
+// AddRelationChange holds a change for adding a relation between two applications.
 type AddRelationChange struct {
 	changeInfo
 	// Params holds parameters for adding a relation.
@@ -181,19 +181,19 @@ func (ch *AddRelationChange) GUIArgs() []interface{} {
 	return []interface{}{ch.Params.Endpoint1, ch.Params.Endpoint2}
 }
 
-// AddRelationParams holds parameters for adding a relation between two services.
+// AddRelationParams holds parameters for adding a relation between two applications.
 type AddRelationParams struct {
 	// Endpoint1 and Endpoint2 hold relation endpoints in the
-	// "service:interface" form, where the service is always a placeholder
-	// pointing to a service change, and the interface is optional. Examples
+	// "application:interface" form, where the application is always a placeholder
+	// pointing to an application change, and the interface is optional. Examples
 	// are "$deploy-42:web" or just "$deploy-42".
 	Endpoint1 string
 	Endpoint2 string
 }
 
-// newAddServiceChange creates a new change for adding a service.
-func newAddServiceChange(params AddServiceParams, requires ...string) *AddServiceChange {
-	return &AddServiceChange{
+// newAddServiceChange creates a new change for adding an application.
+func newAddServiceChange(params AddApplicationParams, requires ...string) *AddApplicationChange {
+	return &AddApplicationChange{
 		changeInfo: changeInfo{
 			requires: requires,
 			method:   "deploy",
@@ -202,15 +202,15 @@ func newAddServiceChange(params AddServiceParams, requires ...string) *AddServic
 	}
 }
 
-// AddServiceChange holds a change for deploying a Juju service.
-type AddServiceChange struct {
+// AddApplicationChange holds a change for deploying a Juju application.
+type AddApplicationChange struct {
 	changeInfo
-	// Params holds parameters for adding a service.
-	Params AddServiceParams
+	// Params holds parameters for adding an application.
+	Params AddApplicationParams
 }
 
 // GUIArgs implements Change.GUIArgs.
-func (ch *AddServiceChange) GUIArgs() []interface{} {
+func (ch *AddApplicationChange) GUIArgs() []interface{} {
 	options := ch.Params.Options
 	if options == nil {
 		options = make(map[string]interface{}, 0)
@@ -225,32 +225,32 @@ func (ch *AddServiceChange) GUIArgs() []interface{} {
 	}
 	// TODO(ericsnow) Add resources to the result (from
 	// ch.Params.Resources) once the GUI is ready.
-	return []interface{}{ch.Params.Charm, ch.Params.Service, options, ch.Params.Constraints, storage, endpointBindings}
+	return []interface{}{ch.Params.Charm, ch.Params.Application, options, ch.Params.Constraints, storage, endpointBindings}
 }
 
-// AddServiceParams holds parameters for deploying a Juju service.
-type AddServiceParams struct {
-	// Charm holds the URL of the charm to be used to deploy this service.
+// AddApplicationParams holds parameters for deploying a Juju application.
+type AddApplicationParams struct {
+	// Charm holds the URL of the charm to be used to deploy this application.
 	Charm string
-	// Series holds the series of the service to be deployed
+	// Series holds the series of the application to be deployed
 	// if the charm default is not sufficient.
 	Series string
-	// Service holds the service name.
-	Service string
-	// Options holds service options.
+	// Application holds the application name.
+	Application string
+	// Options holds application options.
 	Options map[string]interface{}
-	// Constraints holds the optional service constraints.
+	// Constraints holds the optional application constraints.
 	Constraints string
 	// Storage holds the optional storage constraints.
 	Storage map[string]string
 	// EndpointBindings holds the optional endpoint bindings
 	EndpointBindings map[string]string
 	// Resources identifies the revision to use for each resource
-	// of the service's charm.
+	// of the application's charm.
 	Resources map[string]int
 }
 
-// newAddUnitChange creates a new change for adding a service unit.
+// newAddUnitChange creates a new change for adding an application unit.
 func newAddUnitChange(params AddUnitParams, requires ...string) *AddUnitChange {
 	return &AddUnitChange{
 		changeInfo: changeInfo{
@@ -261,7 +261,7 @@ func newAddUnitChange(params AddUnitParams, requires ...string) *AddUnitChange {
 	}
 }
 
-// AddUnitChange holds a change for adding a service unit.
+// AddUnitChange holds a change for adding an application unit.
 type AddUnitChange struct {
 	changeInfo
 	// Params holds parameters for adding a unit.
@@ -270,23 +270,23 @@ type AddUnitChange struct {
 
 // GUIArgs implements Change.GUIArgs.
 func (ch *AddUnitChange) GUIArgs() []interface{} {
-	args := []interface{}{ch.Params.Service, nil}
+	args := []interface{}{ch.Params.Application, nil}
 	if ch.Params.To != "" {
 		args[1] = ch.Params.To
 	}
 	return args
 }
 
-// AddUnitParams holds parameters for adding a service unit.
+// AddUnitParams holds parameters for adding an application unit.
 type AddUnitParams struct {
-	// Service holds the service placeholder name for which a unit is added.
-	Service string
+	// application holds the application placeholder name for which a unit is added.
+	Application string
 	// To holds the optional location where to add the unit, as a placeholder
 	// pointing to another unit change or to a machine change.
 	To string
 }
 
-// newExposeChange creates a new change for exposing a service.
+// newExposeChange creates a new change for exposing an application.
 func newExposeChange(params ExposeParams, requires ...string) *ExposeChange {
 	return &ExposeChange{
 		changeInfo: changeInfo{
@@ -297,22 +297,22 @@ func newExposeChange(params ExposeParams, requires ...string) *ExposeChange {
 	}
 }
 
-// ExposeChange holds a change for exposing a service.
+// ExposeChange holds a change for exposing an application.
 type ExposeChange struct {
 	changeInfo
-	// Params holds parameters for exposing a service.
+	// Params holds parameters for exposing an application.
 	Params ExposeParams
 }
 
 // GUIArgs implements Change.GUIArgs.
 func (ch *ExposeChange) GUIArgs() []interface{} {
-	return []interface{}{ch.Params.Service}
+	return []interface{}{ch.Params.Application}
 }
 
-// ExposeParams holds parameters for exposing a service.
+// ExposeParams holds parameters for exposing an application.
 type ExposeParams struct {
-	// Service holds the placeholder name of the service that must be exposed.
-	Service string
+	// application holds the placeholder name of the application that must be exposed.
+	Application string
 }
 
 // newSetAnnotationsChange creates a new change for setting annotations.
@@ -326,7 +326,7 @@ func newSetAnnotationsChange(params SetAnnotationsParams, requires ...string) *S
 	}
 }
 
-// SetAnnotationsChange holds a change for setting service and machine
+// SetAnnotationsChange holds a change for setting application and machine
 // annotations.
 type SetAnnotationsChange struct {
 	changeInfo
@@ -339,20 +339,20 @@ func (ch *SetAnnotationsChange) GUIArgs() []interface{} {
 	return []interface{}{ch.Params.Id, string(ch.Params.EntityType), ch.Params.Annotations}
 }
 
-// EntityType holds entity types ("service" or "machine").
+// EntityType holds entity types ("application" or "machine").
 type EntityType string
 
 const (
-	ServiceType EntityType = "service"
-	MachineType EntityType = "machine"
+	ApplicationType EntityType = "application"
+	MachineType     EntityType = "machine"
 )
 
 // SetAnnotationsParams holds parameters for setting annotations.
 type SetAnnotationsParams struct {
-	// Id is the placeholder for the service or machine change corresponding to
+	// Id is the placeholder for the application or machine change corresponding to
 	// the entity to be annotated.
 	Id string
-	// EntityType holds the type of the entity, "service" or "machine".
+	// EntityType holds the type of the entity, "application" or "machine".
 	EntityType EntityType
 	// Annotations holds the annotations as key/value pairs.
 	Annotations map[string]string
@@ -379,7 +379,7 @@ func (cs *changeset) sorted() []Change {
 mainloop:
 	for len(changes) != 0 {
 		// Note that all valid bundles have at least two changes
-		// (add one charm and deploy one service).
+		// (add one charm and deploy one application).
 		change := changes[0]
 		changes = changes[1:]
 		for _, r := range change.Requires() {

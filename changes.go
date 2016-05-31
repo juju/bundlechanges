@@ -14,10 +14,10 @@ import (
 // be applied in order. The bundle data is assumed to be already verified.
 func FromData(data *charm.BundleData) []Change {
 	cs := &changeset{}
-	addedServices := handleServices(cs.add, data.Applications, data.Series)
+	addedApplications := handleApplications(cs.add, data.Applications, data.Series)
 	addedMachines := handleMachines(cs.add, data.Machines, data.Series)
-	handleRelations(cs.add, data.Relations, addedServices)
-	handleUnits(cs.add, data.Applications, addedServices, addedMachines, data.Series)
+	handleRelations(cs.add, data.Relations, addedApplications)
+	handleUnits(cs.add, data.Applications, addedApplications, addedMachines, data.Series)
 	return cs.sorted()
 }
 
@@ -191,8 +191,8 @@ type AddRelationParams struct {
 	Endpoint2 string
 }
 
-// newAddServiceChange creates a new change for adding an application.
-func newAddServiceChange(params AddApplicationParams, requires ...string) *AddApplicationChange {
+// newAddApplicationChange creates a new change for adding an application.
+func newAddApplicationChange(params AddApplicationParams, requires ...string) *AddApplicationChange {
 	return &AddApplicationChange{
 		changeInfo: changeInfo{
 			requires: requires,
@@ -279,7 +279,7 @@ func (ch *AddUnitChange) GUIArgs() []interface{} {
 
 // AddUnitParams holds parameters for adding an application unit.
 type AddUnitParams struct {
-	// application holds the application placeholder name for which a unit is added.
+	// Application holds the application placeholder name for which a unit is added.
 	Application string
 	// To holds the optional location where to add the unit, as a placeholder
 	// pointing to another unit change or to a machine change.
@@ -311,7 +311,7 @@ func (ch *ExposeChange) GUIArgs() []interface{} {
 
 // ExposeParams holds parameters for exposing an application.
 type ExposeParams struct {
-	// application holds the placeholder name of the application that must be exposed.
+	// Application holds the placeholder name of the application that must be exposed.
 	Application string
 }
 

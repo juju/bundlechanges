@@ -14,7 +14,7 @@ import (
 
 // handleServices populates the change set with "addCharm"/"addApplication" records.
 // This function also handles adding application annotations.
-func handleServices(add func(Change), services map[string]*charm.ApplicationSpec, defaultSeries string) map[string]string {
+func handleApplications(add func(Change), services map[string]*charm.ApplicationSpec, defaultSeries string) map[string]string {
 	charms := make(map[string]string, len(services))
 	addedServices := make(map[string]string, len(services))
 	// Iterate over the map using its sorted keys so that results are
@@ -39,7 +39,7 @@ func handleServices(add func(Change), services map[string]*charm.ApplicationSpec
 		}
 
 		// Add the addApplication record for this application.
-		change = newAddServiceChange(AddApplicationParams{
+		change = newAddApplicationChange(AddApplicationParams{
 			Charm:            "$" + charms[application.Charm],
 			Series:           series,
 			Application:      name,

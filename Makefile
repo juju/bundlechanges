@@ -21,7 +21,7 @@ endef
 default: build
 
 $(GOPATH)/bin/godeps:
-	go get -v launchpad.net/godeps
+	go get -v github.com/rogpeppe/godeps
 
 # Start of GOPATH-dependent targets. Some targets only make sense -
 # and will only work - when this tree is found on the GOPATH.

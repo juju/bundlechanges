@@ -56,7 +56,7 @@ var fromDataTests = []struct {
 		Params: bundlechanges.AddCharmParams{
 			Charm: "django",
 		},
-		GUIArgs: []interface{}{"django"},
+		GUIArgs: []interface{}{"django", ""},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -66,11 +66,13 @@ var fromDataTests = []struct {
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-0",
+			"",
 			"django",
 			map[string]interface{}{},
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
 	}},
@@ -104,7 +106,7 @@ var fromDataTests = []struct {
 			Charm:  "cs:precise/mediawiki-10",
 			Series: "precise",
 		},
-		GUIArgs: []interface{}{"cs:precise/mediawiki-10"},
+		GUIArgs: []interface{}{"cs:precise/mediawiki-10", "precise"},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -117,11 +119,13 @@ var fromDataTests = []struct {
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-0",
+			"precise",
 			"mediawiki",
 			map[string]interface{}{"debug": false},
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{"data": 3},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -153,7 +157,7 @@ var fromDataTests = []struct {
 			Charm:  "cs:precise/mysql-28",
 			Series: "precise",
 		},
-		GUIArgs: []interface{}{"cs:precise/mysql-28"},
+		GUIArgs: []interface{}{"cs:precise/mysql-28", "precise"},
 	}, {
 		Id:     "deploy-5",
 		Method: "deploy",
@@ -164,11 +168,13 @@ var fromDataTests = []struct {
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-4",
+			"precise",
 			"mysql",
 			map[string]interface{}{},
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-4"},
 	}, {
@@ -214,7 +220,7 @@ var fromDataTests = []struct {
 			Charm:  "precise/mediawiki-10",
 			Series: "precise",
 		},
-		GUIArgs: []interface{}{"precise/mediawiki-10"},
+		GUIArgs: []interface{}{"precise/mediawiki-10", "precise"},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -225,11 +231,13 @@ var fromDataTests = []struct {
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-0",
+			"precise",
 			"mediawiki",
 			map[string]interface{}{},
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -242,11 +250,13 @@ var fromDataTests = []struct {
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-0",
+			"precise",
 			"otherwiki",
 			map[string]interface{}{},
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -291,7 +301,7 @@ var fromDataTests = []struct {
 			Charm:  "cs:trusty/django-42",
 			Series: "trusty",
 		},
-		GUIArgs: []interface{}{"cs:trusty/django-42"},
+		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty"},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -303,11 +313,13 @@ var fromDataTests = []struct {
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-0",
+			"trusty",
 			"django",
 			map[string]interface{}{},
 			"cpu-cores=4 cpu-power=42",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -317,7 +329,7 @@ var fromDataTests = []struct {
 			Charm:  "cs:trusty/haproxy-47",
 			Series: "trusty",
 		},
-		GUIArgs: []interface{}{"cs:trusty/haproxy-47"},
+		GUIArgs: []interface{}{"cs:trusty/haproxy-47", "trusty"},
 	}, {
 		Id:     "deploy-3",
 		Method: "deploy",
@@ -329,11 +341,13 @@ var fromDataTests = []struct {
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-2",
+			"trusty",
 			"haproxy",
 			map[string]interface{}{"bad": "wolf", "number": 42.47},
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-2"},
 	}, {
@@ -463,7 +477,7 @@ var fromDataTests = []struct {
 			Charm:  "cs:trusty/django-42",
 			Series: "trusty",
 		},
-		GUIArgs: []interface{}{"cs:trusty/django-42"},
+		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty"},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -474,11 +488,13 @@ var fromDataTests = []struct {
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-0",
+			"trusty",
 			"django",
 			map[string]interface{}{},
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -556,7 +572,7 @@ var fromDataTests = []struct {
 			Charm:  "cs:precise/mediawiki-10",
 			Series: "precise",
 		},
-		GUIArgs: []interface{}{"cs:precise/mediawiki-10"},
+		GUIArgs: []interface{}{"cs:precise/mediawiki-10", "precise"},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -567,11 +583,13 @@ var fromDataTests = []struct {
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-0",
+			"precise",
 			"mediawiki",
 			map[string]interface{}{},
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -581,7 +599,7 @@ var fromDataTests = []struct {
 			Charm:  "cs:precise/mysql-28",
 			Series: "precise",
 		},
-		GUIArgs: []interface{}{"cs:precise/mysql-28"},
+		GUIArgs: []interface{}{"cs:precise/mysql-28", "precise"},
 	}, {
 		Id:     "deploy-3",
 		Method: "deploy",
@@ -593,11 +611,13 @@ var fromDataTests = []struct {
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-2",
+			"precise",
 			"mysql",
 			map[string]interface{}{},
 			"mem=42G",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-2"},
 	}, {
@@ -629,7 +649,7 @@ var fromDataTests = []struct {
 			Charm:  "cs:trusty/django-42",
 			Series: "trusty",
 		},
-		GUIArgs: []interface{}{"cs:trusty/django-42"},
+		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty"},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -640,11 +660,13 @@ var fromDataTests = []struct {
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-0",
+			"trusty",
 			"django",
 			map[string]interface{}{},
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -653,7 +675,7 @@ var fromDataTests = []struct {
 		Params: bundlechanges.AddCharmParams{
 			Charm: "wordpress",
 		},
-		GUIArgs: []interface{}{"wordpress"},
+		GUIArgs: []interface{}{"wordpress", ""},
 	}, {
 		Id:     "deploy-3",
 		Method: "deploy",
@@ -663,11 +685,13 @@ var fromDataTests = []struct {
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-2",
+			"",
 			"wordpress",
 			map[string]interface{}{},
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-2"},
 	}, {
@@ -746,7 +770,7 @@ var fromDataTests = []struct {
 			Charm:  "cs:trusty/django-42",
 			Series: "trusty",
 		},
-		GUIArgs: []interface{}{"cs:trusty/django-42"},
+		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty"},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -757,11 +781,13 @@ var fromDataTests = []struct {
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-0",
+			"trusty",
 			"django",
 			map[string]interface{}{},
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -771,7 +797,7 @@ var fromDataTests = []struct {
 			Charm:  "cs:trusty/mem-47",
 			Series: "trusty",
 		},
-		GUIArgs: []interface{}{"cs:trusty/mem-47"},
+		GUIArgs: []interface{}{"cs:trusty/mem-47", "trusty"},
 	}, {
 		Id:     "deploy-3",
 		Method: "deploy",
@@ -782,11 +808,13 @@ var fromDataTests = []struct {
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-2",
+			"trusty",
 			"memcached",
 			map[string]interface{}{},
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-2"},
 	}, {
@@ -796,7 +824,7 @@ var fromDataTests = []struct {
 			Charm:  "vivid/rails",
 			Series: "vivid",
 		},
-		GUIArgs: []interface{}{"vivid/rails"},
+		GUIArgs: []interface{}{"vivid/rails", "vivid"},
 	}, {
 		Id:     "deploy-5",
 		Method: "deploy",
@@ -807,11 +835,13 @@ var fromDataTests = []struct {
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-4",
+			"vivid",
 			"ror",
 			map[string]interface{}{},
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-4"},
 	}, {
@@ -1039,7 +1069,7 @@ var fromDataTests = []struct {
 			Charm:  "cs:trusty/django-42",
 			Series: "trusty",
 		},
-		GUIArgs: []interface{}{"cs:trusty/django-42"},
+		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty"},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -1050,11 +1080,13 @@ var fromDataTests = []struct {
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-0",
+			"trusty",
 			"django",
 			map[string]interface{}{},
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -1196,7 +1228,7 @@ var fromDataTests = []struct {
 			Charm:  "cs:trusty/django-42",
 			Series: "trusty",
 		},
-		GUIArgs: []interface{}{"cs:trusty/django-42"},
+		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty"},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -1211,6 +1243,7 @@ var fromDataTests = []struct {
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-0",
+			"trusty",
 			"django",
 			map[string]interface{}{},
 			"",
@@ -1219,6 +1252,7 @@ var fromDataTests = []struct {
 				"tmpfs":       "tmpfs,1G",
 			},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -1253,7 +1287,7 @@ var fromDataTests = []struct {
 		Params: bundlechanges.AddCharmParams{
 			Charm: "django",
 		},
-		GUIArgs: []interface{}{"django"},
+		GUIArgs: []interface{}{"django", ""},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -1264,11 +1298,13 @@ var fromDataTests = []struct {
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-0",
+			"",
 			"django",
 			map[string]interface{}{},
 			"",
 			map[string]string{},
 			map[string]string{"foo": "bar"},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
 	}},
@@ -1293,7 +1329,7 @@ machines:
 			Charm:  "cs:precise/juju-gui",
 			Series: "precise",
 		},
-		GUIArgs: []interface{}{"cs:precise/juju-gui"},
+		GUIArgs: []interface{}{"cs:precise/juju-gui", "precise"},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -1304,11 +1340,13 @@ machines:
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-0",
+			"precise",
 			"gui3",
 			map[string]interface{}{},
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -1408,7 +1446,7 @@ func (s *changesSuite) assertParseData(c *gc.C, content string, expected []recor
 
 func (s *changesSuite) TestFromData(c *gc.C) {
 	for i, test := range fromDataTests {
-		c.Logf("test %d: %s", i, test.about)
+		c.Logf("\ntest %d: %s", i, test.about)
 		s.assertParseData(c, test.content, test.expected)
 	}
 }
@@ -1421,7 +1459,7 @@ func (s *changesSuite) assertLocalBundleChanges(c *gc.C, charmDir, bundleContent
 			Charm:  charmDir,
 			Series: series,
 		},
-		GUIArgs: []interface{}{charmDir},
+		GUIArgs: []interface{}{charmDir, series},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -1432,11 +1470,13 @@ func (s *changesSuite) assertLocalBundleChanges(c *gc.C, charmDir, bundleContent
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-0",
+			series,
 			"django",
-			map[string]interface{}{},
-			"",
-			map[string]string{},
-			map[string]string{},
+			map[string]interface{}{}, // options.
+			"",                  // constraints.
+			map[string]string{}, // storage.
+			map[string]string{}, // endpoint bindings.
+			map[string]int{},    // resources.
 		},
 		Requires: []string{"addCharm-0"},
 	}}

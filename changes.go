@@ -90,7 +90,7 @@ type AddCharmChange struct {
 
 // GUIArgs implements Change.GUIArgs.
 func (ch *AddCharmChange) GUIArgs() []interface{} {
-	return []interface{}{ch.Params.Charm}
+	return []interface{}{ch.Params.Charm, ch.Params.Series}
 }
 
 // AddCharmParams holds parameters for adding a charm to the environment.
@@ -223,9 +223,20 @@ func (ch *AddApplicationChange) GUIArgs() []interface{} {
 	if endpointBindings == nil {
 		endpointBindings = make(map[string]string, 0)
 	}
-	// TODO(ericsnow) Add resources to the result (from
-	// ch.Params.Resources) once the GUI is ready.
-	return []interface{}{ch.Params.Charm, ch.Params.Application, options, ch.Params.Constraints, storage, endpointBindings}
+	resources := ch.Params.Resources
+	if resources == nil {
+		resources = make(map[string]int, 0)
+	}
+	return []interface{}{
+		ch.Params.Charm,
+		ch.Params.Series,
+		ch.Params.Application,
+		options,
+		ch.Params.Constraints,
+		storage,
+		endpointBindings,
+		resources,
+	}
 }
 
 // AddApplicationParams holds parameters for deploying a Juju application.

@@ -181,7 +181,7 @@ func handleUnits(add func(Change), services map[string]*charm.ApplicationSpec, a
 			}
 			// Generate the changes required in order to place this unit, and
 			// retrieve the identifier of the parent change.
-			parentId := unitParent(add, p, records, addedMachines, servicePlacedUnits, getSeries(application, defaultSeries))
+			parentId := unitParent(add, p, records, addedMachines, servicePlacedUnits, getSeries(application, defaultSeries), application)
 			// Retrieve and modify the original "addUnit" change to add the
 			// new parent requirement and placement target.
 			change := records[fmt.Sprintf("%s/%d", name, i)]
@@ -191,7 +191,7 @@ func handleUnits(add func(Change), services map[string]*charm.ApplicationSpec, a
 	}
 }
 
-func unitParent(add func(Change), p string, records map[string]*AddUnitChange, addedMachines map[string]string, servicePlacedUnits map[string]int, series string) (parentId string) {
+func unitParent(add func(Change), p string, records map[string]*AddUnitChange, addedMachines map[string]string, servicePlacedUnits map[string]int, series string, application *charm.ApplicationSpec) (parentId string) {
 	placement, err := charm.ParsePlacement(p)
 	if err != nil {
 		// Since the bundle is already verified, this should never happen.
@@ -202,6 +202,7 @@ func unitParent(add func(Change), p string, records map[string]*AddUnitChange, a
 		change := newAddMachineChange(AddMachineParams{
 			ContainerType: placement.ContainerType,
 			Series:        series,
+			Constraints:   application.Constraints,
 		})
 		add(change)
 		return change.Id()
@@ -210,7 +211,7 @@ func unitParent(add func(Change), p string, records map[string]*AddUnitChange, a
 		// The unit is placed to a machine declared in the bundle.
 		parentId = addedMachines[placement.Machine]
 		if placement.ContainerType != "" {
-			parentId = addContainer(add, placement.ContainerType, parentId, series)
+			parentId = addContainer(add, placement.ContainerType, parentId, series, application)
 		}
 		return parentId
 	}
@@ -229,17 +230,19 @@ func unitParent(add func(Change), p string, records map[string]*AddUnitChange, a
 	otherUnit := fmt.Sprintf("%s/%d", placement.Application, number)
 	parentId = records[otherUnit].Id()
 	if placement.ContainerType != "" {
-		parentId = addContainer(add, placement.ContainerType, parentId, series)
+		parentId = addContainer(add, placement.ContainerType, parentId, series, application)
 	}
 	return parentId
 }
 
-func addContainer(add func(Change), containerType, parentId string, series string) string {
-	change := newAddMachineChange(AddMachineParams{
+func addContainer(add func(Change), containerType, parentId string, series string, application *charm.ApplicationSpec) string {
+	p := AddMachineParams{
 		ContainerType: containerType,
 		ParentId:      "$" + parentId,
 		Series:        series,
-	}, parentId)
+		Constraints:   application.Constraints,
+	}
+	change := newAddMachineChange(p, parentId)
 	add(change)
 	return change.Id()
 }

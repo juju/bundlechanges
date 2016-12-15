@@ -390,12 +390,14 @@ var fromDataTests = []struct {
 			ContainerType: "lxc",
 			Series:        "trusty",
 			ParentId:      "$addMachines-6",
+			Constraints:   "cpu-cores=4 cpu-power=42",
 		},
 		GUIArgs: []interface{}{
 			bundlechanges.AddMachineOptions{
 				ContainerType: "lxc",
 				Series:        "trusty",
 				ParentId:      "$addMachines-6",
+				Constraints:   "cpu-cores=4 cpu-power=42",
 			},
 		},
 		Requires: []string{"addMachines-6"},
@@ -1211,6 +1213,68 @@ var fromDataTests = []struct {
 		Requires: []string{"deploy-1", "addMachines-12"},
 	}},
 }, {
+	about: "unit placed to new machine with constraints",
+	content: `
+        services:
+            django:
+                charm: cs:trusty/django-42
+                num_units: 1
+                to:
+                    - new
+                constraints: "cpu-cores=4"
+    `,
+	expected: []record{{
+		Id:     "addCharm-0",
+		Method: "addCharm",
+		Params: bundlechanges.AddCharmParams{
+			Charm:  "cs:trusty/django-42",
+			Series: "trusty",
+		},
+		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty"},
+	}, {
+		Id:     "deploy-1",
+		Method: "deploy",
+		Params: bundlechanges.AddApplicationParams{
+			Charm:       "$addCharm-0",
+			Application: "django",
+			Series:      "trusty",
+			Constraints: "cpu-cores=4",
+		},
+		GUIArgs: []interface{}{
+			"$addCharm-0",
+			"trusty",
+			"django",
+			map[string]interface{}{},
+			"cpu-cores=4",
+			map[string]string{},
+			map[string]string{},
+			map[string]int{},
+		},
+		Requires: []string{"addCharm-0"},
+	}, {
+		Id:     "addMachines-3",
+		Method: "addMachines",
+		Params: bundlechanges.AddMachineParams{
+			Constraints: "cpu-cores=4",
+			Series:      "trusty",
+		},
+		GUIArgs: []interface{}{
+			bundlechanges.AddMachineOptions{
+				Series:      "trusty",
+				Constraints: "cpu-cores=4",
+			},
+		},
+	}, {
+		Id:     "addUnit-2",
+		Method: "addUnit",
+		Params: bundlechanges.AddUnitParams{
+			Application: "$deploy-1",
+			To:          "$addMachines-3",
+		},
+		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-3"},
+		Requires: []string{"deploy-1", "addMachines-3"},
+	}},
+}, {
 	about: "application with storage",
 	content: `
         services:
@@ -1441,7 +1505,7 @@ func (s *changesSuite) assertParseData(c *gc.C, content string, expected []recor
 	c.Logf("obtained records: %s", b)
 
 	// Check that the obtained records are what we expect.
-	c.Assert(records, jc.DeepEquals, expected)
+	c.Check(records, jc.DeepEquals, expected)
 }
 
 func (s *changesSuite) TestFromData(c *gc.C) {

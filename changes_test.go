@@ -390,12 +390,14 @@ var fromDataTests = []struct {
 			ContainerType: "lxc",
 			Series:        "trusty",
 			ParentId:      "$addMachines-6",
+			Constraints:   "cpu-cores=4 cpu-power=42",
 		},
 		GUIArgs: []interface{}{
 			bundlechanges.AddMachineOptions{
 				ContainerType: "lxc",
 				Series:        "trusty",
 				ParentId:      "$addMachines-6",
+				Constraints:   "cpu-cores=4 cpu-power=42",
 			},
 		},
 		Requires: []string{"addMachines-6"},
@@ -1441,7 +1443,7 @@ func (s *changesSuite) assertParseData(c *gc.C, content string, expected []recor
 	c.Logf("obtained records: %s", b)
 
 	// Check that the obtained records are what we expect.
-	c.Assert(records, jc.DeepEquals, expected)
+	c.Check(records, jc.DeepEquals, expected)
 }
 
 func (s *changesSuite) TestFromData(c *gc.C) {

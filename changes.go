@@ -259,6 +259,9 @@ type AddApplicationParams struct {
 	// Resources identifies the revision to use for each resource
 	// of the application's charm.
 	Resources map[string]int
+	// LocalResources identifies the path to the local resource
+	// of the application's charm.
+	LocalResources map[string]string
 }
 
 // newAddUnitChange creates a new change for adding an application unit.

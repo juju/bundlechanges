@@ -94,6 +94,8 @@ var fromDataTests = []struct {
             mysql:
                 charm: cs:precise/mysql-28
                 num_units: 1
+                resources:
+                  data: "./resources/data.tar"
         series: trusty
         relations:
             - - mediawiki:db
@@ -162,9 +164,10 @@ var fromDataTests = []struct {
 		Id:     "deploy-5",
 		Method: "deploy",
 		Params: bundlechanges.AddApplicationParams{
-			Charm:       "$addCharm-4",
-			Application: "mysql",
-			Series:      "precise",
+			Charm:          "$addCharm-4",
+			Application:    "mysql",
+			Series:         "precise",
+			LocalResources: map[string]string{"data": "./resources/data.tar"},
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-4",

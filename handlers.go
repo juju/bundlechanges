@@ -38,6 +38,23 @@ func handleApplications(add func(Change), services map[string]*charm.Application
 			charms[application.Charm] = change.Id()
 		}
 
+		resources := make(map[string]int)
+		localResources := make(map[string]string)
+		for resName, res := range application.Resources {
+			switch v := res.(type) {
+			case int:
+				resources[resName] = v
+			case string:
+				localResources[resName] = v
+			}
+		}
+		if len(resources) == 0 {
+			resources = nil
+		}
+		if len(localResources) == 0 {
+			localResources = nil
+		}
+
 		// Add the addApplication record for this application.
 		change = newAddApplicationChange(AddApplicationParams{
 			Charm:            "$" + charms[application.Charm],
@@ -47,7 +64,8 @@ func handleApplications(add func(Change), services map[string]*charm.Application
 			Constraints:      application.Constraints,
 			Storage:          application.Storage,
 			EndpointBindings: application.EndpointBindings,
-			Resources:        application.Resources,
+			Resources:        resources,
+			LocalResources:   localResources,
 		}, charms[application.Charm])
 		add(change)
 		id := change.Id()

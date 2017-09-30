@@ -2107,7 +2107,7 @@ func (s *changesSuite) TestChangeDescriptions(c *gc.C) {
 			},
 			expectedChanges: []string{
 				// NOTE: we have mapped machine zero in the bundle to the
-				// existing machine zero, and the sceond unit of mysql is said
+				// existing machine zero, and the second unit of mysql is said
 				// to be in a lxd container on machine zero. We don't try to
 				// map the existing mysql on machine zero to this unit, but
 				// instead map it to the first placement directive. Hence,
@@ -2206,7 +2206,7 @@ func (s *changesSuite) TestChangeDescriptions(c *gc.C) {
 				"set annotations for existing machine 2",
 			},
 		}, {
-			description: "test application placement descriptions",
+			description: "test sibling containers",
 			bundleContent: `
                 applications:
                     mysql:
@@ -2235,6 +2235,62 @@ func (s *changesSuite) TestChangeDescriptions(c *gc.C) {
 				"add unit keystone/$0 to $0/lxd/$1 to satisfy [lxd:mysql]",
 				"add unit keystone/$1 to $1/lxd/$1 to satisfy [lxd:mysql]",
 				"add unit keystone/$2 to $2/lxd/$1 to satisfy [lxd:mysql]",
+			},
+		}, {
+			description: "test colocation into a container when specifying machine (don't ask why)",
+			bundleContent: `
+                applications:
+                    mysql:
+                        charm: cs:mysql
+                        num_units: 3
+                        to: ["lxd:new"]
+                    keystone:
+                        charm: cs:keystone
+                        num_units: 3
+                        to: [mysql/0, mysql/1, mysql/2]
+            `,
+			expectedChanges: []string{
+				"upload charm cs:keystone",
+				"deploy application keystone using cs:keystone",
+				"upload charm cs:mysql",
+				"deploy application mysql using cs:mysql",
+				"add lxd container $0/lxd/$0 on new machine $0",
+				"add lxd container $1/lxd/$0 on new machine $1",
+				"add lxd container $2/lxd/$0 on new machine $2",
+				"add unit mysql/$0 to $0/lxd/$0",
+				"add unit mysql/$1 to $1/lxd/$0",
+				"add unit mysql/$2 to $2/lxd/$0",
+				"add unit keystone/$0 to $0/lxd/$0 to satisfy [mysql/0]",
+				"add unit keystone/$1 to $1/lxd/$0 to satisfy [mysql/1]",
+				"add unit keystone/$2 to $2/lxd/$0 to satisfy [mysql/2]",
+			},
+		}, {
+			description: "test colocation into a container (don't ask why)",
+			bundleContent: `
+                applications:
+                    mysql:
+                        charm: cs:mysql
+                        num_units: 3
+                        to: ["lxd:new"]
+                    keystone:
+                        charm: cs:keystone
+                        num_units: 3
+                        to: ["mysql"]
+            `,
+			expectedChanges: []string{
+				"upload charm cs:keystone",
+				"deploy application keystone using cs:keystone",
+				"upload charm cs:mysql",
+				"deploy application mysql using cs:mysql",
+				"add lxd container $0/lxd/$0 on new machine $0",
+				"add lxd container $1/lxd/$0 on new machine $1",
+				"add lxd container $2/lxd/$0 on new machine $2",
+				"add unit mysql/$0 to $0/lxd/$0",
+				"add unit mysql/$1 to $1/lxd/$0",
+				"add unit mysql/$2 to $2/lxd/$0",
+				"add unit keystone/$0 to $0/lxd/$0 to satisfy [mysql]",
+				"add unit keystone/$1 to $1/lxd/$0 to satisfy [mysql]",
+				"add unit keystone/$2 to $2/lxd/$0 to satisfy [mysql]",
 			},
 		}, {
 			description: "test placement descriptions for unit placement",

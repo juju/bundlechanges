@@ -204,7 +204,7 @@ func (ch *AddMachineChange) GUIArgs() []interface{} {
 // Description implements Change.
 func (ch *AddMachineChange) Description() string {
 	machine := "existing machine"
-	if isPlaceholder(ch.Params.bundleMachineID) {
+	if isNewMachine(ch.Params.bundleMachineID) {
 		machine = "new machine"
 	}
 	machine += " " + ch.Params.bundleMachineID
@@ -269,21 +269,23 @@ func (ch *AddRelationChange) GUIArgs() []interface{} {
 
 // Description implements Change.
 func (ch *AddRelationChange) Description() string {
-	return fmt.Sprintf("add relation %s - %s", ch.Params.endpoint1, ch.Params.endpoint2)
+	return fmt.Sprintf("add relation %s - %s", ch.Params.applicationEndpoint1, ch.Params.applicationEndpoint2)
 }
 
 // AddRelationParams holds parameters for adding a relation between two applications.
 type AddRelationParams struct {
 	// Endpoint1 and Endpoint2 hold relation endpoints in the
-	// "application:interface" form, where the application is always a placeholder
-	// pointing to an application change, and the interface is optional. Examples
-	// are "$deploy-42:web" or just "$deploy-42".
+	// "application:interface" form, where the application is either a
+	// placeholder pointing to an application change or in the case of a model
+	// that already has this application deployed, the name of the
+	// application, and the interface is optional. Examples are
+	// "$deploy-42:web", "$deploy-42", "mysql:db".
 	Endpoint1 string
 	Endpoint2 string
 
 	// These values are always refering to application names.
-	endpoint1 string
-	endpoint2 string
+	applicationEndpoint1 string
+	applicationEndpoint2 string
 }
 
 // newAddApplicationChange creates a new change for adding an application.
@@ -408,6 +410,10 @@ func (ch *AddUnitChange) Description() string {
 	if ch.Params.placementDescription != "" {
 		placement = ch.Params.placementDescription
 	}
+	if ch.Params.directive != "" {
+		placement += " to satisfy [" + ch.Params.directive + "]"
+	}
+
 	return fmt.Sprintf("add unit %s to %s", ch.Params.unitName, placement)
 }
 
@@ -421,7 +427,10 @@ type AddUnitParams struct {
 
 	unitName             string
 	placementDescription string
-	baseMachine          string
+	// If directive is specified, it is added to the placement description
+	// to explain why the unit is being placed there.
+	directive   string
+	baseMachine string
 }
 
 // newExposeChange creates a new change for exposing an application.

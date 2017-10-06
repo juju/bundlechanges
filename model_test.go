@@ -4,7 +4,6 @@
 package bundlechanges
 
 import (
-	// Copyright 2017 Canonical Ltd.
 	"bytes"
 
 	jc "github.com/juju/testing/checkers"
@@ -347,4 +346,22 @@ func (*applicationSuite) TestChangedAnnotationsSomeChanges(c *gc.C) {
 	annotations := map[string]string{"a": "b", "c": "d"}
 	toChange := app.changedAnnotations(annotations)
 	c.Assert(toChange, jc.DeepEquals, map[string]string{"c": "d"})
+}
+
+func (*applicationSuite) TestChangedOptionsSomeChanges(c *gc.C) {
+	app := &Application{
+		Options: map[string]interface{}{
+			"string": "hello",
+			"int":    float64(42), // comes over the API as a float
+			"float":  float64(2.5),
+			"bool":   true,
+		},
+	}
+	options := map[string]interface{}{"string": "hello", "int": 42}
+	toChange := app.changedOptions(options)
+	c.Assert(toChange, gc.HasLen, 0)
+
+	options = map[string]interface{}{"string": "world", "int": 24, "float": 3.14, "bool": false}
+	toChange = app.changedOptions(options)
+	c.Assert(toChange, jc.DeepEquals, options)
 }

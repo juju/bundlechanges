@@ -204,7 +204,7 @@ func (m *Model) unitMachinesWithoutApp(sourceApp, targetApp, container string) [
 			} else {
 				machineTag := names.NewMachineTag(unit.Machine)
 				if machineTag.ContainerType() == container {
-					machines.Remove(machineTag.Parent().Id())
+					machines.Remove(topLevelMachine(unit.Machine))
 				}
 			}
 		}
@@ -242,7 +242,18 @@ func (a *Application) changedOptions(options map[string]interface{}) map[string]
 	for key, value := range options {
 		current, found := a.Options[key]
 		// options should have been validated by now to only contain comparable
-		// types.
+		// types. Here we assume that the options have the correct type, and the
+		// existing options have possibly been passed through JSON serialization
+		// which converts int values to floats.
+		switch value.(type) {
+		case int:
+			// If the validation code has done its job, the option from the
+			// model should be a number too.
+			switch cv := current.(type) {
+			case float64: // JSON encoding converts ints to floats.
+				current = int(cv)
+			}
+		}
 		if !found || current != value {
 			changes[key] = value
 		}

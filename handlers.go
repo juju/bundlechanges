@@ -31,7 +31,7 @@ func handleApplications(add func(Change), applications map[string]*charm.Applica
 	var change Change
 	for _, name := range names {
 		application := applications[name]
-		existingApp := existing.getApplication(name)
+		existingApp := existing.GetApplication(name)
 		series := getSeries(application, defaultSeries)
 		// Add the addCharm record if one hasn't been added yet.
 		if charms[application.Charm] == "" && !existing.hasCharm(application.Charm) {
@@ -238,7 +238,7 @@ func handleRelations(add func(Change), relations [][]string, addedApplications m
 			// If the application exists, then we don't require it, and the param
 			// is the endoint string not a placeholder.
 			nice := ep.String()
-			if app := existing.getApplication(ep.application); app != nil {
+			if app := existing.GetApplication(ep.application); app != nil {
 				return nice, nice
 			}
 			pendingApp := addedApplications[ep.application]
@@ -362,7 +362,7 @@ func (p *unitProcessor) addAllNeededUnits() {
 	// modified later in order to handle unit placement.
 	for _, name := range p.appNames {
 		application := p.bundle.Applications[name]
-		existingApp := p.existing.getApplication(name)
+		existingApp := p.existing.GetApplication(name)
 		for i := existingApp.unitCount(); i < application.NumUnits; i++ {
 			var requires []string
 			changeApplication := name
@@ -433,7 +433,7 @@ func (p *unitProcessor) processUnitPlacement() error {
 }
 
 func (p *unitProcessor) placeUnitsForApplication(name string, application *charm.ApplicationSpec) {
-	existingApp := p.existing.getApplication(name)
+	existingApp := p.existing.GetApplication(name)
 
 	lastPlacement := ""
 	numPlaced := len(application.To)

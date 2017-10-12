@@ -17,7 +17,7 @@ var _ = gc.Suite(&modelSuite{})
 
 func (*modelSuite) TestNilModel(c *gc.C) {
 	var model *Model
-	c.Check(model.getApplication("foo"), gc.IsNil)
+	c.Check(model.GetApplication("foo"), gc.IsNil)
 	c.Check(model.HasRelation("a", "b", "c", "d"), jc.IsFalse)
 	machines := model.unitMachinesWithoutApp("foo", "bar", "")
 	c.Check(machines, gc.HasLen, 0)
@@ -26,7 +26,7 @@ func (*modelSuite) TestNilModel(c *gc.C) {
 
 func (*modelSuite) TestEmtpyModel(c *gc.C) {
 	model := &Model{}
-	c.Check(model.getApplication("foo"), gc.IsNil)
+	c.Check(model.GetApplication("foo"), gc.IsNil)
 	c.Check(model.HasRelation("a", "b", "c", "d"), jc.IsFalse)
 	machines := model.unitMachinesWithoutApp("foo", "bar", "")
 	c.Check(machines, gc.HasLen, 0)
@@ -36,7 +36,7 @@ func (*modelSuite) TestEmtpyModel(c *gc.C) {
 func (*modelSuite) TestGetApplication(c *gc.C) {
 	app := &Application{Name: "foo"}
 	model := &Model{Applications: map[string]*Application{"foo": app}}
-	c.Assert(model.getApplication("foo"), jc.DeepEquals, app)
+	c.Assert(model.GetApplication("foo"), jc.DeepEquals, app)
 }
 
 func (*modelSuite) TestHasCharmNilModel(c *gc.C) {

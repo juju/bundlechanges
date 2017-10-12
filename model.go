@@ -179,7 +179,9 @@ func (m *Model) hasCharm(charm string) bool {
 	return false
 }
 
-func (m *Model) getApplication(name string) *Application {
+// GetApplication returns the application specified or nil
+// if it doesn't have it.
+func (m *Model) GetApplication(name string) *Application {
 	if m == nil {
 		return nil
 	}
@@ -187,12 +189,12 @@ func (m *Model) getApplication(name string) *Application {
 }
 
 func (m *Model) unitMachinesWithoutApp(sourceApp, targetApp, container string) []string {
-	source := m.getApplication(sourceApp)
+	source := m.GetApplication(sourceApp)
 	if source == nil {
 		return []string{}
 	}
 
-	target := m.getApplication(targetApp)
+	target := m.GetApplication(targetApp)
 	machines := set.NewStrings()
 	for _, unit := range source.Units {
 		machines.Add(topLevelMachine(unit.Machine))

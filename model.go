@@ -5,6 +5,7 @@ package bundlechanges
 
 import (
 	"fmt"
+	"strconv"
 
 	"gopkg.in/juju/charm.v6-unstable"
 	"gopkg.in/juju/names.v2"
@@ -24,7 +25,17 @@ type Model struct {
 	// hard dependency on the juju constraints package.
 	ConstraintsEqual func(string, string) bool
 
-	// This is a mapping of
+	// Sequence holds a map of names to the next "number" that relates
+	// to the unit or machine. The keys are "application-<name>", the string
+	// "machine", or "machine-id/c" where n is a machine id, and c is a
+	// container type.
+	Sequence map[string]int
+
+	// The Sequence map isn't touched during the processing of of bundle
+	// changes, but we need to keep track, so a copy is made.
+	sequence map[string]int
+
+	// This is a mapping of existing machines to machines in the bundle.
 	MachineMap map[string]string
 }
 
@@ -35,10 +46,72 @@ type Relation struct {
 	Endpoint2 string
 }
 
-func (m *Model) HasRelation(App1, Endpoint1, App2, Endpoint2 string) bool {
-	if m == nil {
-		return false
+func (m *Model) initializeSequence() {
+	m.sequence = make(map[string]int)
+	if m.Sequence != nil {
+		for key, value := range m.Sequence {
+			m.sequence[key] = value
+		}
+		// We assume that if the mapping was specified, a complete mapping was
+		// specified.
+		return
 	}
+	// Work to infer the mapping.
+
+	for appName, app := range m.Applications {
+		for _, unit := range app.Units {
+			// This is pure paranoia, to avoid panics.
+			if !names.IsValidUnit(unit.Name) {
+				continue
+			}
+			u := names.NewUnitTag(unit.Name)
+			unitNumber := u.Number()
+			key := "application-" + appName
+			if existing := m.sequence[key]; existing <= unitNumber {
+				m.sequence[key] = unitNumber + 1
+			}
+		}
+	}
+
+	for machineID, _ := range m.Machines {
+		// Continued paranoi.
+		if !names.IsValidMachine(machineID) {
+			continue
+		}
+		tag := names.NewMachineTag(machineID)
+		key := "machine"
+		// We know that the child id is always a valid integer.
+		n, _ := strconv.Atoi(tag.ChildId())
+		if containerType := tag.ContainerType(); containerType != "" {
+			key = "machine-" + tag.Parent().Id() + "/" + containerType
+		}
+		if existing := m.sequence[key]; existing <= n {
+			m.sequence[key] = n + 1
+		}
+	}
+}
+
+func (m *Model) nextMachine() string {
+	value := m.sequence["machine"]
+	m.sequence["machine"] = value + 1
+	return strconv.Itoa(value)
+}
+
+func (m *Model) nextContainer(parentID, containerType string) string {
+	key := "machine-" + parentID + "/" + containerType
+	value := m.sequence[key]
+	m.sequence[key] = value + 1
+	return fmt.Sprintf("%s/%s/%d", parentID, containerType, value)
+}
+
+func (m *Model) nextUnit(appName string) string {
+	key := "application-" + appName
+	value := m.sequence[key]
+	m.sequence[key] = value + 1
+	return fmt.Sprintf("%s/%d", appName, value)
+}
+
+func (m *Model) HasRelation(App1, Endpoint1, App2, Endpoint2 string) bool {
 	for _, rel := range m.Relations {
 		oneWay := Relation{
 			App1: App1, Endpoint1: Endpoint1, App2: App2, Endpoint2: Endpoint2,
@@ -67,9 +140,6 @@ func topLevelMachine(machineID string) string {
 // in the natural sort order, meaning we start at unit zero and work
 // our way up the unit numbers.
 func (m *Model) InferMachineMap(data *charm.BundleData) {
-	if m == nil {
-		return
-	}
 	if m.MachineMap == nil {
 		m.MachineMap = make(map[string]string)
 	}
@@ -114,7 +184,7 @@ mainloop:
 // BundleMachine will return a the existing machine for the specified bundle
 // amchine ID. If there is not a mapping available, nil is returned.
 func (m *Model) BundleMachine(id string) *Machine {
-	if m == nil || m.Machines == nil {
+	if m.Machines == nil {
 		return nil
 	}
 	// If the id isn't specified in the machine map, the empty string
@@ -124,7 +194,7 @@ func (m *Model) BundleMachine(id string) *Machine {
 }
 
 func (m *Model) getUnitMachine(appName string, index int) string {
-	if m == nil || m.Applications == nil {
+	if m.Applications == nil {
 		return ""
 	}
 	app := m.Applications[appName]
@@ -168,7 +238,7 @@ type Machine struct {
 }
 
 func (m *Model) hasCharm(charm string) bool {
-	if m == nil || len(m.Applications) == 0 {
+	if len(m.Applications) == 0 {
 		return false
 	}
 	for _, app := range m.Applications {
@@ -182,9 +252,6 @@ func (m *Model) hasCharm(charm string) bool {
 // GetApplication returns the application specified or nil
 // if it doesn't have it.
 func (m *Model) GetApplication(name string) *Application {
-	if m == nil {
-		return nil
-	}
 	return m.Applications[name]
 }
 

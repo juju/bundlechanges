@@ -6,14 +6,12 @@ package bundlechanges
 import (
 	"fmt"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/juju/errors"
 	"github.com/juju/utils/set"
 	"gopkg.in/juju/charm.v6-unstable"
 	"gopkg.in/juju/charmrepo.v2-unstable"
-	"gopkg.in/juju/names.v2"
 )
 
 // handleApplications populates the change set with "addCharm"/"addApplication" records.
@@ -159,8 +157,8 @@ func handleApplications(add func(Change), applications map[string]*charm.Applica
 
 // handleMachines populates the change set with "addMachines" records.
 // This function also handles adding machine annotations.
-func handleMachines(add func(Change), machines map[string]*charm.MachineSpec, defaultSeries string, existing *Model) map[string]string {
-	addedMachines := make(map[string]string, len(machines))
+func handleMachines(add func(Change), machines map[string]*charm.MachineSpec, defaultSeries string, existing *Model) map[string]*AddMachineChange {
+	addedMachines := make(map[string]*AddMachineChange, len(machines))
 	// Iterate over the map using its sorted keys so that results are
 	// deterministic and easier to test.
 	names := make([]string, 0, len(machines))
@@ -168,7 +166,6 @@ func handleMachines(add func(Change), machines map[string]*charm.MachineSpec, de
 		names = append(names, name)
 	}
 	sort.Strings(names)
-	var change Change
 	for _, name := range names {
 		machine := machines[name]
 		if machine == nil {
@@ -186,15 +183,17 @@ func handleMachines(add func(Change), machines map[string]*charm.MachineSpec, de
 		existingMachine := existing.BundleMachine(name)
 		if existingMachine == nil {
 			// Add the addMachines record for this machine.
-			change = newAddMachineChange(AddMachineParams{
+			machineID := existing.nextMachine()
+			change := newAddMachineChange(AddMachineParams{
 				Series:          series,
 				Constraints:     machine.Constraints,
-				bundleMachineID: placeholder(name),
+				machineID:       machineID,
+				bundleMachineID: name,
 			})
 			add(change)
-			addedMachines[name] = change.Id()
+			addedMachines[name] = change
 			id = placeholder(change.Id())
-			target = "new machine " + placeholder(name)
+			target = "new machine " + machineID
 			requires = append(requires, change.Id())
 		} else {
 			id = existingMachine.ID
@@ -269,7 +268,7 @@ type unitProcessor struct {
 	// The added applications and machines are maps from names to
 	// change IDs.
 	addedApplications map[string]string
-	addedMachines     map[string]string
+	addedMachines     map[string]*AddMachineChange
 
 	// Sorted keys from the applications map.
 	appNames []string
@@ -301,56 +300,6 @@ type unitProcessor struct {
 	// application. The values are consumed from the slice as placements are
 	// processed.
 	newUnitsWithoutApp map[string][]*AddUnitChange
-
-	// nextMachinePlaceholderID holds a mapping from parent to a machine ID
-	// that is a used to identify machines that are being added by the bundle.
-	// This value will be bigger than any machine ID mentioned in the bundle,
-	// and any in the existing model. The key is the parent and container
-	// type, or the empty string for top level machines.
-	nextMachinePlaceholderID map[string]int
-}
-
-func (p *unitProcessor) initializeNextMachinePlaceholderID() {
-	p.nextMachinePlaceholderID = make(map[string]int)
-	// Initially the value is zero, and that is fine.
-	// First iterate through the bundle machine definitions.
-	topLevel := ""
-	for bundleMachineID := range p.bundle.Machines {
-		// We know that the bundle is valid, and all machine IDs in the bundle
-		// must be positive integers.
-		id, _ := strconv.Atoi(bundleMachineID)
-		if id >= p.nextMachinePlaceholderID[topLevel] {
-			p.nextMachinePlaceholderID[topLevel] = id + 1
-		}
-	}
-	if p.existing == nil {
-		return
-	}
-	for existingMachineID := range p.existing.Machines {
-		// We assume that the machines IDs for the existing model are real.
-		tag := names.NewMachineTag(existingMachineID)
-		key := topLevel
-		if containerType := tag.ContainerType(); containerType != "" {
-			key = fmt.Sprintf("%s/%s", tag.Parent().Id(), containerType)
-		}
-		id, _ := strconv.Atoi(tag.ChildId())
-		if id >= p.nextMachinePlaceholderID[key] {
-			p.nextMachinePlaceholderID[key] = id + 1
-		}
-	}
-}
-
-func (p *unitProcessor) getNextMachinePlaceholderID() string {
-	result := fmt.Sprint(p.nextMachinePlaceholderID[""])
-	p.nextMachinePlaceholderID[""]++
-	return result
-}
-
-func (p *unitProcessor) getNextContainerPlaceholderID(parent, containerType string) string {
-	key := fmt.Sprintf("%s/%s", parent, containerType)
-	result := fmt.Sprint(p.nextMachinePlaceholderID[key])
-	p.nextMachinePlaceholderID[key]++
-	return fmt.Sprintf("%s/%s", key, placeholder(result))
 }
 
 func (p *unitProcessor) unitPlaceholder(appName string, n int) string {
@@ -371,13 +320,13 @@ func (p *unitProcessor) addAllNeededUnits() {
 				requires = append(requires, appChangeID)
 				changeApplication = placeholder(appChangeID)
 			}
-			unitName := p.unitPlaceholder(name, i)
+			unitName := p.existing.nextUnit(name)
 			change := newAddUnitChange(AddUnitParams{
 				Application: changeApplication,
 				unitName:    unitName,
 			}, requires...)
 			p.add(change)
-			p.addUnitChanges[unitName] = change
+			p.addUnitChanges[p.unitPlaceholder(name, i)] = change
 			p.appChanges[name] = append(p.appChanges[name], change)
 		}
 	}
@@ -489,7 +438,7 @@ func (p *unitProcessor) existingMachinePlacement(machineID, container string) un
 	description := "existing machine " + machineID
 	if container != "" {
 		toMachine = container + ":" + toMachine
-		description = p.getNextContainerPlaceholderID(machineID, container)
+		description = p.existing.nextContainer(machineID, container)
 	}
 
 	return unitPlacement{
@@ -515,12 +464,12 @@ func (p *unitProcessor) definedMachineForUnit(application *charm.ApplicationSpec
 	machine := p.existing.BundleMachine(placement.Machine)
 	if machine == nil {
 		// The unit is placed to a machine declared in the bundle.
-		changeID := p.addedMachines[placement.Machine]
+		change := p.addedMachines[placement.Machine]
 		result := unitPlacement{
-			target:               placeholder(changeID),
-			requires:             []string{changeID},
-			placementDescription: "new machine " + placeholder(placement.Machine),
-			baseMachine:          placeholder(placement.Machine),
+			target:               placeholder(change.Id()),
+			requires:             []string{change.Id()},
+			placementDescription: "new machine " + change.Params.machineID,
+			baseMachine:          change.Params.machineID,
 		}
 		if placement.ContainerType != "" {
 			result = p.addContainer(result, application, placement.ContainerType)
@@ -644,7 +593,7 @@ func (p *unitProcessor) definedApplicationForUnit(appName string, application *c
 	}
 
 	return unitPlacement{
-		baseMachine: placeholder(p.getNextMachinePlaceholderID()),
+		baseMachine: p.existing.nextMachine(),
 	}
 }
 
@@ -675,7 +624,7 @@ func (p *unitProcessor) getPlacementForNewUnit(appName string, application *char
 	if directive == "" {
 		// There is no specified directive for this unit, so it gets a new machine.
 		return unitPlacement{
-			baseMachine: placeholder(p.getNextMachinePlaceholderID()),
+			baseMachine: p.existing.nextMachine(),
 		}
 	}
 
@@ -701,12 +650,11 @@ func (p *unitProcessor) getPlacementForNewUnit(appName string, application *char
 }
 
 func (p *unitProcessor) addNewMachine(application *charm.ApplicationSpec, containerType string) unitPlacement {
-	bundleMachineID := p.getNextMachinePlaceholderID()
-	placeholderMachine := placeholder(bundleMachineID)
-	description := "new machine " + placeholderMachine
+	machineID := p.existing.nextMachine()
+	description := "new machine " + machineID
 	placeholderContainer := ""
 	if containerType != "" {
-		placeholderContainer = p.getNextContainerPlaceholderID(placeholderMachine, containerType)
+		placeholderContainer = p.existing.nextContainer(machineID, containerType)
 		description = placeholderContainer
 	}
 
@@ -714,20 +662,21 @@ func (p *unitProcessor) addNewMachine(application *charm.ApplicationSpec, contai
 		ContainerType:      containerType,
 		Series:             getSeries(application, p.defaultSeries),
 		Constraints:        application.Constraints,
-		bundleMachineID:    placeholderMachine,
+		machineID:          machineID,
 		containerMachineID: placeholderContainer,
 	})
 	p.add(change)
 	return unitPlacement{
 		target:               placeholder(change.Id()),
 		requires:             []string{change.Id()},
-		baseMachine:          placeholderMachine,
+		baseMachine:          machineID,
 		placementDescription: description,
 	}
 }
 
 func (p *unitProcessor) addContainer(up unitPlacement, application *charm.ApplicationSpec, containerType string) unitPlacement {
-	placeholderContainer := p.getNextContainerPlaceholderID(up.baseMachine, containerType)
+	placeholderContainer := p.existing.nextContainer(up.baseMachine, containerType)
+	_, existing := p.existing.Machines[up.baseMachine]
 	description := placeholderContainer
 
 	params := AddMachineParams{
@@ -735,7 +684,8 @@ func (p *unitProcessor) addContainer(up unitPlacement, application *charm.Applic
 		ParentId:           up.target,
 		Series:             getSeries(application, p.defaultSeries),
 		Constraints:        application.Constraints,
-		bundleMachineID:    up.baseMachine,
+		existing:           existing,
+		machineID:          up.baseMachine,
 		containerMachineID: placeholderContainer,
 	}
 	change := newAddMachineChange(params, up.requires...)
@@ -750,7 +700,7 @@ func (p *unitProcessor) addContainer(up unitPlacement, application *charm.Applic
 
 // handleUnits populates the change set with "addUnit" records.
 // It also handles adding machine containers where to place units if required.
-func handleUnits(add func(Change), bundle *charm.BundleData, addedApplications, addedMachines map[string]string, existing *Model) error {
+func handleUnits(add func(Change), bundle *charm.BundleData, addedApplications map[string]string, addedMachines map[string]*AddMachineChange, existing *Model) error {
 	// Iterate over the map using its sorted keys so that results are
 	// deterministic and easier to test.
 	names := make([]string, 0, len(bundle.Applications))
@@ -773,7 +723,6 @@ func handleUnits(add func(Change), bundle *charm.BundleData, addedApplications, 
 		newUnitsWithoutApp:         make(map[string][]*AddUnitChange),
 	}
 
-	processor.initializeNextMachinePlaceholderID()
 	processor.addAllNeededUnits()
 	return errors.Trace(processor.processUnitPlacement())
 }

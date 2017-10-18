@@ -15,15 +15,6 @@ type modelSuite struct{}
 
 var _ = gc.Suite(&modelSuite{})
 
-func (*modelSuite) TestNilModel(c *gc.C) {
-	var model *Model
-	c.Check(model.GetApplication("foo"), gc.IsNil)
-	c.Check(model.HasRelation("a", "b", "c", "d"), jc.IsFalse)
-	machines := model.unitMachinesWithoutApp("foo", "bar", "")
-	c.Check(machines, gc.HasLen, 0)
-	c.Check(machines, gc.NotNil)
-}
-
 func (*modelSuite) TestEmtpyModel(c *gc.C) {
 	model := &Model{}
 	c.Check(model.GetApplication("foo"), gc.IsNil)
@@ -37,11 +28,6 @@ func (*modelSuite) TestGetApplication(c *gc.C) {
 	app := &Application{Name: "foo"}
 	model := &Model{Applications: map[string]*Application{"foo": app}}
 	c.Assert(model.GetApplication("foo"), jc.DeepEquals, app)
-}
-
-func (*modelSuite) TestHasCharmNilModel(c *gc.C) {
-	var model *Model
-	c.Assert(model.hasCharm("foo"), jc.IsFalse)
 }
 
 func (*modelSuite) TestHasCharmNilApplications(c *gc.C) {
@@ -246,12 +232,6 @@ func (s *inferMachineMapSuite) SetUpTest(c *gc.C) {
 	data, err := charm.ReadBundleData(reader)
 	c.Assert(err, jc.ErrorIsNil)
 	s.data = data
-}
-
-func (s *inferMachineMapSuite) TestInferMachineMapNilModel(c *gc.C) {
-	var model *Model
-	// This call does not panic.
-	model.InferMachineMap(s.data)
 }
 
 func (s *inferMachineMapSuite) TestInferMachineMapEmptyModel(c *gc.C) {

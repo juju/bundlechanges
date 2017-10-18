@@ -15,6 +15,10 @@ import (
 // given bundle data. The changes are sorted by requirements, so that they can
 // be applied in order. The bundle data is assumed to be already verified.
 func FromData(data *charm.BundleData, existing *Model) ([]Change, error) {
+	if existing == nil {
+		existing = &Model{}
+	}
+	existing.initializeSequence()
 	existing.InferMachineMap(data)
 	cs := &changeset{}
 	addedApplications := handleApplications(cs.add, data.Applications, data.Series, existing)
@@ -203,11 +207,15 @@ func (ch *AddMachineChange) GUIArgs() []interface{} {
 
 // Description implements Change.
 func (ch *AddMachineChange) Description() string {
-	machine := "existing machine"
-	if isNewMachine(ch.Params.bundleMachineID) {
-		machine = "new machine"
+	machine := "new machine"
+	if ch.Params.existing {
+		machine = "existing machine"
 	}
-	machine += " " + ch.Params.bundleMachineID
+	machine += " " + ch.Params.machineID
+	if ch.Params.bundleMachineID != "" && ch.Params.bundleMachineID != ch.Params.machineID {
+		machine += " (bundle machine " + ch.Params.bundleMachineID + ")"
+	}
+
 	if ch.Params.ContainerType != "" {
 		machine = ch.Params.ContainerType + " container " + ch.Params.containerMachineID + " on " + machine
 	}
@@ -240,7 +248,9 @@ type AddMachineParams struct {
 	// this machine is a container, in which case also ContainerType is set.
 	ParentId string
 
+	existing           bool
 	bundleMachineID    string
+	machineID          string
 	containerMachineID string
 }
 

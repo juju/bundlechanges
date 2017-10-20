@@ -65,7 +65,10 @@ func process(r io.Reader, w io.Writer) error {
 		return err
 	}
 	// Generate the changes and convert them to the standard form.
-	changes := bundlechanges.FromData(data)
+	changes, err := bundlechanges.FromData(data, nil)
+	if err != nil {
+		return err
+	}
 	records := make([]*record, len(changes))
 	for i, change := range changes {
 		records[i] = &record{

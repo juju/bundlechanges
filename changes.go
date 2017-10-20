@@ -6,19 +6,29 @@ package bundlechanges
 import (
 	"fmt"
 
+	"github.com/juju/errors"
+	"github.com/juju/utils/set"
 	"gopkg.in/juju/charm.v6-unstable"
 )
 
 // FromData generates and returns the list of changes required to deploy the
 // given bundle data. The changes are sorted by requirements, so that they can
 // be applied in order. The bundle data is assumed to be already verified.
-func FromData(data *charm.BundleData) []Change {
+func FromData(data *charm.BundleData, existing *Model) ([]Change, error) {
+	if existing == nil {
+		existing = &Model{}
+	}
+	existing.initializeSequence()
+	existing.InferMachineMap(data)
 	cs := &changeset{}
-	addedApplications := handleApplications(cs.add, data.Applications, data.Series)
-	addedMachines := handleMachines(cs.add, data.Machines, data.Series)
-	handleRelations(cs.add, data.Relations, addedApplications)
-	handleUnits(cs.add, data.Applications, addedApplications, addedMachines, data.Series)
-	return cs.sorted()
+	addedApplications := handleApplications(cs.add, data.Applications, data.Series, existing)
+	addedMachines := handleMachines(cs.add, data.Machines, data.Series, existing)
+	handleRelations(cs.add, data.Relations, addedApplications, existing)
+	err := handleUnits(cs.add, data, addedApplications, addedMachines, existing)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+	return cs.sorted(), nil
 }
 
 // Change holds a single change required to deploy a bundle.
@@ -35,6 +45,9 @@ type Change interface {
 	GUIArgs() []interface{}
 	// setId is used to set the identifier for the change.
 	setId(string)
+
+	// Description returns a human readable summary of the change.
+	Description() string
 }
 
 // changeInfo holds information on a change, suitable for embedding into a more
@@ -93,6 +106,15 @@ func (ch *AddCharmChange) GUIArgs() []interface{} {
 	return []interface{}{ch.Params.Charm, ch.Params.Series}
 }
 
+// Description implements Change.
+func (ch *AddCharmChange) Description() string {
+	series := ""
+	if ch.Params.Series != "" {
+		series = " for series " + ch.Params.Series
+	}
+	return fmt.Sprintf("upload charm %s%s", ch.Params.Charm, series)
+}
+
 // AddCharmParams holds parameters for adding a charm to the environment.
 type AddCharmParams struct {
 	// Charm holds the URL of the charm to be added.
@@ -100,6 +122,58 @@ type AddCharmParams struct {
 	// Series holds the series of the charm to be added
 	// if the charm default is not sufficient.
 	Series string
+}
+
+// newUpgradeCharm upgrades an existing charm to a new version.
+func newUpgradeCharm(params UpgradeCharmParams, requires ...string) *UpgradeCharmChange {
+	return &UpgradeCharmChange{
+		changeInfo: changeInfo{
+			requires: requires,
+			method:   "upgradeCharm",
+		},
+		Params: params,
+	}
+}
+
+// UpgradeCharmChange holds a change for adding a charm to the environment.
+type UpgradeCharmChange struct {
+	changeInfo
+	// Params holds parameters for upgrading the charm for an application.
+	Params UpgradeCharmParams
+}
+
+// GUIArgs implements Change.GUIArgs.
+func (ch *UpgradeCharmChange) GUIArgs() []interface{} {
+	return []interface{}{ch.Params.Charm, ch.Params.Application, ch.Params.Series}
+}
+
+// Description implements Change.
+func (ch *UpgradeCharmChange) Description() string {
+	series := ""
+	if ch.Params.Series != "" {
+		series = " for series " + ch.Params.Series
+	}
+	return fmt.Sprintf("upgrade %s to use charm %s%s", ch.Params.Application, ch.Params.charmURL, series)
+}
+
+// UpgradeCharmParams holds parameters for adding a charm to the environment.
+type UpgradeCharmParams struct {
+	// Charm holds the placeholder or URL of the charm to be added.
+	Charm string
+	// Application refers to the application that is being upgraded.
+	Application string
+	// Series holds the series of the charm to be added
+	// if the charm default is not sufficient.
+	Series string
+
+	// Resources identifies the revision to use for each resource
+	// of the application's charm.
+	Resources map[string]int
+	// LocalResources identifies the path to the local resource
+	// of the application's charm.
+	LocalResources map[string]string
+
+	charmURL string
 }
 
 // newAddMachineChange creates a new change for adding a machine or container.
@@ -131,6 +205,23 @@ func (ch *AddMachineChange) GUIArgs() []interface{} {
 	return []interface{}{options}
 }
 
+// Description implements Change.
+func (ch *AddMachineChange) Description() string {
+	machine := "new machine"
+	if ch.Params.existing {
+		machine = "existing machine"
+	}
+	machine += " " + ch.Params.machineID
+	if ch.Params.bundleMachineID != "" && ch.Params.bundleMachineID != ch.Params.machineID {
+		machine += " (bundle machine " + ch.Params.bundleMachineID + ")"
+	}
+
+	if ch.Params.ContainerType != "" {
+		machine = ch.Params.ContainerType + " container " + ch.Params.containerMachineID + " on " + machine
+	}
+	return fmt.Sprintf("add %s", machine)
+}
+
 // AddMachineOptions holds GUI options for adding a machine or container.
 type AddMachineOptions struct {
 	// Series holds the machine OS series.
@@ -156,6 +247,11 @@ type AddMachineParams struct {
 	// change or to a unit change. This value is only specified in the case
 	// this machine is a container, in which case also ContainerType is set.
 	ParentId string
+
+	existing           bool
+	bundleMachineID    string
+	machineID          string
+	containerMachineID string
 }
 
 // newAddRelationChange creates a new change for adding a relation.
@@ -181,14 +277,25 @@ func (ch *AddRelationChange) GUIArgs() []interface{} {
 	return []interface{}{ch.Params.Endpoint1, ch.Params.Endpoint2}
 }
 
+// Description implements Change.
+func (ch *AddRelationChange) Description() string {
+	return fmt.Sprintf("add relation %s - %s", ch.Params.applicationEndpoint1, ch.Params.applicationEndpoint2)
+}
+
 // AddRelationParams holds parameters for adding a relation between two applications.
 type AddRelationParams struct {
 	// Endpoint1 and Endpoint2 hold relation endpoints in the
-	// "application:interface" form, where the application is always a placeholder
-	// pointing to an application change, and the interface is optional. Examples
-	// are "$deploy-42:web" or just "$deploy-42".
+	// "application:interface" form, where the application is either a
+	// placeholder pointing to an application change or in the case of a model
+	// that already has this application deployed, the name of the
+	// application, and the interface is optional. Examples are
+	// "$deploy-42:web", "$deploy-42", "mysql:db".
 	Endpoint1 string
 	Endpoint2 string
+
+	// These values are always refering to application names.
+	applicationEndpoint1 string
+	applicationEndpoint2 string
 }
 
 // newAddApplicationChange creates a new change for adding an application.
@@ -239,6 +346,15 @@ func (ch *AddApplicationChange) GUIArgs() []interface{} {
 	}
 }
 
+// Description implements Change.
+func (ch *AddApplicationChange) Description() string {
+	series := ""
+	if ch.Params.Series != "" {
+		series = " on " + ch.Params.Series
+	}
+	return fmt.Sprintf("deploy application %s%s using %s", ch.Params.Application, series, ch.Params.charmURL)
+}
+
 // AddApplicationParams holds parameters for deploying a Juju application.
 type AddApplicationParams struct {
 	// Charm holds the URL of the charm to be used to deploy this application.
@@ -262,6 +378,10 @@ type AddApplicationParams struct {
 	// LocalResources identifies the path to the local resource
 	// of the application's charm.
 	LocalResources map[string]string
+
+	// The public Charm holds either the charmURL of a placeholder for the
+	// add charm change.
+	charmURL string
 }
 
 // newAddUnitChange creates a new change for adding an application unit.
@@ -291,6 +411,22 @@ func (ch *AddUnitChange) GUIArgs() []interface{} {
 	return args
 }
 
+// Description implements Change.
+func (ch *AddUnitChange) Description() string {
+	placement := "new machine"
+	if ch.Params.baseMachine != "" {
+		placement = placement + " " + ch.Params.baseMachine
+	}
+	if ch.Params.placementDescription != "" {
+		placement = ch.Params.placementDescription
+	}
+	if ch.Params.directive != "" {
+		placement += " to satisfy [" + ch.Params.directive + "]"
+	}
+
+	return fmt.Sprintf("add unit %s to %s", ch.Params.unitName, placement)
+}
+
 // AddUnitParams holds parameters for adding an application unit.
 type AddUnitParams struct {
 	// Application holds the application placeholder name for which a unit is added.
@@ -298,6 +434,13 @@ type AddUnitParams struct {
 	// To holds the optional location where to add the unit, as a placeholder
 	// pointing to another unit change or to a machine change.
 	To string
+
+	unitName             string
+	placementDescription string
+	// If directive is specified, it is added to the placement description
+	// to explain why the unit is being placed there.
+	directive   string
+	baseMachine string
 }
 
 // newExposeChange creates a new change for exposing an application.
@@ -323,10 +466,17 @@ func (ch *ExposeChange) GUIArgs() []interface{} {
 	return []interface{}{ch.Params.Application}
 }
 
+// Description implements Change.
+func (ch *ExposeChange) Description() string {
+	return fmt.Sprintf("expose %s", ch.Params.appName)
+}
+
 // ExposeParams holds parameters for exposing an application.
 type ExposeParams struct {
 	// Application holds the placeholder name of the application that must be exposed.
 	Application string
+
+	appName string
 }
 
 // newSetAnnotationsChange creates a new change for setting annotations.
@@ -353,6 +503,11 @@ func (ch *SetAnnotationsChange) GUIArgs() []interface{} {
 	return []interface{}{ch.Params.Id, string(ch.Params.EntityType), ch.Params.Annotations}
 }
 
+// Description implements Change.
+func (ch *SetAnnotationsChange) Description() string {
+	return fmt.Sprintf("set annotations for %s", ch.Params.target)
+}
+
 // EntityType holds entity types ("application" or "machine").
 type EntityType string
 
@@ -370,6 +525,79 @@ type SetAnnotationsParams struct {
 	EntityType EntityType
 	// Annotations holds the annotations as key/value pairs.
 	Annotations map[string]string
+
+	target string
+}
+
+// newSetOptionsChange creates a new change for setting application options.
+func newSetOptionsChange(params SetOptionsParams, requires ...string) *SetOptionsChange {
+	return &SetOptionsChange{
+		changeInfo: changeInfo{
+			requires: requires,
+			method:   "setOptions",
+		},
+		Params: params,
+	}
+}
+
+// SetOptionsChange holds a change for setting application options.
+type SetOptionsChange struct {
+	changeInfo
+	// Params holds parameters for setting options.
+	Params SetOptionsParams
+}
+
+// GUIArgs implements Change.GUIArgs.
+func (ch *SetOptionsChange) GUIArgs() []interface{} {
+	return []interface{}{ch.Params.Application, ch.Params.Options}
+}
+
+// Description implements Change.
+func (ch *SetOptionsChange) Description() string {
+	return fmt.Sprintf("set application options for %s", ch.Params.Application)
+}
+
+// SetOptionsParams holds parameters for setting options.
+type SetOptionsParams struct {
+	// Application is the name of the application.
+	Application string
+	// Options holds the changed options for the application.
+	Options map[string]interface{}
+}
+
+// newSetConstraintsChange creates a new change for setting application constraints.
+func newSetConstraintsChange(params SetConstraintsParams) *SetConstraintsChange {
+	return &SetConstraintsChange{
+		changeInfo: changeInfo{
+			method: "setConstraints",
+		},
+		Params: params,
+	}
+}
+
+// SetConstraintsChange holds a change for setting application constraints.
+type SetConstraintsChange struct {
+	changeInfo
+	// Params holds parameters for setting constraints.
+	Params SetConstraintsParams
+}
+
+// GUIArgs implements Change.GUIArgs.
+func (ch *SetConstraintsChange) GUIArgs() []interface{} {
+	return []interface{}{ch.Params.Application, ch.Params.Constraints}
+}
+
+// Description implements Change.
+func (ch *SetConstraintsChange) Description() string {
+	return fmt.Sprintf("set constraints for %s to %q", ch.Params.Application, ch.Params.Constraints)
+}
+
+// SetConstraintsParams holds parameters for setting constraints.
+type SetConstraintsParams struct {
+	// Application is the name of the application.
+	Application string
+	// Constraints holds the new constraints.
+	Constraints string
 }
 
 // changeset holds the list of changes returned by FromData.
@@ -385,11 +613,9 @@ func (cs *changeset) add(change Change) {
 
 // sorted returns the changes sorted by requirements, required first.
 func (cs *changeset) sorted() []Change {
-	numChanges := len(cs.changes)
-	records := make(map[string]bool, numChanges)
-	sorted := make([]Change, 0, numChanges)
-	changes := make([]Change, numChanges, numChanges*2)
-	copy(changes, cs.changes)
+	done := set.NewStrings()
+	var sorted []Change
+	changes := cs.changes[:]
 mainloop:
 	for len(changes) != 0 {
 		// Note that all valid bundles have at least two changes
@@ -397,14 +623,15 @@ mainloop:
 		change := changes[0]
 		changes = changes[1:]
 		for _, r := range change.Requires() {
-			if !records[r] {
+			if !done.Contains(r) {
+
 				// This change requires a change which is not yet listed.
 				// Push this change at the end of the list and retry later.
 				changes = append(changes, change)
 				continue mainloop
 			}
 		}
-		records[change.Id()] = true
+		done.Add(change.Id())
 		sorted = append(sorted, change)
 	}
 	return sorted

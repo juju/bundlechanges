@@ -74,7 +74,7 @@ func (m *Model) initializeSequence() {
 	}
 
 	for machineID, _ := range m.Machines {
-		// Continued paranoi.
+		// Continued paranoia.
 		if !names.IsValidMachine(machineID) {
 			continue
 		}

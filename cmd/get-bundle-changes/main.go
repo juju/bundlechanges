@@ -10,7 +10,7 @@ import (
 	"io"
 	"os"
 
-	"gopkg.in/juju/charm.v6-unstable"
+	"gopkg.in/juju/charm.v6"
 
 	"github.com/juju/bundlechanges"
 )

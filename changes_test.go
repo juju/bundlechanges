@@ -275,12 +275,15 @@ var fromDataTests = []struct {
 		Requires: []string{"deploy-1"},
 	}},
 }, {
-	about: "machines and units placement",
+	about: "machines and units placement, with bindings",
 	content: `
         services:
             django:
                 charm: cs:trusty/django-42
                 num_units: 2
+                bindings:
+                    "": foo
+                    http: bar
                 to:
                     - 1
                     - lxc:2
@@ -312,10 +315,11 @@ var fromDataTests = []struct {
 		Id:     "deploy-1",
 		Method: "deploy",
 		Params: bundlechanges.AddApplicationParams{
-			Charm:       "$addCharm-0",
-			Application: "django",
-			Series:      "trusty",
-			Constraints: "cpu-cores=4 cpu-power=42",
+			Charm:            "$addCharm-0",
+			Application:      "django",
+			Series:           "trusty",
+			Constraints:      "cpu-cores=4 cpu-power=42",
+			EndpointBindings: map[string]string{"": "foo", "http": "bar"},
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-0",
@@ -324,7 +328,7 @@ var fromDataTests = []struct {
 			map[string]interface{}{},
 			"cpu-cores=4 cpu-power=42",
 			map[string]string{},
-			map[string]string{},
+			map[string]string{"": "foo", "http": "bar"},
 			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
@@ -396,14 +400,14 @@ var fromDataTests = []struct {
 			ContainerType: "lxc",
 			Series:        "trusty",
 			ParentId:      "$addMachines-6",
-			Constraints:   "cpu-cores=4 cpu-power=42",
+			Constraints:   "spaces=bar,foo cpu-cores=4 cpu-power=42",
 		},
 		GUIArgs: []interface{}{
 			bundlechanges.AddMachineOptions{
 				ContainerType: "lxc",
 				Series:        "trusty",
 				ParentId:      "$addMachines-6",
-				Constraints:   "cpu-cores=4 cpu-power=42",
+				Constraints:   "spaces=bar,foo cpu-cores=4 cpu-power=42",
 			},
 		},
 		Requires: []string{"addMachines-6"},

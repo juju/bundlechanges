@@ -287,7 +287,7 @@ var fromDataTests = []struct {
                 to:
                     - 1
                     - lxc:2
-                constraints: cpu-cores=4 cpu-power=42
+                constraints: spaces=baz cpu-cores=4 cpu-power=42
             haproxy:
                 charm: cs:trusty/haproxy-47
                 num_units: 2
@@ -318,7 +318,7 @@ var fromDataTests = []struct {
 			Charm:            "$addCharm-0",
 			Application:      "django",
 			Series:           "trusty",
-			Constraints:      "cpu-cores=4 cpu-power=42",
+			Constraints:      "spaces=baz cpu-cores=4 cpu-power=42",
 			EndpointBindings: map[string]string{"": "foo", "http": "bar"},
 		},
 		GUIArgs: []interface{}{
@@ -326,7 +326,7 @@ var fromDataTests = []struct {
 			"trusty",
 			"django",
 			map[string]interface{}{},
-			"cpu-cores=4 cpu-power=42",
+			"spaces=baz cpu-cores=4 cpu-power=42",
 			map[string]string{},
 			map[string]string{"": "foo", "http": "bar"},
 			map[string]int{},
@@ -400,14 +400,14 @@ var fromDataTests = []struct {
 			ContainerType: "lxc",
 			Series:        "trusty",
 			ParentId:      "$addMachines-6",
-			Constraints:   "spaces=bar,foo cpu-cores=4 cpu-power=42",
+			Constraints:   "spaces=bar,baz,foo cpu-cores=4 cpu-power=42",
 		},
 		GUIArgs: []interface{}{
 			bundlechanges.AddMachineOptions{
 				ContainerType: "lxc",
 				Series:        "trusty",
 				ParentId:      "$addMachines-6",
-				Constraints:   "spaces=bar,foo cpu-cores=4 cpu-power=42",
+				Constraints:   "spaces=bar,baz,foo cpu-cores=4 cpu-power=42",
 			},
 		},
 		Requires: []string{"addMachines-6"},

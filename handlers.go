@@ -366,8 +366,10 @@ func (p *unitProcessor) processUnitPlacement() error {
 				// so try again next time through the outer loop.
 				continue
 			}
-			p.placeUnitsForApplication(name, application)
-
+			err := p.placeUnitsForApplication(name, application)
+			if err != nil {
+				return err
+			}
 			processed.Add(name)
 			toDo.Remove(name)
 			done++
@@ -381,7 +383,7 @@ func (p *unitProcessor) processUnitPlacement() error {
 	return nil
 }
 
-func (p *unitProcessor) placeUnitsForApplication(name string, application *charm.ApplicationSpec) {
+func (p *unitProcessor) placeUnitsForApplication(name string, application *charm.ApplicationSpec) error {
 	existingApp := p.existing.GetApplication(name)
 
 	lastPlacement := ""
@@ -413,7 +415,10 @@ func (p *unitProcessor) placeUnitsForApplication(name string, application *charm
 		if i < numPlaced {
 			directive = application.To[i]
 		}
-		placement := p.getPlacementForNewUnit(name, application, directive)
+		placement, err := p.getPlacementForNewUnit(name, application, directive)
+		if err != nil {
+			return err
+		}
 		// Retrieve and modify the original "addUnit" change to add the
 		// new parent requirement and placement target.
 		change := p.addUnitChanges[p.unitPlaceholder(name, i)]
@@ -428,6 +433,7 @@ func (p *unitProcessor) placeUnitsForApplication(name string, application *charm
 		}
 		lastChangeId = change.id
 	}
+	return nil
 }
 
 // existingMachinePlacement generates the standard unitPlacement for a machine
@@ -451,7 +457,7 @@ func (p *unitProcessor) existingMachinePlacement(machineID, container string) un
 // newMachineForUnit handles the placement directives "new" and
 // "container:new", where container is a supported container type. Most often
 // "lxd" or "kvm".
-func (p *unitProcessor) newMachineForUnit(application *charm.ApplicationSpec, placement *charm.UnitPlacement) unitPlacement {
+func (p *unitProcessor) newMachineForUnit(application *charm.ApplicationSpec, placement *charm.UnitPlacement) (unitPlacement, error) {
 	return p.addNewMachine(application, placement.ContainerType)
 }
 
@@ -459,9 +465,10 @@ func (p *unitProcessor) newMachineForUnit(application *charm.ApplicationSpec, pl
 // machine number is specified, perhaps with a container. The machine numbers
 // mentioned must be in the bundles machines specification. Examples would be:
 // "2", "lxd:1".
-func (p *unitProcessor) definedMachineForUnit(application *charm.ApplicationSpec, placement *charm.UnitPlacement) unitPlacement {
+func (p *unitProcessor) definedMachineForUnit(application *charm.ApplicationSpec, placement *charm.UnitPlacement) (unitPlacement, error) {
 	// See if we have the mapped machine in the existing model.
 	machine := p.existing.BundleMachine(placement.Machine)
+	var err error
 	if machine == nil {
 		// The unit is placed to a machine declared in the bundle.
 		change := p.addedMachines[placement.Machine]
@@ -472,12 +479,12 @@ func (p *unitProcessor) definedMachineForUnit(application *charm.ApplicationSpec
 			baseMachine:          change.Params.machineID,
 		}
 		if placement.ContainerType != "" {
-			result = p.addContainer(result, application, placement.ContainerType)
+			result, err = p.addContainer(result, application, placement.ContainerType)
 		}
-		return result
+		return result, err
 	}
 	// Placement is the machine, or a container on that machine.
-	return p.existingMachinePlacement(machine.ID, placement.ContainerType)
+	return p.existingMachinePlacement(machine.ID, placement.ContainerType), err
 }
 
 // definedUnitForUnit handles the placement directive where a unit is to be
@@ -486,7 +493,7 @@ func (p *unitProcessor) definedMachineForUnit(application *charm.ApplicationSpec
 // container is placed on the same base machine as the other unit. This means
 // that if the target unit is also in a container, the containers become
 // siblings, not nested.
-func (p *unitProcessor) definedUnitForUnit(application *charm.ApplicationSpec, placement *charm.UnitPlacement, directive string) unitPlacement {
+func (p *unitProcessor) definedUnitForUnit(application *charm.ApplicationSpec, placement *charm.UnitPlacement, directive string) (unitPlacement, error) {
 	// If the placement refers to a Unit, see if there is a unit for the app
 	// in the existing model that exists.
 	setDirective := func(result unitPlacement) unitPlacement {
@@ -497,7 +504,7 @@ func (p *unitProcessor) definedUnitForUnit(application *charm.ApplicationSpec, p
 	machineID := p.existing.getUnitMachine(placement.Application, placement.Unit)
 	if machineID != "" {
 		// Placement is the machine, or a container on that machine.
-		return setDirective(p.existingMachinePlacement(machineID, placement.ContainerType))
+		return setDirective(p.existingMachinePlacement(machineID, placement.ContainerType)), nil
 	}
 
 	// The specified unit number doesn't relate to a known existing unit, so see if
@@ -509,8 +516,8 @@ func (p *unitProcessor) definedUnitForUnit(application *charm.ApplicationSpec, p
 		return p.newMachineForUnit(application, placement)
 	}
 
-	result := p.newUnitPlacementForChange(otherChange, application, placement.ContainerType)
-	return setDirective(result)
+	result, err := p.newUnitPlacementForChange(otherChange, application, placement.ContainerType)
+	return setDirective(result), err
 }
 
 func (p *unitProcessor) nextMachineForExistingAppUnits(appName string, placement *charm.UnitPlacement) string {
@@ -551,7 +558,8 @@ func (p *unitProcessor) nextUnitChangeForApp(appName string, placement *charm.Un
 	return result
 }
 
-func (p *unitProcessor) newUnitPlacementForChange(change *AddUnitChange, application *charm.ApplicationSpec, containerType string) unitPlacement {
+func (p *unitProcessor) newUnitPlacementForChange(change *AddUnitChange, application *charm.ApplicationSpec, containerType string) (unitPlacement, error) {
+	var err error
 	baseMachine := change.Params.baseMachine
 	// Here we need to do some magic. If the new unit is being placed into a container
 	// then the container should be a sibling to the change, otherwise we need it
@@ -567,13 +575,13 @@ func (p *unitProcessor) newUnitPlacementForChange(change *AddUnitChange, applica
 	// Need to check with the GUI folks about removing container additions, and
 	// instead just handling it in unit placement.
 	if containerType != "" {
-		result = p.addContainer(result, application, containerType)
+		result, err = p.addContainer(result, application, containerType)
 	}
 
-	return result
+	return result, err
 }
 
-func (p *unitProcessor) definedApplicationForUnit(appName string, application *charm.ApplicationSpec, placement *charm.UnitPlacement, directive string) unitPlacement {
+func (p *unitProcessor) definedApplicationForUnit(appName string, application *charm.ApplicationSpec, placement *charm.UnitPlacement, directive string) (unitPlacement, error) {
 	setDirective := func(result unitPlacement) unitPlacement {
 		result.directive = directive
 		return result
@@ -583,18 +591,18 @@ func (p *unitProcessor) definedApplicationForUnit(appName string, application *c
 	// a container as defined by the placement).
 	existingMachine := p.nextMachineForExistingAppUnits(appName, placement)
 	if existingMachine != "" {
-		return setDirective(p.existingMachinePlacement(existingMachine, placement.ContainerType))
+		return setDirective(p.existingMachinePlacement(existingMachine, placement.ContainerType)), nil
 	}
 	// If there are none in the model, look for units of appName that have been placed.
 	change := p.nextUnitChangeForApp(appName, placement)
 	if change != nil {
-		result := p.newUnitPlacementForChange(change, application, placement.ContainerType)
-		return setDirective(result)
+		result, err := p.newUnitPlacementForChange(change, application, placement.ContainerType)
+		return setDirective(result), err
 	}
 
 	return unitPlacement{
 		baseMachine: p.existing.nextMachine(),
-	}
+	}, nil
 }
 
 type unitPlacement struct {
@@ -620,18 +628,18 @@ type unitPlacement struct {
 	directive string
 }
 
-func (p *unitProcessor) getPlacementForNewUnit(appName string, application *charm.ApplicationSpec, directive string) unitPlacement {
+func (p *unitProcessor) getPlacementForNewUnit(appName string, application *charm.ApplicationSpec, directive string) (unitPlacement, error) {
 	if directive == "" {
 		// There is no specified directive for this unit, so it gets a new machine.
 		return unitPlacement{
 			baseMachine: p.existing.nextMachine(),
-		}
+		}, nil
 	}
 
 	placement, err := charm.ParsePlacement(directive)
 	if err != nil {
 		// Since the bundle is already verified, this should never happen.
-		return unitPlacement{}
+		return unitPlacement{}, nil
 	}
 
 	if placement.Machine == "new" {
@@ -649,7 +657,7 @@ func (p *unitProcessor) getPlacementForNewUnit(appName string, application *char
 	return p.definedApplicationForUnit(appName, application, placement, directive)
 }
 
-func (p *unitProcessor) addNewMachine(application *charm.ApplicationSpec, containerType string) unitPlacement {
+func (p *unitProcessor) addNewMachine(application *charm.ApplicationSpec, containerType string) (unitPlacement, error) {
 	machineID := p.existing.nextMachine()
 	description := "new machine " + machineID
 	placeholderContainer := ""
@@ -657,11 +665,14 @@ func (p *unitProcessor) addNewMachine(application *charm.ApplicationSpec, contai
 		placeholderContainer = p.existing.nextContainer(machineID, containerType)
 		description = placeholderContainer
 	}
-
+	constraints, err := fixupConstraintsWithBindings(application.Constraints, application.EndpointBindings)
+	if err != nil {
+		return unitPlacement{}, err
+	}
 	change := newAddMachineChange(AddMachineParams{
 		ContainerType:      containerType,
 		Series:             getSeries(application, p.defaultSeries),
-		Constraints:        application.Constraints,
+		Constraints:        constraints,
 		machineID:          machineID,
 		containerMachineID: placeholderContainer,
 	})
@@ -671,19 +682,85 @@ func (p *unitProcessor) addNewMachine(application *charm.ApplicationSpec, contai
 		requires:             []string{change.Id()},
 		baseMachine:          machineID,
 		placementDescription: description,
-	}
+	}, nil
 }
 
-func (p *unitProcessor) addContainer(up unitPlacement, application *charm.ApplicationSpec, containerType string) unitPlacement {
+// fixupConstraintsWithBindings returns constraints with
+// added spaces constraints for bound endpoints.
+func fixupConstraintsWithBindings(inputConstraints string, endpointBindings map[string]string) (string, error) {
+	posSpaces := make(map[string]bool)
+	negSpaces := make(map[string]bool)
+	for _, space := range endpointBindings {
+		posSpaces[space] = true
+	}
+
+	if len(posSpaces) == 0 {
+		return inputConstraints, nil
+	}
+
+	constraintsMap := make(map[string]string)
+	var constraintsKeyList []string
+	if len(inputConstraints) > 0 {
+		constraints := strings.Split(inputConstraints, " ")
+		for _, constraint := range constraints {
+			split := strings.SplitN(constraint, "=", 2)
+			if len(split) != 2 {
+				return "", fmt.Errorf("Invalid constraint: %q %q %d", constraint, inputConstraints, len(constraints))
+			}
+			key, value := split[0], split[1]
+			constraintsMap[key] = value
+			if key != "spaces" {
+				constraintsKeyList = append(constraintsKeyList, key)
+			}
+		}
+	}
+
+	var spaces []string
+	if spacesToSplit := constraintsMap["spaces"]; len(spacesToSplit) > 0 {
+		spaces = strings.Split(spacesToSplit, ",")
+	}
+
+	for _, space := range spaces {
+		if strings.HasPrefix(space, "^") {
+			negSpaces[space[1:]] = true
+			if posSpaces[space[1:]] {
+				return "", fmt.Errorf("Space %q is required but it's forbidden by constraint", space[1:])
+			}
+		} else {
+			posSpaces[space] = true
+		}
+	}
+	var outputSpaces []string
+	for k := range posSpaces {
+		outputSpaces = append(outputSpaces, k)
+	}
+	for k := range negSpaces {
+		outputSpaces = append(outputSpaces, "^"+k)
+	}
+	// To make test tests stable.
+	sort.Strings(outputSpaces)
+	sort.Strings(constraintsKeyList)
+	output := "spaces=" + strings.Join(outputSpaces, ",")
+	for _, constraint := range constraintsKeyList {
+		output += " " + constraint + "=" + constraintsMap[constraint]
+	}
+	return output, nil
+}
+
+func (p *unitProcessor) addContainer(up unitPlacement, application *charm.ApplicationSpec, containerType string) (unitPlacement, error) {
 	placeholderContainer := p.existing.nextContainer(up.baseMachine, containerType)
 	_, existing := p.existing.Machines[up.baseMachine]
 	description := placeholderContainer
 
+	constraints, err := fixupConstraintsWithBindings(application.Constraints, application.EndpointBindings)
+	if err != nil {
+		return unitPlacement{}, err
+	}
 	params := AddMachineParams{
 		ContainerType:      containerType,
 		ParentId:           up.target,
 		Series:             getSeries(application, p.defaultSeries),
-		Constraints:        application.Constraints,
+		Constraints:        constraints,
 		existing:           existing,
 		machineID:          up.baseMachine,
 		containerMachineID: placeholderContainer,
@@ -695,7 +772,7 @@ func (p *unitProcessor) addContainer(up unitPlacement, application *charm.Applic
 		requires:             []string{change.Id()},
 		placementDescription: description,
 		baseMachine:          up.baseMachine, // The underlying base machine stays the same.
-	}
+	}, nil
 }
 
 // handleUnits populates the change set with "addUnit" records.

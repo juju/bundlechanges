@@ -2495,6 +2495,59 @@ func (s *changesSuite) TestChangeDescriptions(c *gc.C) {
 				"add unit ror/2 to new machine 3",
 			},
 		}, {
+			description: "machine natural sorting",
+			bundleContent: `
+                applications:
+                    ubu:
+                        charm: cs:ubuntu
+                        num_units: 13
+                        to: [0,1,2,3,4,5,6,7,8,9,10,11,12]
+                machines:
+                    0:
+                    1:
+                    2:
+                    3:
+                    4:
+                    5:
+                    6:
+                    7:
+                    8:
+                    9:
+                    10:
+                    11:
+                    12:
+            `,
+			expectedChanges: []string{
+				"upload charm cs:ubuntu",
+				"deploy application ubu using cs:ubuntu",
+				"add new machine 0",
+				"add new machine 1",
+				"add new machine 2",
+				"add new machine 3",
+				"add new machine 4",
+				"add new machine 5",
+				"add new machine 6",
+				"add new machine 7",
+				"add new machine 8",
+				"add new machine 9",
+				"add new machine 10",
+				"add new machine 11",
+				"add new machine 12",
+				"add unit ubu/0 to new machine 0",
+				"add unit ubu/1 to new machine 1",
+				"add unit ubu/2 to new machine 2",
+				"add unit ubu/3 to new machine 3",
+				"add unit ubu/4 to new machine 4",
+				"add unit ubu/5 to new machine 5",
+				"add unit ubu/6 to new machine 6",
+				"add unit ubu/7 to new machine 7",
+				"add unit ubu/8 to new machine 8",
+				"add unit ubu/9 to new machine 9",
+				"add unit ubu/10 to new machine 10",
+				"add unit ubu/11 to new machine 11",
+				"add unit ubu/12 to new machine 12",
+			},
+		}, {
 			description: "add unit to existing app",
 			bundleContent: `
                 applications:

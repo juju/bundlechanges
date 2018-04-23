@@ -5,10 +5,10 @@ package bundlechanges
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 
 	"github.com/juju/errors"
+	"github.com/juju/naturalsort"
 	"github.com/juju/utils/set"
 	"gopkg.in/juju/charm.v6"
 	"gopkg.in/juju/charmrepo.v2"
@@ -25,7 +25,7 @@ func handleApplications(add func(Change), applications map[string]*charm.Applica
 	for name, _ := range applications {
 		names = append(names, name)
 	}
-	sort.Strings(names)
+	naturalsort.Sort(names)
 	var change Change
 	for _, name := range names {
 		application := applications[name]
@@ -165,7 +165,7 @@ func handleMachines(add func(Change), machines map[string]*charm.MachineSpec, de
 	for name, _ := range machines {
 		names = append(names, name)
 	}
-	sort.Strings(names)
+	naturalsort.Sort(names)
 	for _, name := range names {
 		machine := machines[name]
 		if machine == nil {
@@ -738,8 +738,8 @@ func fixupConstraintsWithBindings(inputConstraints string, endpointBindings map[
 		outputSpaces = append(outputSpaces, "^"+k)
 	}
 	// To make test tests stable.
-	sort.Strings(outputSpaces)
-	sort.Strings(constraintsKeyList)
+	naturalsort.Sort(outputSpaces)
+	naturalsort.Sort(constraintsKeyList)
 	output := "spaces=" + strings.Join(outputSpaces, ",")
 	for _, constraint := range constraintsKeyList {
 		output += " " + constraint + "=" + constraintsMap[constraint]
@@ -784,7 +784,7 @@ func handleUnits(add func(Change), bundle *charm.BundleData, addedApplications m
 	for name, _ := range bundle.Applications {
 		names = append(names, name)
 	}
-	sort.Strings(names)
+	naturalsort.Sort(names)
 
 	processor := &unitProcessor{
 		add:                        add,

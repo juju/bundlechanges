@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/juju/loggo"
 	"gopkg.in/juju/charm.v6"
 
 	"github.com/juju/bundlechanges"
@@ -65,7 +66,10 @@ func process(r io.Reader, w io.Writer) error {
 		return err
 	}
 	// Generate the changes and convert them to the standard form.
-	changes, err := bundlechanges.FromData(data, nil)
+	changes, err := bundlechanges.FromData(bundlechanges.ChangesConfig{
+		Bundle: data,
+		Logger: loggo.GetLogger("bundlechanges"),
+	})
 	if err != nil {
 		return err
 	}

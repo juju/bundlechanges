@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"strconv"
 
-	"gopkg.in/juju/charm.v6"
-	"gopkg.in/juju/names.v2"
-
+	"github.com/juju/naturalsort"
 	"github.com/juju/utils"
 	"github.com/juju/utils/set"
+	"gopkg.in/juju/charm.v6"
+	"gopkg.in/juju/names.v2"
 )
 
 // Model represents the existing deployment if any.
@@ -143,8 +143,37 @@ func (m *Model) InferMachineMap(data *charm.BundleData) {
 	if m.MachineMap == nil {
 		m.MachineMap = make(map[string]string)
 	}
-mainloop:
+	// NOTE: makes a copy of the placements for each app as we consume them
+	// as we iterate first time to allow for second pass to consume
+	// remaining placement directives
+	initialMachines := set.NewStrings()
+	for appName, app := range data.Applications {
+		for _, to := range app.To {
+			placement, _ := charm.ParsePlacement(to)
+			if placement == nil || placement.Machine == "" {
+				continue
+			}
+			// If this machine is mapped already, skip this one.
+			machine := placement.Machine
+			if _, ok := m.MachineMap[machine]; ok {
+				continue
+			}
+			if m.machineHasApp(machine, appName, placement.ContainerType) {
+				m.MachineMap[machine] = machine
+				initialMachines.Add(machine)
+			} else {
+			}
+		}
+	}
+
+	var ids []string
 	for id := range data.Machines {
+		ids = append(ids, id)
+	}
+	naturalsort.Sort(ids)
+
+mainloop:
+	for _, id := range ids {
 		// The simplst case is where the user has specified a mapping
 		// for us.
 		if _, found := m.MachineMap[id]; found {
@@ -172,11 +201,22 @@ mainloop:
 				if len(deployed.Units) <= index {
 					continue
 				}
+				// Find the first unit that we have't already used.
 
 				unit := deployed.Units[index]
-				m.MachineMap[id] = topLevelMachine(unit.Machine)
+				machine := topLevelMachine(unit.Machine)
+				if initialMachines.Contains(machine) {
+					// Can't match the same machine twice.
+					continue
+				}
+				m.MachineMap[id] = machine
 				continue mainloop
 			}
+		}
+		// If we didn't find a placement that matches, yet there is a machine
+		// in the model with the same ID, add to the machine map.
+		if existing := m.Machines[id]; existing != nil {
+			m.MachineMap[id] = id
 		}
 	}
 }
@@ -280,6 +320,64 @@ func (m *Model) unitMachinesWithoutApp(sourceApp, targetApp, container string) [
 	}
 
 	return utils.SortStringsNaturally(machines.Values())
+}
+
+func (m *Model) unsatisfiedMachineAndUnitPlacements(sourceApp string, placements []string) []string {
+	// Cases we care about here are machine or unit placement.
+	source := m.GetApplication(sourceApp)
+	if source == nil {
+		// Return a copy of the slice.
+		return append([]string(nil), placements...)
+	}
+
+	var result []string
+
+	for _, value := range placements {
+		p, _ := charm.ParsePlacement(value)
+		switch {
+		case p.Machine == "new":
+			result = append(result, value)
+		case p.Machine != "":
+			if !m.machineHasApp(p.Machine, sourceApp, p.ContainerType) {
+				result = append(result, value)
+			}
+		case p.Application != "" && p.Unit < 0:
+			result = append(result, value)
+		case p.Application != "":
+			machine := m.getUnitMachine(p.Application, p.Unit)
+			if machine == "" {
+				// This is unsatisfied because we don't have that unit.
+				result = append(result, value)
+			} else if !m.machineHasApp(machine, sourceApp, p.ContainerType) {
+				result = append(result, value)
+			}
+		}
+	}
+	return result
+}
+
+func (m *Model) machineHasApp(machine, appName, containerType string) bool {
+	if mappedMachine, ok := m.MachineMap[machine]; ok {
+		machine = mappedMachine
+	}
+	app := m.GetApplication(appName)
+	if app == nil {
+		return false
+	}
+	for _, u := range app.Units {
+		machineTag := names.NewMachineTag(u.Machine)
+		if containerType == "" {
+			if machineTag.ContainerType() == "" && machineTag.Id() == machine {
+				return true
+			}
+		} else {
+			if machineTag.ContainerType() == containerType &&
+				machineTag.Parent().Id() == machine {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (a *Application) unitCount() int {

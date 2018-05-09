@@ -107,6 +107,79 @@ func (*modelSuite) TestUnitMachinesWithoutAppSourceAllTarget(c *gc.C) {
 	c.Check(machines, gc.NotNil)
 }
 
+func (*modelSuite) TestMachineHasApp(c *gc.C) {
+	model := &Model{
+		Applications: map[string]*Application{
+			"django": &Application{
+				Units: []Unit{
+					{"django/0", "0"},
+				},
+			},
+			"nginx": &Application{
+				Units: []Unit{
+					{"nginx/0", "0/lxd/3"},
+					{"nginx/2", "2/kvm/2"},
+				},
+			},
+		},
+	}
+	c.Check(model.machineHasApp("0", "django", ""), jc.IsTrue)
+	c.Check(model.machineHasApp("0", "django", "lxd"), jc.IsFalse)
+	c.Check(model.machineHasApp("4", "django", ""), jc.IsFalse)
+
+	c.Check(model.machineHasApp("0", "nginx", ""), jc.IsFalse)
+	c.Check(model.machineHasApp("0", "nginx", "lxd"), jc.IsTrue)
+	c.Check(model.machineHasApp("0", "nginx", "kvm"), jc.IsFalse)
+
+	c.Check(model.machineHasApp("2", "nginx", ""), jc.IsFalse)
+	c.Check(model.machineHasApp("2", "nginx", "lxd"), jc.IsFalse)
+	c.Check(model.machineHasApp("2", "nginx", "kvm"), jc.IsTrue)
+}
+
+func (*modelSuite) TestUnsatisfiedMachineAndUnitPlacement(c *gc.C) {
+	model := &Model{
+		Applications: map[string]*Application{
+			"django": &Application{
+				Units: []Unit{
+					{"django/0", "0/lxd/0"},
+					{"django/1", "1/lxd/0"},
+					{"django/2", "2/lxd/0"},
+				},
+			},
+			"nginx": &Application{
+				Units: []Unit{
+					{"nginx/0", "0"},
+					{"nginx/2", "2"},
+					{"nginx/3", "3"},
+				},
+			},
+		},
+	}
+	checkPlacement := func(app string, placements, expected []string) {
+		result := model.unsatisfiedMachineAndUnitPlacements(app, placements)
+		if expected == nil {
+			c.Check(result, gc.IsNil)
+		} else {
+			c.Check(result, jc.DeepEquals, expected)
+		}
+	}
+
+	placements := []string{"other-app", "new", "lxd:new", "lxd:app-name"}
+	checkPlacement("unknown", placements, placements)
+	checkPlacement("nginx", placements, placements)
+	checkPlacement("nginx", []string{"0", "2", "3"}, nil)
+	placements = []string{"lxd:0", "lxd:2", "lxd:3"}
+	checkPlacement("nginx", placements, placements)
+	checkPlacement("nginx", []string{"0", "1", "2"}, []string{"1"})
+	checkPlacement("nginx", []string{"0", "5", "4", "2"}, []string{"5", "4"})
+	placements = []string{"0", "1", "2"}
+	checkPlacement("django", placements, placements)
+	checkPlacement("django", []string{"lxd:0", "lxd:1", "lxd:2"}, nil)
+	checkPlacement("django", []string{"lxd:0", "lxd:4", "lxd:2"}, []string{"lxd:4"})
+	checkPlacement("django", []string{"lxd:nginx/0", "lxd:nginx/1", "lxd:nginx/2"}, []string{"lxd:nginx/1"})
+	checkPlacement("django", []string{"lxd:nginx/0", "lxd:nginx/2", "lxd:nginx/3"}, []string{"lxd:nginx/3"})
+}
+
 func (*modelSuite) TestUnitMachinesWithoutAppSourceSomeTarget(c *gc.C) {
 	model := &Model{
 		Applications: map[string]*Application{

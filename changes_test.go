@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/juju/loggo"
 	jujutesting "github.com/juju/testing"
 	jc "github.com/juju/testing/checkers"
 	gc "gopkg.in/check.v1"
@@ -30,6 +31,11 @@ func TestPackage(t *testing.T) {
 	gc.TestingT(t)
 }
 
+func (s *changesSuite) SetUpTest(c *gc.C) {
+	s.IsolationSuite.SetUpTest(c)
+	loggo.ConfigureLoggers("bundlechanges=trace")
+}
+
 // record holds expected information about the contents of a change value.
 type record struct {
 	Id       string
@@ -39,21 +45,13 @@ type record struct {
 	GUIArgs  []interface{}
 }
 
-var fromDataTests = []struct {
-	// about describes the test.
-	about string
-	// content is the YAML encoded bundle content.
-	content string
-	// expected holds the expected changes required to deploy the bundle.
-	expected []record
-}{{
-	about: "minimal bundle",
-	content: `
+func (s *changesSuite) TestMinimalBundle(c *gc.C) {
+	content := `
         services:
             django:
                 charm: django
-    `,
-	expected: []record{{
+   `
+	expected := []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
@@ -78,10 +76,13 @@ var fromDataTests = []struct {
 			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
-	}},
-}, {
-	about: "simple bundle",
-	content: `
+	}}
+
+	s.assertParseData(c, content, expected)
+}
+
+func (s *changesSuite) TestSimpleBundle(c *gc.C) {
+	content := `
         services:
             mediawiki:
                 charm: cs:precise/mediawiki-10
@@ -103,8 +104,8 @@ var fromDataTests = []struct {
         relations:
             - - mediawiki:db
               - mysql:db
-    `,
-	expected: []record{{
+        `
+	expected := []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
@@ -208,18 +209,21 @@ var fromDataTests = []struct {
 		},
 		GUIArgs:  []interface{}{"$deploy-5", nil},
 		Requires: []string{"deploy-5"},
-	}},
-}, {
-	about: "same charm reused",
-	content: `
+	}}
+
+	s.assertParseData(c, content, expected)
+}
+
+func (s *changesSuite) TestSameCharmReused(c *gc.C) {
+	content := `
         services:
             mediawiki:
                 charm: precise/mediawiki-10
                 num_units: 1
             otherwiki:
                 charm: precise/mediawiki-10
-    `,
-	expected: []record{{
+        `
+	expected := []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
@@ -273,10 +277,13 @@ var fromDataTests = []struct {
 		},
 		GUIArgs:  []interface{}{"$deploy-1", nil},
 		Requires: []string{"deploy-1"},
-	}},
-}, {
-	about: "machines and units placement, with bindings",
-	content: `
+	}}
+
+	s.assertParseData(c, content, expected)
+}
+
+func (s *changesSuite) TestMachinesAndUnitsPlacementWithbindings(c *gc.C) {
+	content := `
         services:
             django:
                 charm: cs:trusty/django-42
@@ -302,8 +309,8 @@ var fromDataTests = []struct {
             1:
                 series: trusty
             2:
-    `,
-	expected: []record{{
+        `
+	expected := []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
@@ -465,10 +472,13 @@ var fromDataTests = []struct {
 		},
 		GUIArgs:  []interface{}{"$deploy-3", "$addMachines-13"},
 		Requires: []string{"deploy-3", "addMachines-13", "addUnit-9"},
-	}},
-}, {
-	about: "machines with constraints and annotations",
-	content: `
+	}}
+
+	s.assertParseData(c, content, expected)
+}
+
+func (s *changesSuite) TestMachinesWithConstraintsAndAnnotations(c *gc.C) {
+	content := `
         services:
             django:
                 charm: cs:trusty/django-42
@@ -481,8 +491,8 @@ var fromDataTests = []struct {
                 constraints: "cpu-cores=4"
                 annotations:
                     foo: bar
-    `,
-	expected: []record{{
+        `
+	expected := []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
@@ -563,10 +573,13 @@ var fromDataTests = []struct {
 		},
 		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-6"},
 		Requires: []string{"deploy-1", "addMachines-6", "addUnit-4"},
-	}},
-}, {
-	about: "endpoint without relation name",
-	content: `
+	}}
+
+	s.assertParseData(c, content, expected)
+}
+
+func (s *changesSuite) TestEndpointWithoutRelationName(c *gc.C) {
+	content := `
         services:
             mediawiki:
                 charm: cs:precise/mediawiki-10
@@ -576,8 +589,8 @@ var fromDataTests = []struct {
         relations:
             - - mediawiki:db
               - mysql
-    `,
-	expected: []record{{
+        `
+	expected := []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
@@ -641,10 +654,13 @@ var fromDataTests = []struct {
 		},
 		GUIArgs:  []interface{}{"$deploy-1:db", "$deploy-3"},
 		Requires: []string{"deploy-1", "deploy-3"},
-	}},
-}, {
-	about: "unit placed in application",
-	content: `
+	}}
+
+	s.assertParseData(c, content, expected)
+}
+
+func (s *changesSuite) TestUnitPlacedInApplication(c *gc.C) {
+	content := `
         services:
             wordpress:
                 charm: wordpress
@@ -653,8 +669,8 @@ var fromDataTests = []struct {
                 charm: cs:trusty/django-42
                 num_units: 2
                 to: [wordpress]
-    `,
-	expected: []record{{
+        `
+	expected := []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
@@ -748,10 +764,13 @@ var fromDataTests = []struct {
 		},
 		GUIArgs:  []interface{}{"$deploy-1", "$addUnit-7"},
 		Requires: []string{"deploy-1", "addUnit-7", "addUnit-4"},
-	}},
-}, {
-	about: "unit co-location with other units",
-	content: `
+	}}
+
+	s.assertParseData(c, content, expected)
+}
+
+func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
+	content := `
         services:
             memcached:
                 charm: cs:trusty/mem-47
@@ -774,8 +793,8 @@ var fromDataTests = []struct {
         machines:
             1:
                 series: trusty
-    `,
-	expected: []record{{
+        `
+	expected := []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
@@ -1055,10 +1074,13 @@ var fromDataTests = []struct {
 		},
 		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-23"},
 		Requires: []string{"deploy-1", "addMachines-23", "addUnit-10"},
-	}},
-}, {
-	about: "unit placed to machines",
-	content: `
+	}}
+
+	s.assertParseData(c, content, expected)
+}
+
+func (s *changesSuite) TestUnitPlacedTomachines(c *gc.C) {
+	content := `
         services:
             django:
                 charm: cs:trusty/django-42
@@ -1073,8 +1095,8 @@ var fromDataTests = []struct {
                 constraints: "cpu-cores=4"
             8:
                 constraints: "cpu-cores=8"
-    `,
-	expected: []record{{
+        `
+	expected := []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
@@ -1221,10 +1243,13 @@ var fromDataTests = []struct {
 		},
 		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-12"},
 		Requires: []string{"deploy-1", "addMachines-12", "addUnit-7"},
-	}},
-}, {
-	about: "unit placed to new machine with constraints",
-	content: `
+	}}
+
+	s.assertParseData(c, content, expected)
+}
+
+func (s *changesSuite) TestUnitPlacedToNewMachineWithConstraints(c *gc.C) {
+	content := `
         services:
             django:
                 charm: cs:trusty/django-42
@@ -1232,8 +1257,8 @@ var fromDataTests = []struct {
                 to:
                     - new
                 constraints: "cpu-cores=4"
-    `,
-	expected: []record{{
+        `
+	expected := []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
@@ -1283,10 +1308,13 @@ var fromDataTests = []struct {
 		},
 		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-3"},
 		Requires: []string{"deploy-1", "addMachines-3"},
-	}},
-}, {
-	about: "application with storage",
-	content: `
+	}}
+
+	s.assertParseData(c, content, expected)
+}
+
+func (s *changesSuite) TestApplicationWithStorage(c *gc.C) {
+	content := `
         services:
             django:
                 charm: cs:trusty/django-42
@@ -1294,8 +1322,8 @@ var fromDataTests = []struct {
                 storage:
                     osd-devices: 3,30G
                     tmpfs: tmpfs,1G
-    `,
-	expected: []record{{
+        `
+	expected := []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
@@ -1345,17 +1373,20 @@ var fromDataTests = []struct {
 		},
 		GUIArgs:  []interface{}{"$deploy-1", nil},
 		Requires: []string{"deploy-1", "addUnit-2"},
-	}},
-}, {
-	about: "application with endpoint bindings",
-	content: `
+	}}
+
+	s.assertParseData(c, content, expected)
+}
+
+func (s *changesSuite) TestApplicationWithEndpointBindings(c *gc.C) {
+	content := `
         services:
             django:
                 charm: django
                 bindings:
                     foo: bar
-    `,
-	expected: []record{{
+        `
+	expected := []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
@@ -1381,10 +1412,13 @@ var fromDataTests = []struct {
 			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
-	}},
-}, {
-	about: "application with non-default series and placements ",
-	content: `
+	}}
+
+	s.assertParseData(c, content, expected)
+}
+
+func (s *changesSuite) TestApplicationWithNonDefaultSeriesAndPlacements(c *gc.C) {
+	content := `
 series: trusty
 services:
     gui3:
@@ -1395,8 +1429,8 @@ services:
             - lxc:1
 machines:
     1:
-   `,
-	expected: []record{{
+   `
+	expected := []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
@@ -1485,8 +1519,10 @@ machines:
 			"$deploy-1",
 			"$addMachines-6",
 		},
-	}},
-}}
+	}}
+
+	s.assertParseData(c, content, expected)
+}
 
 func copyParams(value interface{}) interface{} {
 	source := reflect.ValueOf(value).Elem().FieldByName("Params")
@@ -1510,7 +1546,10 @@ func (s *changesSuite) assertParseData(c *gc.C, content string, expected []recor
 	c.Assert(err, jc.ErrorIsNil)
 
 	// Retrieve the changes, and convert them to a sequence of records.
-	changes, err := bundlechanges.FromData(data, nil)
+	changes, err := bundlechanges.FromData(bundlechanges.ChangesConfig{
+		Bundle: data,
+		Logger: loggo.GetLogger("bundlechanges"),
+	})
 	c.Assert(err, jc.ErrorIsNil)
 	records := make([]record, len(changes))
 	for i, change := range changes {
@@ -1532,13 +1571,6 @@ func (s *changesSuite) assertParseData(c *gc.C, content string, expected []recor
 
 	// Check that the obtained records are what we expect.
 	c.Check(records, jc.DeepEquals, expected)
-}
-
-func (s *changesSuite) TestFromData(c *gc.C) {
-	for i, test := range fromDataTests {
-		c.Logf("\ntest %d: %s", i, test.about)
-		s.assertParseData(c, test.content, test.expected)
-	}
 }
 
 func (s *changesSuite) assertLocalBundleChanges(c *gc.C, charmDir, bundleContent, series string) {
@@ -1606,17 +1638,8 @@ series:
 	s.assertLocalBundleChanges(c, charmDir, bundleContent, "precise")
 }
 
-func (s *changesSuite) TestChangeDescriptions(c *gc.C) {
-	for i, test := range []struct {
-		description     string
-		bundleContent   string
-		existingModel   *bundlechanges.Model
-		expectedChanges []string
-		errMatch        string
-	}{
-		{
-			description: "simple bundle, empty model",
-			bundleContent: `
+func (s *changesSuite) TestSimpleBundleEmptyModel(c *gc.C) {
+	bundleContent := `
                 applications:
                     django:
                         charm: cs:django-4
@@ -1628,166 +1651,180 @@ func (s *changesSuite) TestChangeDescriptions(c *gc.C) {
                         annotations:
                             gui-x: "10"
                             gui-y: "50"
-            `,
-			expectedChanges: []string{
-				"upload charm cs:django-4",
-				"deploy application django using cs:django-4",
-				"expose django",
-				"set annotations for django",
-				"add unit django/0 to new machine 0",
-			},
-		}, {
-			description: "charm in use by another application",
-			bundleContent: `
+            `
+	expectedChanges := []string{
+		"upload charm cs:django-4",
+		"deploy application django using cs:django-4",
+		"expose django",
+		"set annotations for django",
+		"add unit django/0 to new machine 0",
+	}
+	s.checkBundle(c, bundleContent, expectedChanges)
+}
+
+func (s *changesSuite) TestCharmInUseByAnotherApplication(c *gc.C) {
+	bundleContent := `
                 applications:
                     django:
                         charm: cs:django-4
                         num_units: 1
                         expose: yes
-            `,
-			existingModel: &bundlechanges.Model{
-				Applications: map[string]*bundlechanges.Application{
-					"other-app": &bundlechanges.Application{
-						Charm: "cs:django-4",
-					},
-				},
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"other-app": &bundlechanges.Application{
+				Charm: "cs:django-4",
 			},
-			expectedChanges: []string{
-				"deploy application django using cs:django-4",
-				"expose django",
-				"add unit django/0 to new machine 0",
-			},
-		}, {
-			description: "charm upgrade",
-			bundleContent: `
+		},
+	}
+	expectedChanges := []string{
+		"deploy application django using cs:django-4",
+		"expose django",
+		"add unit django/0 to new machine 0",
+	}
+	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
+
+func (s *changesSuite) TestCharmUpgrade(c *gc.C) {
+	bundleContent := `
                 applications:
                     django:
                         charm: cs:django-6
                         num_units: 1
-            `,
-			existingModel: &bundlechanges.Model{
-				Applications: map[string]*bundlechanges.Application{
-					"django": &bundlechanges.Application{
-						Charm: "cs:django-4",
-						Units: []bundlechanges.Unit{
-							{"django/0", "0"},
-						},
-					},
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"django": &bundlechanges.Application{
+				Charm: "cs:django-4",
+				Units: []bundlechanges.Unit{
+					{"django/0", "0"},
 				},
 			},
-			expectedChanges: []string{
-				"upload charm cs:django-6",
-				"upgrade django to use charm cs:django-6",
-			},
-		}, {
-			description: "app exists with less units",
-			bundleContent: `
+		},
+	}
+	expectedChanges := []string{
+		"upload charm cs:django-6",
+		"upgrade django to use charm cs:django-6",
+	}
+	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
+
+func (s *changesSuite) TestAppExistsWithLessUnits(c *gc.C) {
+	bundleContent := `
                 applications:
                     django:
                         charm: cs:django-4
                         num_units: 2
-            `,
-			existingModel: &bundlechanges.Model{
-				Applications: map[string]*bundlechanges.Application{
-					"django": &bundlechanges.Application{
-						Charm: "cs:django-4",
-						Units: []bundlechanges.Unit{
-							{"django/0", "0"},
-						},
-					},
-				},
-				Machines: map[string]*bundlechanges.Machine{
-					// We don't actually look at the content of the machines
-					// for this test, just the keys.
-					"0": nil,
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"django": &bundlechanges.Application{
+				Charm: "cs:django-4",
+				Units: []bundlechanges.Unit{
+					{"django/0", "0"},
 				},
 			},
-			expectedChanges: []string{
-				"add unit django/1 to new machine 1",
-			},
-		}, {
-			description: "new machine number higher, unit higher",
-			bundleContent: `
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			// We don't actually look at the content of the machines
+			// for this test, just the keys.
+			"0": nil,
+		},
+	}
+	expectedChanges := []string{
+		"add unit django/1 to new machine 1",
+	}
+	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
+
+func (s *changesSuite) TestNewMachineNumberHigherUnitHigher(c *gc.C) {
+	bundleContent := `
                 applications:
                     django:
                         charm: cs:django-4
                         num_units: 2
-            `,
-			existingModel: &bundlechanges.Model{
-				Applications: map[string]*bundlechanges.Application{
-					"django": &bundlechanges.Application{
-						Charm: "cs:django-4",
-						Units: []bundlechanges.Unit{
-							{"django/0", "0"},
-						},
-					},
-				},
-				Machines: map[string]*bundlechanges.Machine{
-					// We don't actually look at the content of the machines
-					// for this test, just the keys.
-					"0": nil,
-				},
-				Sequence: map[string]int{
-					"application-django": 2,
-					"machine":            3,
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"django": &bundlechanges.Application{
+				Charm: "cs:django-4",
+				Units: []bundlechanges.Unit{
+					{"django/0", "0"},
 				},
 			},
-			expectedChanges: []string{
-				"add unit django/2 to new machine 3",
-			},
-		}, {
-			description: "app with different constraints",
-			bundleContent: `
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			// We don't actually look at the content of the machines
+			// for this test, just the keys.
+			"0": nil,
+		},
+		Sequence: map[string]int{
+			"application-django": 2,
+			"machine":            3,
+		},
+	}
+	expectedChanges := []string{
+		"add unit django/2 to new machine 3",
+	}
+	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
+
+func (s *changesSuite) TestAppWithDifferentConstraints(c *gc.C) {
+	bundleContent := `
                 applications:
                     django:
                         charm: cs:django-4
                         constraints: cpu-cores=4 cpu-power=42
-            `,
-			existingModel: &bundlechanges.Model{
-				Applications: map[string]*bundlechanges.Application{
-					"django": &bundlechanges.Application{
-						Charm: "cs:django-4",
-						Units: []bundlechanges.Unit{
-							{"django/0", "0"},
-						},
-					},
-				},
-				ConstraintsEqual: func(string, string) bool {
-					return false
-				},
-				Machines: map[string]*bundlechanges.Machine{
-					// We don't actually look at the content of the machines
-					// for this test, just the keys.
-					"0": nil,
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"django": &bundlechanges.Application{
+				Charm: "cs:django-4",
+				Units: []bundlechanges.Unit{
+					{"django/0", "0"},
 				},
 			},
-			expectedChanges: []string{
-				`set constraints for django to "cpu-cores=4 cpu-power=42"`,
-			},
-		}, {
-			description: "app exists with enough units",
-			bundleContent: `
+		},
+		ConstraintsEqual: func(string, string) bool {
+			return false
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			// We don't actually look at the content of the machines
+			// for this test, just the keys.
+			"0": nil,
+		},
+	}
+	expectedChanges := []string{
+		`set constraints for django to "cpu-cores=4 cpu-power=42"`,
+	}
+	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
+
+func (s *changesSuite) TestAppExistsWithEnoughUnits(c *gc.C) {
+	bundleContent := `
                 applications:
                     django:
                         charm: cs:django-4
                         num_units: 2
-            `,
-			existingModel: &bundlechanges.Model{
-				Applications: map[string]*bundlechanges.Application{
-					"django": &bundlechanges.Application{
-						Charm: "cs:django-4",
-						Units: []bundlechanges.Unit{
-							{"django/0", "0"},
-							{"django/1", "1"},
-							{"django/2", "2"},
-						},
-					},
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"django": &bundlechanges.Application{
+				Charm: "cs:django-4",
+				Units: []bundlechanges.Unit{
+					{"django/0", "0"},
+					{"django/1", "1"},
+					{"django/2", "2"},
 				},
 			},
-			expectedChanges: []string{},
-		}, {
-			description: "app exists with changed options and annotations",
-			bundleContent: `
+		},
+	}
+	expectedChanges := []string{}
+	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
+
+func (s *changesSuite) TestAppExistsWithChangedOptionsAndAnnotations(c *gc.C) {
+	bundleContent := `
                 applications:
                     django:
                         charm: cs:django-4
@@ -1798,33 +1835,35 @@ func (s *changesSuite) TestChangeDescriptions(c *gc.C) {
                         annotations:
                             gui-x: "10"
                             gui-y: "50"
-            `,
-			existingModel: &bundlechanges.Model{
-				Applications: map[string]*bundlechanges.Application{
-					"django": &bundlechanges.Application{
-						Charm: "cs:django-4",
-						Options: map[string]interface{}{
-							"key-1": "value-1",
-							"key-2": "value-4",
-							"key-3": "value-5",
-						},
-						Annotations: map[string]string{
-							"gui-x": "10",
-							"gui-y": "40",
-						},
-						Units: []bundlechanges.Unit{
-							{"django/0", "0"},
-						},
-					},
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"django": &bundlechanges.Application{
+				Charm: "cs:django-4",
+				Options: map[string]interface{}{
+					"key-1": "value-1",
+					"key-2": "value-4",
+					"key-3": "value-5",
+				},
+				Annotations: map[string]string{
+					"gui-x": "10",
+					"gui-y": "40",
+				},
+				Units: []bundlechanges.Unit{
+					{"django/0", "0"},
 				},
 			},
-			expectedChanges: []string{
-				"set application options for django",
-				"set annotations for django",
-			},
-		}, {
-			description: "new machine annotations and placement",
-			bundleContent: `
+		},
+	}
+	expectedChanges := []string{
+		"set application options for django",
+		"set annotations for django",
+	}
+	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
+
+func (s *changesSuite) TestNewMachineAnnotationsAndPlacement(c *gc.C) {
+	bundleContent := `
                 applications:
                     django:
                         charm: cs:django-4
@@ -1836,17 +1875,19 @@ func (s *changesSuite) TestChangeDescriptions(c *gc.C) {
                         annotations:
                             foo: "10"
                             bar: "50"
-            `,
-			expectedChanges: []string{
-				"upload charm cs:django-4",
-				"deploy application django using cs:django-4",
-				"add new machine 0 (bundle machine 1)",
-				"set annotations for new machine 0",
-				"add unit django/0 to new machine 0",
-			},
-		}, {
-			description: "final placement not reused if specifies machine",
-			bundleContent: `
+            `
+	expectedChanges := []string{
+		"upload charm cs:django-4",
+		"deploy application django using cs:django-4",
+		"add new machine 0 (bundle machine 1)",
+		"set annotations for new machine 0",
+		"add unit django/0 to new machine 0",
+	}
+	s.checkBundle(c, bundleContent, expectedChanges)
+}
+
+func (s *changesSuite) TestFinalPlacementNotReusedIfSpecifiesMachine(c *gc.C) {
+	bundleContent := `
                 applications:
                     django:
                         charm: cs:django-4
@@ -1854,18 +1895,20 @@ func (s *changesSuite) TestChangeDescriptions(c *gc.C) {
                         to: [1]
                 machines:
                     1:
-            `,
-			expectedChanges: []string{
-				"upload charm cs:django-4",
-				"deploy application django using cs:django-4",
-				"add new machine 0 (bundle machine 1)",
-				"add unit django/0 to new machine 0",
-				// NOTE: new machine, not put on $1.
-				"add unit django/1 to new machine 1",
-			},
-		}, {
-			description: "final placement not reused if specifies unit",
-			bundleContent: `
+            `
+	expectedChanges := []string{
+		"upload charm cs:django-4",
+		"deploy application django using cs:django-4",
+		"add new machine 0 (bundle machine 1)",
+		"add unit django/0 to new machine 0",
+		// NOTE: new machine, not put on $1.
+		"add unit django/1 to new machine 1",
+	}
+	s.checkBundle(c, bundleContent, expectedChanges)
+}
+
+func (s *changesSuite) TestFinalPlacementNotReusedIfSpecifiesUnit(c *gc.C) {
+	bundleContent := `
                 applications:
                     django:
                         charm: cs:django-4
@@ -1874,20 +1917,22 @@ func (s *changesSuite) TestChangeDescriptions(c *gc.C) {
                         charm: cs:nginx
                         num_units: 2
                         to: ["django/0"]
-            `,
-			expectedChanges: []string{
-				"upload charm cs:django-4",
-				"deploy application django using cs:django-4",
-				"upload charm cs:nginx",
-				"deploy application nginx using cs:nginx",
-				"add unit django/0 to new machine 0",
-				"add unit nginx/0 to new machine 0 to satisfy [django/0]",
-				// NOTE: new machine, not put on $0.
-				"add unit nginx/1 to new machine 1",
-			},
-		}, {
-			description: "unit placed next to other new unit on existing machine",
-			bundleContent: `
+            `
+	expectedChanges := []string{
+		"upload charm cs:django-4",
+		"deploy application django using cs:django-4",
+		"upload charm cs:nginx",
+		"deploy application nginx using cs:nginx",
+		"add unit django/0 to new machine 0",
+		"add unit nginx/0 to new machine 0 to satisfy [django/0]",
+		// NOTE: new machine, not put on $0.
+		"add unit nginx/1 to new machine 1",
+	}
+	s.checkBundle(c, bundleContent, expectedChanges)
+}
+
+func (s *changesSuite) TestUnitPlaceNextToOtherNewUnitOnExistingMachine(c *gc.C) {
+	bundleContent := `
                 applications:
                     django:
                         charm: cs:django-4
@@ -1899,24 +1944,26 @@ func (s *changesSuite) TestChangeDescriptions(c *gc.C) {
                         to: ["django/0"]
                 machines:
                     1:
-            `,
-			existingModel: &bundlechanges.Model{
-				Machines: map[string]*bundlechanges.Machine{
-					"0": &bundlechanges.Machine{ID: "0"},
-				},
-				MachineMap: map[string]string{"1": "0"},
-			},
-			expectedChanges: []string{
-				"upload charm cs:django-4",
-				"deploy application django using cs:django-4",
-				"upload charm cs:nginx",
-				"deploy application nginx using cs:nginx",
-				"add unit django/0 to existing machine 0",
-				"add unit nginx/0 to existing machine 0 to satisfy [django/0]",
-			},
-		}, {
-			description: "application placement, not enough units",
-			bundleContent: `
+            `
+	existingModel := &bundlechanges.Model{
+		Machines: map[string]*bundlechanges.Machine{
+			"0": &bundlechanges.Machine{ID: "0"},
+		},
+		MachineMap: map[string]string{"1": "0"},
+	}
+	expectedChanges := []string{
+		"upload charm cs:django-4",
+		"deploy application django using cs:django-4",
+		"upload charm cs:nginx",
+		"deploy application nginx using cs:nginx",
+		"add unit django/0 to existing machine 0",
+		"add unit nginx/0 to existing machine 0 to satisfy [django/0]",
+	}
+	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
+
+func (s *changesSuite) TestApplicationPlacementNotEnoughUnits(c *gc.C) {
+	bundleContent := `
                 applications:
                     django:
                         charm: cs:django-4
@@ -1925,24 +1972,26 @@ func (s *changesSuite) TestChangeDescriptions(c *gc.C) {
                         charm: cs:nginx
                         num_units: 5
                         to: [django]
-            `,
-			expectedChanges: []string{
-				"upload charm cs:django-4",
-				"deploy application django using cs:django-4",
-				"upload charm cs:nginx",
-				"deploy application nginx using cs:nginx",
-				"add unit django/0 to new machine 0",
-				"add unit django/1 to new machine 1",
-				"add unit django/2 to new machine 2",
-				"add unit nginx/0 to new machine 0 to satisfy [django]",
-				"add unit nginx/1 to new machine 1 to satisfy [django]",
-				"add unit nginx/2 to new machine 2 to satisfy [django]",
-				"add unit nginx/3 to new machine 3",
-				"add unit nginx/4 to new machine 4",
-			},
-		}, {
-			description: "application placement, some existing",
-			bundleContent: `
+            `
+	expectedChanges := []string{
+		"upload charm cs:django-4",
+		"deploy application django using cs:django-4",
+		"upload charm cs:nginx",
+		"deploy application nginx using cs:nginx",
+		"add unit django/0 to new machine 0",
+		"add unit django/1 to new machine 1",
+		"add unit django/2 to new machine 2",
+		"add unit nginx/0 to new machine 0 to satisfy [django]",
+		"add unit nginx/1 to new machine 1 to satisfy [django]",
+		"add unit nginx/2 to new machine 2 to satisfy [django]",
+		"add unit nginx/3 to new machine 3",
+		"add unit nginx/4 to new machine 4",
+	}
+	s.checkBundle(c, bundleContent, expectedChanges)
+}
+
+func (s *changesSuite) TestApplicationPlacementSomeExisting(c *gc.C) {
+	bundleContent := `
                 applications:
                     django:
                         charm: cs:django-4
@@ -1951,38 +2000,40 @@ func (s *changesSuite) TestChangeDescriptions(c *gc.C) {
                         charm: cs:nginx
                         num_units: 5
                         to: [django]
-            `,
-			existingModel: &bundlechanges.Model{
-				Applications: map[string]*bundlechanges.Application{
-					"django": &bundlechanges.Application{
-						Charm: "cs:django-4",
-						Units: []bundlechanges.Unit{
-							{"django/0", "0"},
-							{"django/1", "1"},
-							{"django/3", "3"},
-						},
-					},
-				},
-				Machines: map[string]*bundlechanges.Machine{
-					// We don't actually look at the content of the machines
-					// for this test, just the keys.
-					"0": nil, "1": nil, "3": nil,
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"django": &bundlechanges.Application{
+				Charm: "cs:django-4",
+				Units: []bundlechanges.Unit{
+					{"django/0", "0"},
+					{"django/1", "1"},
+					{"django/3", "3"},
 				},
 			},
-			expectedChanges: []string{
-				"upload charm cs:nginx",
-				"deploy application nginx using cs:nginx",
-				"add unit django/4 to new machine 4",
-				"add unit django/5 to new machine 5",
-				"add unit nginx/0 to existing machine 0 to satisfy [django]",
-				"add unit nginx/1 to existing machine 1 to satisfy [django]",
-				"add unit nginx/2 to existing machine 3 to satisfy [django]",
-				"add unit nginx/3 to new machine 4 to satisfy [django]",
-				"add unit nginx/4 to new machine 5 to satisfy [django]",
-			},
-		}, {
-			description: "application placement, some co-located",
-			bundleContent: `
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			// We don't actually look at the content of the machines
+			// for this test, just the keys.
+			"0": nil, "1": nil, "3": nil,
+		},
+	}
+	expectedChanges := []string{
+		"upload charm cs:nginx",
+		"deploy application nginx using cs:nginx",
+		"add unit django/4 to new machine 4",
+		"add unit django/5 to new machine 5",
+		"add unit nginx/0 to existing machine 0 to satisfy [django]",
+		"add unit nginx/1 to existing machine 1 to satisfy [django]",
+		"add unit nginx/2 to existing machine 3 to satisfy [django]",
+		"add unit nginx/3 to new machine 4 to satisfy [django]",
+		"add unit nginx/4 to new machine 5 to satisfy [django]",
+	}
+	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
+
+func (s *changesSuite) TestApplicationPlacementSomeColocated(c *gc.C) {
+	bundleContent := `
                 applications:
                     django:
                         charm: cs:django-4
@@ -1991,41 +2042,43 @@ func (s *changesSuite) TestChangeDescriptions(c *gc.C) {
                         charm: cs:nginx
                         num_units: 5
                         to: [django]
-            `,
-			existingModel: &bundlechanges.Model{
-				Applications: map[string]*bundlechanges.Application{
-					"django": &bundlechanges.Application{
-						Charm: "cs:django-4",
-						Units: []bundlechanges.Unit{
-							{"django/0", "0"},
-							{"django/1", "1"},
-							{"django/3", "3"},
-						},
-					},
-					"nginx": &bundlechanges.Application{
-						Charm: "cs:nginx",
-						Units: []bundlechanges.Unit{
-							{"nginx/0", "0"},
-							{"nginx/1", "1"},
-							{"nginx/2", "4"},
-						},
-					},
-				},
-				Machines: map[string]*bundlechanges.Machine{
-					// We don't actually look at the content of the machines
-					// for this test, just the keys.
-					"0": nil, "1": nil, "3": nil, "4": nil,
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"django": &bundlechanges.Application{
+				Charm: "cs:django-4",
+				Units: []bundlechanges.Unit{
+					{"django/0", "0"},
+					{"django/1", "1"},
+					{"django/3", "3"},
 				},
 			},
-			expectedChanges: []string{
-				"add unit django/4 to new machine 5",
-				"add unit django/5 to new machine 6",
-				"add unit nginx/3 to existing machine 3 to satisfy [django]",
-				"add unit nginx/4 to new machine 5 to satisfy [django]",
+			"nginx": &bundlechanges.Application{
+				Charm: "cs:nginx",
+				Units: []bundlechanges.Unit{
+					{"nginx/0", "0"},
+					{"nginx/1", "1"},
+					{"nginx/2", "4"},
+				},
 			},
-		}, {
-			description: "weird unit deployed, no existing model",
-			bundleContent: `
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			// We don't actually look at the content of the machines
+			// for this test, just the keys.
+			"0": nil, "1": nil, "3": nil, "4": nil,
+		},
+	}
+	expectedChanges := []string{
+		"add unit django/4 to new machine 5",
+		"add unit django/5 to new machine 6",
+		"add unit nginx/3 to existing machine 3 to satisfy [django]",
+		"add unit nginx/4 to new machine 5 to satisfy [django]",
+	}
+	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
+
+func (s *changesSuite) TestWeirdUnitDeployedNoExistingModel(c *gc.C) {
+	bundleContent := `
                 applications:
                     mysql:
                         charm: cs:mysql
@@ -2039,35 +2092,35 @@ func (s *changesSuite) TestChangeDescriptions(c *gc.C) {
                         to: ["lxd:mysql"]
                 machines:
                     0:
-            `,
-			expectedChanges: []string{
-				"upload charm cs:keystone",
-				"deploy application keystone using cs:keystone",
-				"upload charm cs:mysql",
-				"deploy application mysql using cs:mysql",
-				"add new machine 0",
-				"add new machine 1",
-				"add lxd container 0/lxd/0 on new machine 0",
-				"add lxd container 2/lxd/0 on new machine 2",
-				"add unit mysql/0 to new machine 1",
-				"add unit mysql/1 to 0/lxd/0",
-				"add unit mysql/2 to 2/lxd/0",
-				"add lxd container 1/lxd/0 on new machine 1",
-				"add lxd container 0/lxd/1 on new machine 0",
-				"add lxd container 2/lxd/1 on new machine 2",
-				"add unit keystone/0 to 1/lxd/0 to satisfy [lxd:mysql]",
-				"add unit keystone/1 to 0/lxd/1 to satisfy [lxd:mysql]",
-				"add unit keystone/2 to 2/lxd/1 to satisfy [lxd:mysql]",
-			},
-		}, {
-			description: "unit deployed, defined machine",
-			bundleContent: `
+            `
+	expectedChanges := []string{
+		"upload charm cs:keystone",
+		"deploy application keystone using cs:keystone",
+		"upload charm cs:mysql",
+		"deploy application mysql using cs:mysql",
+		"add new machine 0",
+		"add new machine 1",
+		"add lxd container 0/lxd/0 on new machine 0",
+		"add lxd container 2/lxd/0 on new machine 2",
+		"add unit mysql/0 to new machine 1",
+		"add unit mysql/1 to 0/lxd/0",
+		"add unit mysql/2 to 2/lxd/0",
+		"add lxd container 1/lxd/0 on new machine 1",
+		"add lxd container 0/lxd/1 on new machine 0",
+		"add lxd container 2/lxd/1 on new machine 2",
+		"add unit keystone/0 to 1/lxd/0 to satisfy [lxd:mysql]",
+		"add unit keystone/1 to 0/lxd/1 to satisfy [lxd:mysql]",
+		"add unit keystone/2 to 2/lxd/1 to satisfy [lxd:mysql]",
+	}
+	s.checkBundle(c, bundleContent, expectedChanges)
+}
+
+func (s *changesSuite) TestUnitDeployedDefinedMachine(c *gc.C) {
+	bundleContent := `
                 applications:
                     mysql:
                         charm: cs:mysql
                         num_units: 3
-                        # The first placement directive here is skipped because
-                        # the existing model already has one unit.
                         to: [new, "lxd:0", "lxd:new"]
                     keystone:
                         charm: cs:keystone
@@ -2075,39 +2128,39 @@ func (s *changesSuite) TestChangeDescriptions(c *gc.C) {
                         to: ["lxd:mysql"]
                 machines:
                     0:
-            `,
-			existingModel: &bundlechanges.Model{
-				Applications: map[string]*bundlechanges.Application{
-					"mysql": &bundlechanges.Application{
-						Charm: "cs:mysql",
-						Units: []bundlechanges.Unit{
-							{"mysql/0", "0/lxd/0"},
-						},
-					},
-				},
-				Machines: map[string]*bundlechanges.Machine{
-					// We don't actually look at the content of the machines
-					// for this test, just the keys.
-					"0": nil, "0/lxd/0": nil,
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"mysql": &bundlechanges.Application{
+				Charm: "cs:mysql",
+				Units: []bundlechanges.Unit{
+					{"mysql/0", "0/lxd/0"},
 				},
 			},
-			expectedChanges: []string{
-				"upload charm cs:keystone",
-				"deploy application keystone using cs:keystone",
-				"add new machine 1 (bundle machine 0)",
-				"add unit keystone/0 to 0/lxd/1 to satisfy [lxd:mysql]",
-				"add lxd container 1/lxd/0 on new machine 1",
-				"add lxd container 2/lxd/0 on new machine 2",
-				"add unit mysql/1 to 1/lxd/0",
-				"add unit mysql/2 to 2/lxd/0",
-				"add lxd container 1/lxd/1 on new machine 1",
-				"add lxd container 2/lxd/1 on new machine 2",
-				"add unit keystone/1 to 1/lxd/1 to satisfy [lxd:mysql]",
-				"add unit keystone/2 to 2/lxd/1 to satisfy [lxd:mysql]",
-			},
-		}, {
-			description: "lxd container sequence",
-			bundleContent: `
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			"0":       &bundlechanges.Machine{ID: "0"},
+			"0/lxd/0": &bundlechanges.Machine{ID: "0/lxd/0"},
+		},
+	}
+	expectedChanges := []string{
+		"upload charm cs:keystone",
+		"deploy application keystone using cs:keystone",
+		"add unit keystone/0 to 0/lxd/1 to satisfy [lxd:mysql]",
+		"add new machine 1",
+		"add lxd container 2/lxd/0 on new machine 2",
+		"add unit mysql/1 to new machine 1",
+		"add unit mysql/2 to 2/lxd/0",
+		"add lxd container 1/lxd/0 on new machine 1",
+		"add lxd container 2/lxd/1 on new machine 2",
+		"add unit keystone/1 to 1/lxd/0 to satisfy [lxd:mysql]",
+		"add unit keystone/2 to 2/lxd/1 to satisfy [lxd:mysql]",
+	}
+	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
+
+func (s *changesSuite) TestLXDContainerSequence(c *gc.C) {
+	bundleContent := `
                 applications:
                     mysql:
                         charm: cs:mysql
@@ -2116,35 +2169,37 @@ func (s *changesSuite) TestChangeDescriptions(c *gc.C) {
                         charm: cs:keystone
                         num_units: 1
                         to: ["lxd:mysql"]
-            `,
-			existingModel: &bundlechanges.Model{
-				Applications: map[string]*bundlechanges.Application{
-					"mysql": &bundlechanges.Application{
-						Charm: "cs:mysql",
-						Units: []bundlechanges.Unit{
-							{"mysql/0", "0/lxd/0"},
-						},
-					},
-				},
-				Machines: map[string]*bundlechanges.Machine{
-					// We don't actually look at the content of the machines
-					// for this test, just the keys.
-					"0": nil, "0/lxd/0": nil,
-				},
-				Sequence: map[string]int{
-					"application-mysql": 1,
-					"machine":           1,
-					"machine-0/lxd":     2,
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"mysql": &bundlechanges.Application{
+				Charm: "cs:mysql",
+				Units: []bundlechanges.Unit{
+					{"mysql/0", "0/lxd/0"},
 				},
 			},
-			expectedChanges: []string{
-				"upload charm cs:keystone",
-				"deploy application keystone using cs:keystone",
-				"add unit keystone/0 to 0/lxd/2 to satisfy [lxd:mysql]",
-			},
-		}, {
-			description: "unit deployed, defined machine, map 0 to 0",
-			bundleContent: `
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			// We don't actually look at the content of the machines
+			// for this test, just the keys.
+			"0": nil, "0/lxd/0": nil,
+		},
+		Sequence: map[string]int{
+			"application-mysql": 1,
+			"machine":           1,
+			"machine-0/lxd":     2,
+		},
+	}
+	expectedChanges := []string{
+		"upload charm cs:keystone",
+		"deploy application keystone using cs:keystone",
+		"add unit keystone/0 to 0/lxd/2 to satisfy [lxd:mysql]",
+	}
+	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
+
+func (s *changesSuite) TestMachineMapToExistingMachineSomeDeployed(c *gc.C) {
+	bundleContent := `
                 applications:
                     mysql:
                         charm: cs:mysql
@@ -2158,95 +2213,50 @@ func (s *changesSuite) TestChangeDescriptions(c *gc.C) {
                         to: ["lxd:mysql"]
                 machines:
                     0:
-            `,
-			existingModel: &bundlechanges.Model{
-				Applications: map[string]*bundlechanges.Application{
-					"mysql": &bundlechanges.Application{
-						Charm: "cs:mysql",
-						Units: []bundlechanges.Unit{
-							{"mysql/0", "0/lxd/0"},
-						},
-					},
-				},
-				Machines: map[string]*bundlechanges.Machine{
-					"0":       &bundlechanges.Machine{ID: "0"},
-					"0/lxd/0": &bundlechanges.Machine{ID: "0/lxd/0"},
-				},
-				MachineMap: map[string]string{
-					"0": "0",
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"mysql": &bundlechanges.Application{
+				Charm: "cs:mysql",
+				Units: []bundlechanges.Unit{
+					{"mysql/0", "0/lxd/0"},
 				},
 			},
-			expectedChanges: []string{
-				// NOTE: we have mapped machine zero in the bundle to the
-				// existing machine zero, and the second unit of mysql is said
-				// to be in a lxd container on machine zero. We don't try to
-				// map the existing mysql on machine zero to this unit, but
-				// instead map it to the first placement directive. Hence,
-				// this weird resulting placement.
-				"upload charm cs:keystone",
-				"deploy application keystone using cs:keystone",
-				"add unit keystone/0 to 0/lxd/2 to satisfy [lxd:mysql]",
-				"add unit mysql/1 to 0/lxd/1",
-				"add lxd container 1/lxd/0 on new machine 1",
-				"add lxd container 0/lxd/3 on existing machine 0",
-				// This is arguably wrong since we have already placed a keystone
-				// in a lxd container on this machine.
-				"add unit keystone/1 to 0/lxd/3 to satisfy [lxd:mysql]",
-				"add unit mysql/2 to 1/lxd/0",
-				"add lxd container 1/lxd/1 on new machine 1",
-				"add unit keystone/2 to 1/lxd/1 to satisfy [lxd:mysql]",
-			},
-		}, {
-			description: "machine map to existing machine, some deployed",
-			bundleContent: `
-                applications:
-                    mysql:
-                        charm: cs:mysql
-                        num_units: 3
-                        # The first placement directive here is skipped because
-                        # the existing model already has one unit.
-                        to: [new, "lxd:0", "lxd:new"]
-                    keystone:
-                        charm: cs:keystone
-                        num_units: 3
-                        to: ["lxd:mysql"]
-                machines:
-                    0:
-            `,
-			existingModel: &bundlechanges.Model{
-				Applications: map[string]*bundlechanges.Application{
-					"mysql": &bundlechanges.Application{
-						Charm: "cs:mysql",
-						Units: []bundlechanges.Unit{
-							{"mysql/0", "0/lxd/0"},
-						},
-					},
-				},
-				Machines: map[string]*bundlechanges.Machine{
-					"0":       &bundlechanges.Machine{ID: "0"},
-					"0/lxd/0": &bundlechanges.Machine{ID: "0/lxd/0"},
-					"2":       &bundlechanges.Machine{ID: "2"},
-					"2/lxd/0": &bundlechanges.Machine{ID: "2/lxd/0"},
-				},
-				MachineMap: map[string]string{
-					"0": "2", // 0 in bundle is machine 2 in existing.
-				},
-			},
-			expectedChanges: []string{
-				"upload charm cs:keystone",
-				"deploy application keystone using cs:keystone",
-				"add unit keystone/0 to 0/lxd/1 to satisfy [lxd:mysql]",
-				"add unit mysql/1 to 2/lxd/1",
-				"add lxd container 3/lxd/0 on new machine 3",
-				"add lxd container 2/lxd/2 on existing machine 2",
-				"add unit keystone/1 to 2/lxd/2 to satisfy [lxd:mysql]",
-				"add unit mysql/2 to 3/lxd/0",
-				"add lxd container 3/lxd/1 on new machine 3",
-				"add unit keystone/2 to 3/lxd/1 to satisfy [lxd:mysql]",
-			},
-		}, {
-			description: "setting annotations for existing machine",
-			bundleContent: `
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			"0":       &bundlechanges.Machine{ID: "0"},
+			"0/lxd/0": &bundlechanges.Machine{ID: "0/lxd/0"},
+			"2":       &bundlechanges.Machine{ID: "2"},
+			"2/lxd/0": &bundlechanges.Machine{ID: "2/lxd/0"},
+		},
+		MachineMap: map[string]string{
+			"0": "2", // 0 in bundle is machine 2 in existing.
+		},
+	}
+	expectedChanges := []string{
+		"upload charm cs:keystone",
+		"deploy application keystone using cs:keystone",
+		// First unit of keystone goes in a container next to the existing mysql.
+		"add unit keystone/0 to 0/lxd/1 to satisfy [lxd:mysql]",
+		// Two more units of mysql are needed, and the "lxd:0" is unsatisfied
+		// because machine 0 has been mapped to machine 2, and mysql isn't on machine 2.
+		// Due to this, the placements directives are popped off as needed,
+		// First one is "new", second is "lxd:0", and since 0 is mapped to 2, the lxd
+		// is created on machine 2.
+		"add new machine 3",
+		"add unit mysql/1 to new machine 3",
+		"add unit mysql/2 to 2/lxd/1",
+		// Next, units of keystone go next to the new mysql units.
+		"add lxd container 3/lxd/0 on new machine 3",
+		"add lxd container 2/lxd/2 on existing machine 2",
+		"add unit keystone/1 to 3/lxd/0 to satisfy [lxd:mysql]",
+		"add unit keystone/2 to 2/lxd/2 to satisfy [lxd:mysql]",
+	}
+	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
+
+func (s *changesSuite) TestSettingAnnotationsForExistingMachine(c *gc.C) {
+	bundleContent := `
                 applications:
                     mysql:
                         charm: cs:mysql
@@ -2256,31 +2266,33 @@ func (s *changesSuite) TestChangeDescriptions(c *gc.C) {
                     0:
                         annotations:
                             key: value
-            `,
-			existingModel: &bundlechanges.Model{
-				Applications: map[string]*bundlechanges.Application{
-					"mysql": &bundlechanges.Application{
-						Charm: "cs:mysql",
-						Units: []bundlechanges.Unit{
-							{"mysql/0", "0/lxd/0"},
-						},
-					},
-				},
-				Machines: map[string]*bundlechanges.Machine{
-					"0":       &bundlechanges.Machine{ID: "0"},
-					"0/lxd/0": &bundlechanges.Machine{ID: "0/lxd/0"},
-					"2":       &bundlechanges.Machine{ID: "2"},
-				},
-				MachineMap: map[string]string{
-					"0": "2", // 0 in bundle is machine 2 in existing.
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"mysql": &bundlechanges.Application{
+				Charm: "cs:mysql",
+				Units: []bundlechanges.Unit{
+					{"mysql/0", "0/lxd/0"},
 				},
 			},
-			expectedChanges: []string{
-				"set annotations for existing machine 2",
-			},
-		}, {
-			description: "test sibling containers",
-			bundleContent: `
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			"0":       &bundlechanges.Machine{ID: "0"},
+			"0/lxd/0": &bundlechanges.Machine{ID: "0/lxd/0"},
+			"2":       &bundlechanges.Machine{ID: "2"},
+		},
+		MachineMap: map[string]string{
+			"0": "2", // 0 in bundle is machine 2 in existing.
+		},
+	}
+	expectedChanges := []string{
+		"set annotations for existing machine 2",
+	}
+	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
+
+func (s *changesSuite) TestSiblingContainers(c *gc.C) {
+	bundleContent := `
                 applications:
                     mysql:
                         charm: cs:mysql
@@ -2290,28 +2302,85 @@ func (s *changesSuite) TestChangeDescriptions(c *gc.C) {
                         charm: cs:keystone
                         num_units: 3
                         to: ["lxd:mysql"]
-            `,
-			expectedChanges: []string{
-				"upload charm cs:keystone",
-				"deploy application keystone using cs:keystone",
-				"upload charm cs:mysql",
-				"deploy application mysql using cs:mysql",
-				"add lxd container 0/lxd/0 on new machine 0",
-				"add lxd container 1/lxd/0 on new machine 1",
-				"add lxd container 2/lxd/0 on new machine 2",
-				"add unit mysql/0 to 0/lxd/0",
-				"add unit mysql/1 to 1/lxd/0",
-				"add unit mysql/2 to 2/lxd/0",
-				"add lxd container 0/lxd/1 on new machine 0",
-				"add lxd container 1/lxd/1 on new machine 1",
-				"add lxd container 2/lxd/1 on new machine 2",
-				"add unit keystone/0 to 0/lxd/1 to satisfy [lxd:mysql]",
-				"add unit keystone/1 to 1/lxd/1 to satisfy [lxd:mysql]",
-				"add unit keystone/2 to 2/lxd/1 to satisfy [lxd:mysql]",
+            `
+	expectedChanges := []string{
+		"upload charm cs:keystone",
+		"deploy application keystone using cs:keystone",
+		"upload charm cs:mysql",
+		"deploy application mysql using cs:mysql",
+		"add lxd container 0/lxd/0 on new machine 0",
+		"add lxd container 1/lxd/0 on new machine 1",
+		"add lxd container 2/lxd/0 on new machine 2",
+		"add unit mysql/0 to 0/lxd/0",
+		"add unit mysql/1 to 1/lxd/0",
+		"add unit mysql/2 to 2/lxd/0",
+		"add lxd container 0/lxd/1 on new machine 0",
+		"add lxd container 1/lxd/1 on new machine 1",
+		"add lxd container 2/lxd/1 on new machine 2",
+		"add unit keystone/0 to 0/lxd/1 to satisfy [lxd:mysql]",
+		"add unit keystone/1 to 1/lxd/1 to satisfy [lxd:mysql]",
+		"add unit keystone/2 to 2/lxd/1 to satisfy [lxd:mysql]",
+	}
+	s.checkBundle(c, bundleContent, expectedChanges)
+}
+
+func (s *changesSuite) TestSiblingContainersSomeDeployed(c *gc.C) {
+	bundleContent := `
+                applications:
+                    mysql:
+                        charm: cs:mysql
+                        num_units: 3
+                        to: ["lxd:new"]
+                    keystone:
+                        charm: cs:keystone
+                        num_units: 4
+                        to: ["lxd:mysql"]
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"mysql": &bundlechanges.Application{
+				Charm: "cs:mysql",
+				Units: []bundlechanges.Unit{
+					{"mysql/0", "0/lxd/0"},
+					{"mysql/1", "1/lxd/0"},
+					{"mysql/2", "2/lxd/0"},
+				},
 			},
-		}, {
-			description: "test colocation into a container when specifying machine (don't ask why)",
-			bundleContent: `
+			"keystone": &bundlechanges.Application{
+				Charm: "cs:keystone",
+				Units: []bundlechanges.Unit{
+					{"keystone/0", "0/lxd/1"},
+					{"keystone/2", "2/lxd/1"},
+				},
+			},
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			"0":       &bundlechanges.Machine{ID: "0"},
+			"0/lxd/0": &bundlechanges.Machine{ID: "0/lxd/0"},
+			"0/lxd/1": &bundlechanges.Machine{ID: "0/lxd/1"},
+			"1":       &bundlechanges.Machine{ID: "1"},
+			"1/lxd/0": &bundlechanges.Machine{ID: "1/lxd/0"},
+			"2":       &bundlechanges.Machine{ID: "2"},
+			"2/lxd/0": &bundlechanges.Machine{ID: "2/lxd/0"},
+			"2/lxd/1": &bundlechanges.Machine{ID: "2/lxd/1"},
+		},
+		Sequence: map[string]int{
+			"machine":              3,
+			"application-keystone": 3,
+			"machine-1/lxd":        2,
+		},
+	}
+	expectedChanges := []string{
+		"add unit keystone/3 to 1/lxd/2 to satisfy [lxd:mysql]",
+		// TODO: this should really be 3/lxd/0 as fallback should
+		// be "lxd:new", not "new"
+		"add unit keystone/4 to new machine 3",
+	}
+	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
+
+func (s *changesSuite) TestColocationIntoAContainerUsingUnitPlacement(c *gc.C) {
+	bundleContent := `
                 applications:
                     mysql:
                         charm: cs:mysql
@@ -2321,25 +2390,27 @@ func (s *changesSuite) TestChangeDescriptions(c *gc.C) {
                         charm: cs:keystone
                         num_units: 3
                         to: [mysql/0, mysql/1, mysql/2]
-            `,
-			expectedChanges: []string{
-				"upload charm cs:keystone",
-				"deploy application keystone using cs:keystone",
-				"upload charm cs:mysql",
-				"deploy application mysql using cs:mysql",
-				"add lxd container 0/lxd/0 on new machine 0",
-				"add lxd container 1/lxd/0 on new machine 1",
-				"add lxd container 2/lxd/0 on new machine 2",
-				"add unit mysql/0 to 0/lxd/0",
-				"add unit mysql/1 to 1/lxd/0",
-				"add unit mysql/2 to 2/lxd/0",
-				"add unit keystone/0 to 0/lxd/0 to satisfy [mysql/0]",
-				"add unit keystone/1 to 1/lxd/0 to satisfy [mysql/1]",
-				"add unit keystone/2 to 2/lxd/0 to satisfy [mysql/2]",
-			},
-		}, {
-			description: "test colocation into a container (don't ask why)",
-			bundleContent: `
+            `
+	expectedChanges := []string{
+		"upload charm cs:keystone",
+		"deploy application keystone using cs:keystone",
+		"upload charm cs:mysql",
+		"deploy application mysql using cs:mysql",
+		"add lxd container 0/lxd/0 on new machine 0",
+		"add lxd container 1/lxd/0 on new machine 1",
+		"add lxd container 2/lxd/0 on new machine 2",
+		"add unit mysql/0 to 0/lxd/0",
+		"add unit mysql/1 to 1/lxd/0",
+		"add unit mysql/2 to 2/lxd/0",
+		"add unit keystone/0 to 0/lxd/0 to satisfy [mysql/0]",
+		"add unit keystone/1 to 1/lxd/0 to satisfy [mysql/1]",
+		"add unit keystone/2 to 2/lxd/0 to satisfy [mysql/2]",
+	}
+	s.checkBundle(c, bundleContent, expectedChanges)
+}
+
+func (s *changesSuite) TestColocationIntoAContainerUsingAppPlacement(c *gc.C) {
+	bundleContent := `
                 applications:
                     mysql:
                         charm: cs:mysql
@@ -2349,25 +2420,27 @@ func (s *changesSuite) TestChangeDescriptions(c *gc.C) {
                         charm: cs:keystone
                         num_units: 3
                         to: ["mysql"]
-            `,
-			expectedChanges: []string{
-				"upload charm cs:keystone",
-				"deploy application keystone using cs:keystone",
-				"upload charm cs:mysql",
-				"deploy application mysql using cs:mysql",
-				"add lxd container 0/lxd/0 on new machine 0",
-				"add lxd container 1/lxd/0 on new machine 1",
-				"add lxd container 2/lxd/0 on new machine 2",
-				"add unit mysql/0 to 0/lxd/0",
-				"add unit mysql/1 to 1/lxd/0",
-				"add unit mysql/2 to 2/lxd/0",
-				"add unit keystone/0 to 0/lxd/0 to satisfy [mysql]",
-				"add unit keystone/1 to 1/lxd/0 to satisfy [mysql]",
-				"add unit keystone/2 to 2/lxd/0 to satisfy [mysql]",
-			},
-		}, {
-			description: "test placement descriptions for unit placement",
-			bundleContent: `
+            `
+	expectedChanges := []string{
+		"upload charm cs:keystone",
+		"deploy application keystone using cs:keystone",
+		"upload charm cs:mysql",
+		"deploy application mysql using cs:mysql",
+		"add lxd container 0/lxd/0 on new machine 0",
+		"add lxd container 1/lxd/0 on new machine 1",
+		"add lxd container 2/lxd/0 on new machine 2",
+		"add unit mysql/0 to 0/lxd/0",
+		"add unit mysql/1 to 1/lxd/0",
+		"add unit mysql/2 to 2/lxd/0",
+		"add unit keystone/0 to 0/lxd/0 to satisfy [mysql]",
+		"add unit keystone/1 to 1/lxd/0 to satisfy [mysql]",
+		"add unit keystone/2 to 2/lxd/0 to satisfy [mysql]",
+	}
+	s.checkBundle(c, bundleContent, expectedChanges)
+}
+
+func (s *changesSuite) TestPlacementDescriptionsForUnitPlacement(c *gc.C) {
+	bundleContent := `
                 applications:
                     mysql:
                         charm: cs:mysql
@@ -2376,41 +2449,27 @@ func (s *changesSuite) TestChangeDescriptions(c *gc.C) {
                         charm: cs:keystone
                         num_units: 3
                         to: ["lxd:mysql/0", "lxd:mysql/1", "lxd:mysql/2"]
-            `,
-			expectedChanges: []string{
-				"upload charm cs:keystone",
-				"deploy application keystone using cs:keystone",
-				"upload charm cs:mysql",
-				"deploy application mysql using cs:mysql",
-				"add unit mysql/0 to new machine 0",
-				"add unit mysql/1 to new machine 1",
-				"add unit mysql/2 to new machine 2",
-				"add lxd container 0/lxd/0 on new machine 0",
-				"add lxd container 1/lxd/0 on new machine 1",
-				"add lxd container 2/lxd/0 on new machine 2",
-				"add unit keystone/0 to 0/lxd/0 to satisfy [lxd:mysql/0]",
-				"add unit keystone/1 to 1/lxd/0 to satisfy [lxd:mysql/1]",
-				"add unit keystone/2 to 2/lxd/0 to satisfy [lxd:mysql/2]",
-			},
-		}, {
-			description: "cyclic placement",
-			bundleContent: `
-                applications:
-                    mysql:
-                        charm: cs:mysql
-                        num_units: 3
-                        to: [new, "lxd:0", "lxd:keystone/2"]
-                    keystone:
-                        charm: cs:keystone
-                        num_units: 3
-                        to: ["lxd:mysql"]
-                machines:
-                    0:
-            `,
-			errMatch: "cycle in placement directives for: keystone, mysql",
-		}, {
-			description: "test placement descriptions for unit placement",
-			bundleContent: `
+            `
+	expectedChanges := []string{
+		"upload charm cs:keystone",
+		"deploy application keystone using cs:keystone",
+		"upload charm cs:mysql",
+		"deploy application mysql using cs:mysql",
+		"add unit mysql/0 to new machine 0",
+		"add unit mysql/1 to new machine 1",
+		"add unit mysql/2 to new machine 2",
+		"add lxd container 0/lxd/0 on new machine 0",
+		"add lxd container 1/lxd/0 on new machine 1",
+		"add lxd container 2/lxd/0 on new machine 2",
+		"add unit keystone/0 to 0/lxd/0 to satisfy [lxd:mysql/0]",
+		"add unit keystone/1 to 1/lxd/0 to satisfy [lxd:mysql/1]",
+		"add unit keystone/2 to 2/lxd/0 to satisfy [lxd:mysql/2]",
+	}
+	s.checkBundle(c, bundleContent, expectedChanges)
+}
+
+func (s *changesSuite) TestMostAppOptions(c *gc.C) {
+	bundleContent := `
                 applications:
                     mediawiki:
                         charm: cs:precise/mediawiki-10
@@ -2432,21 +2491,23 @@ func (s *changesSuite) TestChangeDescriptions(c *gc.C) {
                 relations:
                     - - mediawiki:db
                       - mysql:db
-            `,
-			expectedChanges: []string{
-				"upload charm cs:precise/mediawiki-10 for series precise",
-				"deploy application mediawiki on precise using cs:precise/mediawiki-10",
-				"expose mediawiki",
-				"set annotations for mediawiki",
-				"upload charm cs:precise/mysql-28 for series precise",
-				"deploy application mysql on precise using cs:precise/mysql-28",
-				"add relation mediawiki:db - mysql:db",
-				"add unit mediawiki/0 to new machine 0",
-				"add unit mysql/0 to new machine 1",
-			},
-		}, {
-			description: "test unit ordering",
-			bundleContent: `
+            `
+	expectedChanges := []string{
+		"upload charm cs:precise/mediawiki-10 for series precise",
+		"deploy application mediawiki on precise using cs:precise/mediawiki-10",
+		"expose mediawiki",
+		"set annotations for mediawiki",
+		"upload charm cs:precise/mysql-28 for series precise",
+		"deploy application mysql on precise using cs:precise/mysql-28",
+		"add relation mediawiki:db - mysql:db",
+		"add unit mediawiki/0 to new machine 0",
+		"add unit mysql/0 to new machine 1",
+	}
+	s.checkBundle(c, bundleContent, expectedChanges)
+}
+
+func (s *changesSuite) TestUnitOrdering(c *gc.C) {
+	bundleContent := `
                 applications:
                     memcached:
                         charm: cs:xenial/mem-47
@@ -2468,35 +2529,37 @@ func (s *changesSuite) TestChangeDescriptions(c *gc.C) {
                     1:
                     2:
                     3:
-            `,
-			expectedChanges: []string{
-				"upload charm cs:xenial/django-42 for series xenial",
-				"deploy application django on xenial using cs:xenial/django-42",
-				"upload charm cs:xenial/mem-47 for series xenial",
-				"deploy application memcached on xenial using cs:xenial/mem-47",
-				"upload charm rails",
-				"deploy application ror using rails",
-				"add new machine 0 (bundle machine 1)",
-				"add new machine 1 (bundle machine 2)",
-				"add new machine 2 (bundle machine 3)",
-				"add unit django/0 to new machine 0",
-				"add unit memcached/0 to new machine 0",
-				"add unit memcached/1 to new machine 1",
-				"add unit memcached/2 to new machine 2",
-				"add unit ror/0 to new machine 0",
-				"add kvm container 2/kvm/0 on new machine 2",
-				"add lxd container 0/lxd/0 on new machine 0",
-				"add lxd container 1/lxd/0 on new machine 1",
-				"add lxd container 2/lxd/0 on new machine 2",
-				"add unit django/1 to 0/lxd/0 to satisfy [lxd:memcached]",
-				"add unit django/2 to 1/lxd/0 to satisfy [lxd:memcached]",
-				"add unit django/3 to 2/lxd/0 to satisfy [lxd:memcached]",
-				"add unit ror/1 to 2/kvm/0",
-				"add unit ror/2 to new machine 3",
-			},
-		}, {
-			description: "machine natural sorting",
-			bundleContent: `
+            `
+	expectedChanges := []string{
+		"upload charm cs:xenial/django-42 for series xenial",
+		"deploy application django on xenial using cs:xenial/django-42",
+		"upload charm cs:xenial/mem-47 for series xenial",
+		"deploy application memcached on xenial using cs:xenial/mem-47",
+		"upload charm rails",
+		"deploy application ror using rails",
+		"add new machine 0 (bundle machine 1)",
+		"add new machine 1 (bundle machine 2)",
+		"add new machine 2 (bundle machine 3)",
+		"add unit django/0 to new machine 0",
+		"add unit memcached/0 to new machine 0",
+		"add unit memcached/1 to new machine 1",
+		"add unit memcached/2 to new machine 2",
+		"add unit ror/0 to new machine 0",
+		"add kvm container 2/kvm/0 on new machine 2",
+		"add lxd container 0/lxd/0 on new machine 0",
+		"add lxd container 1/lxd/0 on new machine 1",
+		"add lxd container 2/lxd/0 on new machine 2",
+		"add unit django/1 to 0/lxd/0 to satisfy [lxd:memcached]",
+		"add unit django/2 to 1/lxd/0 to satisfy [lxd:memcached]",
+		"add unit django/3 to 2/lxd/0 to satisfy [lxd:memcached]",
+		"add unit ror/1 to 2/kvm/0",
+		"add unit ror/2 to new machine 3",
+	}
+	s.checkBundle(c, bundleContent, expectedChanges)
+}
+
+func (s *changesSuite) TestMachineNaturalSorting(c *gc.C) {
+	bundleContent := `
                 applications:
                     ubu:
                         charm: cs:ubuntu
@@ -2516,40 +2579,42 @@ func (s *changesSuite) TestChangeDescriptions(c *gc.C) {
                     10:
                     11:
                     12:
-            `,
-			expectedChanges: []string{
-				"upload charm cs:ubuntu",
-				"deploy application ubu using cs:ubuntu",
-				"add new machine 0",
-				"add new machine 1",
-				"add new machine 2",
-				"add new machine 3",
-				"add new machine 4",
-				"add new machine 5",
-				"add new machine 6",
-				"add new machine 7",
-				"add new machine 8",
-				"add new machine 9",
-				"add new machine 10",
-				"add new machine 11",
-				"add new machine 12",
-				"add unit ubu/0 to new machine 0",
-				"add unit ubu/1 to new machine 1",
-				"add unit ubu/2 to new machine 2",
-				"add unit ubu/3 to new machine 3",
-				"add unit ubu/4 to new machine 4",
-				"add unit ubu/5 to new machine 5",
-				"add unit ubu/6 to new machine 6",
-				"add unit ubu/7 to new machine 7",
-				"add unit ubu/8 to new machine 8",
-				"add unit ubu/9 to new machine 9",
-				"add unit ubu/10 to new machine 10",
-				"add unit ubu/11 to new machine 11",
-				"add unit ubu/12 to new machine 12",
-			},
-		}, {
-			description: "add unit to existing app",
-			bundleContent: `
+            `
+	expectedChanges := []string{
+		"upload charm cs:ubuntu",
+		"deploy application ubu using cs:ubuntu",
+		"add new machine 0",
+		"add new machine 1",
+		"add new machine 2",
+		"add new machine 3",
+		"add new machine 4",
+		"add new machine 5",
+		"add new machine 6",
+		"add new machine 7",
+		"add new machine 8",
+		"add new machine 9",
+		"add new machine 10",
+		"add new machine 11",
+		"add new machine 12",
+		"add unit ubu/0 to new machine 0",
+		"add unit ubu/1 to new machine 1",
+		"add unit ubu/2 to new machine 2",
+		"add unit ubu/3 to new machine 3",
+		"add unit ubu/4 to new machine 4",
+		"add unit ubu/5 to new machine 5",
+		"add unit ubu/6 to new machine 6",
+		"add unit ubu/7 to new machine 7",
+		"add unit ubu/8 to new machine 8",
+		"add unit ubu/9 to new machine 9",
+		"add unit ubu/10 to new machine 10",
+		"add unit ubu/11 to new machine 11",
+		"add unit ubu/12 to new machine 12",
+	}
+	s.checkBundle(c, bundleContent, expectedChanges)
+}
+
+func (s *changesSuite) TestAddUnitToExistingApp(c *gc.C) {
+	bundleContent := `
                 applications:
                     mediawiki:
                         charm: cs:precise/mediawiki-10
@@ -2561,71 +2626,138 @@ func (s *changesSuite) TestChangeDescriptions(c *gc.C) {
                 relations:
                     - - mediawiki:db
                       - mysql:db
-            `,
-			existingModel: &bundlechanges.Model{
-				Applications: map[string]*bundlechanges.Application{
-					"mediawiki": &bundlechanges.Application{
-						Charm: "cs:precise/mediawiki-10",
-						Units: []bundlechanges.Unit{
-							{"mediawiki/0", "1"},
-						},
-					},
-					"mysql": &bundlechanges.Application{
-						Charm: "cs:precise/mysql-28",
-						Units: []bundlechanges.Unit{
-							{"mysql/0", "0"},
-						},
-					},
-				},
-				Machines: map[string]*bundlechanges.Machine{
-					"0": &bundlechanges.Machine{ID: "0"},
-					"1": &bundlechanges.Machine{ID: "1"},
-				},
-				Relations: []bundlechanges.Relation{
-					{
-						App1:      "mediawiki",
-						Endpoint1: "db",
-						App2:      "mysql",
-						Endpoint2: "db",
-					},
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"mediawiki": &bundlechanges.Application{
+				Charm: "cs:precise/mediawiki-10",
+				Units: []bundlechanges.Unit{
+					{"mediawiki/0", "1"},
 				},
 			},
-			expectedChanges: []string{
-				"add unit mediawiki/1 to new machine 2",
+			"mysql": &bundlechanges.Application{
+				Charm: "cs:precise/mysql-28",
+				Units: []bundlechanges.Unit{
+					{"mysql/0", "0"},
+				},
 			},
-		}, {
-			description: "test placement referring to own application",
-			bundleContent: `
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			"0": &bundlechanges.Machine{ID: "0"},
+			"1": &bundlechanges.Machine{ID: "1"},
+		},
+		Relations: []bundlechanges.Relation{
+			{
+				App1:      "mediawiki",
+				Endpoint1: "db",
+				App2:      "mysql",
+				Endpoint2: "db",
+			},
+		},
+	}
+	expectedChanges := []string{
+		"add unit mediawiki/1 to new machine 2",
+	}
+	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
+
+func (s *changesSuite) TestPlacementCycle(c *gc.C) {
+	bundleContent := `
+                applications:
+                    mysql:
+                        charm: cs:mysql
+                        num_units: 3
+                        to: [new, "lxd:0", "lxd:keystone/2"]
+                    keystone:
+                        charm: cs:keystone
+                        num_units: 3
+                        to: ["lxd:mysql"]
+                machines:
+                    0:
+            `
+	s.checkBundleError(c, bundleContent, "cycle in placement directives for: keystone, mysql")
+}
+
+func (s *changesSuite) TestPlacementCycleSameApp(c *gc.C) {
+	bundleContent := `
                 applications:
                     problem:
                         charm: cs:problem
                         num_units: 2
                         to: ["lxd:new", "lxd:problem/0"]
-            `,
-			errMatch: `cycle in placement directives for: problem`,
+            `
+	s.checkBundleError(c, bundleContent, `cycle in placement directives for: problem`)
+}
+
+func (s *changesSuite) TestAddMissingUnitToNotLastPlacement(c *gc.C) {
+	bundleContent := `
+                applications:
+                    foo:
+                        charm: cs:foo
+                        num_units: 3
+                        to: [0,1,2]
+                machines:
+                   0:
+                   1:
+                   2:
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"foo": &bundlechanges.Application{
+				Charm: "cs:foo",
+				Units: []bundlechanges.Unit{
+					{"foo/1", "1"},
+					{"foo/2", "2"},
+				},
+			},
 		},
-	} {
-		c.Logf("%d: %s", i, test.description)
+		Machines: map[string]*bundlechanges.Machine{
+			"0": &bundlechanges.Machine{ID: "0"},
+			"1": &bundlechanges.Machine{ID: "1"},
+			"2": &bundlechanges.Machine{ID: "2"},
+		},
+	}
+	expectedChanges := []string{
+		"add unit foo/3 to existing machine 0",
+	}
+	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
 
-		data, err := charm.ReadBundleData(strings.NewReader(test.bundleContent))
+func (s *changesSuite) checkBundle(c *gc.C, bundleContent string, expectedChanges []string) {
+	s.checkBundleImpl(c, bundleContent, nil, expectedChanges, "")
+}
+
+func (s *changesSuite) checkBundleExistingModel(c *gc.C, bundleContent string, existingModel *bundlechanges.Model, expectedChanges []string) {
+	s.checkBundleImpl(c, bundleContent, existingModel, expectedChanges, "")
+}
+
+func (s *changesSuite) checkBundleError(c *gc.C, bundleContent string, errMatch string) {
+	s.checkBundleImpl(c, bundleContent, nil, nil, errMatch)
+}
+
+func (s *changesSuite) checkBundleImpl(c *gc.C, bundleContent string, existingModel *bundlechanges.Model, expectedChanges []string, errMatch string) {
+	data, err := charm.ReadBundleData(strings.NewReader(bundleContent))
+	c.Assert(err, jc.ErrorIsNil)
+	err = data.Verify(nil, nil)
+	c.Assert(err, jc.ErrorIsNil)
+
+	// Retrieve the changes, and convert them to a sequence of records.
+	changes, err := bundlechanges.FromData(bundlechanges.ChangesConfig{
+		Bundle: data,
+		Model:  existingModel,
+		Logger: loggo.GetLogger("bundlechanges"),
+	})
+	if errMatch != "" {
+		c.Assert(err, gc.ErrorMatches, errMatch)
+	} else {
 		c.Assert(err, jc.ErrorIsNil)
-		err = data.Verify(nil, nil)
-		c.Assert(err, jc.ErrorIsNil)
+		var obtained []string
+		for _, change := range changes {
+			c.Log(change.Description())
+			//c.Logf("  %s %v", change.Method(), change.GUIArgs())
 
-		// Retrieve the changes, and convert them to a sequence of records.
-		changes, err := bundlechanges.FromData(data, test.existingModel)
-		if test.errMatch != "" {
-			c.Assert(err, gc.ErrorMatches, test.errMatch)
-		} else {
-			c.Assert(err, jc.ErrorIsNil)
-			var obtained []string
-			for _, change := range changes {
-				c.Log(change.Description())
-				c.Logf("  %s %v", change.Method(), change.GUIArgs())
-
-				obtained = append(obtained, change.Description())
-			}
-			c.Check(obtained, jc.DeepEquals, test.expectedChanges)
+			obtained = append(obtained, change.Description())
 		}
+		c.Check(obtained, jc.DeepEquals, expectedChanges)
 	}
 }

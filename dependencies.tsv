@@ -13,6 +13,8 @@ github.com/juju/utils	git	9b65c33e54c793d74a4ed99c15111c44faddb8e4	2017-10-25T16
 github.com/juju/version	git	1f41e27e54f21acccf9b2dddae063a782a8a7ceb	2016-10-31T05:19:06Z
 github.com/juju/webbrowser	git	54b8c57083b4afb7dc75da7f13e2967b2606a507	2016-03-09T14:36:29Z
 github.com/julienschmidt/httprouter	git	77a895ad01ebc98a4dc95d8355bc825ce80a56f6	2015-10-13T22:55:20Z
+github.com/kr/pretty	git	cfb55aafdaf3ec08f0db22699ab822c50091b1c4	2016-08-23T17:07:15Z
+github.com/kr/text	git	7cafcd837844e784b526369c9bce262804aebc60	2016-05-04T23:40:17Z
 github.com/rogpeppe/fastuuid	git	6724a57986aff9bff1a1770e9347036def7c89f6	2015-01-06T09:32:20Z
 golang.org/x/crypto	git	96846453c37f0876340a66a47f3f75b1f3a6cd2d	2017-04-21T04:31:20Z
 golang.org/x/net	git	ea47fc708ee3e20177f3ca3716217c4ab75942cb	2015-08-29T23:03:18Z

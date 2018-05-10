@@ -10,13 +10,26 @@ import (
 	"github.com/juju/errors"
 	"github.com/juju/naturalsort"
 	"github.com/juju/utils/set"
+	"github.com/kr/pretty"
 	"gopkg.in/juju/charm.v6"
 	"gopkg.in/juju/charmrepo.v2"
 )
 
+type resolver struct {
+	bundle  *charm.BundleData
+	model   *Model
+	logger  Logger
+	changes *changeset
+}
+
 // handleApplications populates the change set with "addCharm"/"addApplication" records.
 // This function also handles adding application annotations.
-func handleApplications(add func(Change), applications map[string]*charm.ApplicationSpec, defaultSeries string, existing *Model) map[string]string {
+func (r *resolver) handleApplications() map[string]string {
+	add := r.changes.add
+	applications := r.bundle.Applications
+	defaultSeries := r.bundle.Series
+	existing := r.model
+
 	charms := make(map[string]string, len(applications))
 	addedApplications := make(map[string]string, len(applications))
 	// Iterate over the map using its sorted keys so that results are
@@ -157,7 +170,12 @@ func handleApplications(add func(Change), applications map[string]*charm.Applica
 
 // handleMachines populates the change set with "addMachines" records.
 // This function also handles adding machine annotations.
-func handleMachines(add func(Change), machines map[string]*charm.MachineSpec, defaultSeries string, existing *Model) map[string]*AddMachineChange {
+func (r *resolver) handleMachines() map[string]*AddMachineChange {
+	add := r.changes.add
+	machines := r.bundle.Machines
+	defaultSeries := r.bundle.Series
+	existing := r.model
+
 	addedMachines := make(map[string]*AddMachineChange, len(machines))
 	// Iterate over the map using its sorted keys so that results are
 	// deterministic and easier to test.
@@ -216,7 +234,11 @@ func handleMachines(add func(Change), machines map[string]*charm.MachineSpec, de
 }
 
 // handleRelations populates the change set with "addRelation" records.
-func handleRelations(add func(Change), relations [][]string, addedApplications map[string]string, existing *Model) {
+func (r *resolver) handleRelations(addedApplications map[string]string) {
+	add := r.changes.add
+	relations := r.bundle.Relations
+	existing := r.model
+
 	for _, relation := range relations {
 		// Add the addRelation record for this relation pair.
 		var requires []string
@@ -264,6 +286,7 @@ type unitProcessor struct {
 	existing      *Model
 	bundle        *charm.BundleData
 	defaultSeries string
+	logger        Logger
 
 	// The added applications and machines are maps from names to
 	// change IDs.
@@ -408,13 +431,20 @@ func (p *unitProcessor) placeUnitsForApplication(name string, application *charm
 		}
 	}
 
+	p.logger.Tracef("model: %s", pretty.Sprint(p.existing))
+	p.logger.Tracef("placements: %v", application.To)
+	unsatisfied := p.existing.unsatisfiedMachineAndUnitPlacements(name, application.To)
+	p.logger.Tracef("unsatisfied: %v", unsatisfied)
 	lastChangeId := ""
 	// unitCount on a nil existingApp returns zero.
 	for i := existingApp.unitCount(); i < application.NumUnits; i++ {
 		directive := lastPlacement
-		if i < numPlaced {
-			directive = application.To[i]
+		if len(unsatisfied) > 0 {
+			directive, unsatisfied = unsatisfied[0], unsatisfied[1:]
 		}
+		_ = unsatisfied
+
+		p.logger.Tracef("directive: %q", directive)
 		placement, err := p.getPlacementForNewUnit(name, application, directive)
 		if err != nil {
 			return err
@@ -777,20 +807,22 @@ func (p *unitProcessor) addContainer(up unitPlacement, application *charm.Applic
 
 // handleUnits populates the change set with "addUnit" records.
 // It also handles adding machine containers where to place units if required.
-func handleUnits(add func(Change), bundle *charm.BundleData, addedApplications map[string]string, addedMachines map[string]*AddMachineChange, existing *Model) error {
+func (r *resolver) handleUnits(addedApplications map[string]string, addedMachines map[string]*AddMachineChange) error {
+
 	// Iterate over the map using its sorted keys so that results are
 	// deterministic and easier to test.
-	names := make([]string, 0, len(bundle.Applications))
-	for name, _ := range bundle.Applications {
+	names := make([]string, 0, len(r.bundle.Applications))
+	for name, _ := range r.bundle.Applications {
 		names = append(names, name)
 	}
 	naturalsort.Sort(names)
 
 	processor := &unitProcessor{
-		add:                        add,
-		existing:                   existing,
-		bundle:                     bundle,
-		defaultSeries:              bundle.Series,
+		add:                        r.changes.add,
+		existing:                   r.model,
+		bundle:                     r.bundle,
+		defaultSeries:              r.bundle.Series,
+		logger:                     r.logger,
 		addedApplications:          addedApplications,
 		addedMachines:              addedMachines,
 		appNames:                   names,

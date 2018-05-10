@@ -11,24 +11,58 @@ import (
 	"gopkg.in/juju/charm.v6"
 )
 
+// Logger defines the logging methods needed
+type Logger interface {
+	Tracef(string, ...interface{})
+}
+
+// ChangesConfig is used to provide the required data for determining changes.
+type ChangesConfig struct {
+	Bundle *charm.BundleData
+	Model  *Model
+	Logger Logger
+	// TODO: add charm metadata for validation.
+}
+
+func (c *ChangesConfig) Validate() error {
+	if c.Bundle == nil {
+		return errors.NotValidf("nil Bundle")
+	}
+	if c.Logger == nil {
+		return errors.NotValidf("nil Logger")
+	}
+	return nil
+}
+
 // FromData generates and returns the list of changes required to deploy the
 // given bundle data. The changes are sorted by requirements, so that they can
 // be applied in order. The bundle data is assumed to be already verified.
-func FromData(data *charm.BundleData, existing *Model) ([]Change, error) {
-	if existing == nil {
-		existing = &Model{}
+func FromData(config ChangesConfig) ([]Change, error) {
+	if err := config.Validate(); err != nil {
+		return nil, err
 	}
-	existing.initializeSequence()
-	existing.InferMachineMap(data)
-	cs := &changeset{}
-	addedApplications := handleApplications(cs.add, data.Applications, data.Series, existing)
-	addedMachines := handleMachines(cs.add, data.Machines, data.Series, existing)
-	handleRelations(cs.add, data.Relations, addedApplications, existing)
-	err := handleUnits(cs.add, data, addedApplications, addedMachines, existing)
+	model := config.Model
+	if model == nil {
+		model = &Model{}
+	}
+
+	model.initializeSequence()
+	model.InferMachineMap(config.Bundle)
+	changes := &changeset{}
+	resolver := resolver{
+		bundle:  config.Bundle,
+		model:   model,
+		logger:  config.Logger,
+		changes: changes,
+	}
+	addedApplications := resolver.handleApplications()
+	addedMachines := resolver.handleMachines()
+	resolver.handleRelations(addedApplications)
+	err := resolver.handleUnits(addedApplications, addedMachines)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-	return cs.sorted(), nil
+	return changes.sorted(), nil
 }
 
 // Change holds a single change required to deploy a bundle.

@@ -213,11 +213,6 @@ mainloop:
 				continue mainloop
 			}
 		}
-		// If we didn't find a placement that matches, yet there is a machine
-		// in the model with the same ID, add to the machine map.
-		if existing := m.Machines[id]; existing != nil {
-			m.MachineMap[id] = id
-		}
 	}
 }
 

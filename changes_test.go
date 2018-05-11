@@ -2718,6 +2718,47 @@ func (s *changesSuite) TestAddMissingUnitToNotLastPlacement(c *gc.C) {
 		},
 	}
 	expectedChanges := []string{
+		"add new machine 3 (bundle machine 0)",
+		"add unit foo/3 to new machine 3",
+	}
+	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
+
+func (s *changesSuite) TestAddMissingUnitToNotLastPlacementExisting(c *gc.C) {
+	bundleContent := `
+                applications:
+                    foo:
+                        charm: cs:foo
+                        num_units: 3
+                        to: [0,1,2]
+                machines:
+                   0:
+                   1:
+                   2:
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"foo": &bundlechanges.Application{
+				Charm: "cs:foo",
+				Units: []bundlechanges.Unit{
+					{"foo/1", "1"},
+					{"foo/2", "2"},
+				},
+			},
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			"0": &bundlechanges.Machine{ID: "0"},
+			"1": &bundlechanges.Machine{ID: "1"},
+			"2": &bundlechanges.Machine{ID: "2"},
+		},
+		MachineMap: map[string]string{
+			// map existing machines.
+			"0": "0",
+			"1": "1",
+			"2": "2",
+		},
+	}
+	expectedChanges := []string{
 		"add unit foo/3 to existing machine 0",
 	}
 	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)

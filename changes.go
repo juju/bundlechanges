@@ -43,9 +43,10 @@ func FromData(config ChangesConfig) ([]Change, error) {
 	}
 	model := config.Model
 	if model == nil {
-		model = &Model{}
+		model = &Model{
+			logger: config.Logger,
+		}
 	}
-
 	model.initializeSequence()
 	model.InferMachineMap(config.Bundle)
 	changes := &changeset{}

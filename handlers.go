@@ -10,7 +10,6 @@ import (
 	"github.com/juju/errors"
 	"github.com/juju/naturalsort"
 	"github.com/juju/utils/set"
-	"github.com/kr/pretty"
 	"gopkg.in/juju/charm.v6"
 	"gopkg.in/juju/charmrepo.v2"
 )
@@ -431,7 +430,7 @@ func (p *unitProcessor) placeUnitsForApplication(name string, application *charm
 		}
 	}
 
-	p.logger.Tracef("model: %s", pretty.Sprint(p.existing))
+	p.logger.Tracef("model: %s", p.existing.pretty())
 	p.logger.Tracef("placements: %v", application.To)
 	unsatisfied := p.existing.unsatisfiedMachineAndUnitPlacements(name, application.To)
 	p.logger.Tracef("unsatisfied: %v", unsatisfied)

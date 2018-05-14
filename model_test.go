@@ -6,6 +6,8 @@ package bundlechanges
 import (
 	"bytes"
 
+	"github.com/juju/loggo"
+	"github.com/juju/testing"
 	jc "github.com/juju/testing/checkers"
 	gc "gopkg.in/check.v1"
 	"gopkg.in/juju/charm.v6"
@@ -280,13 +282,18 @@ func (*modelSuite) TestBundleMachineNotMapped(c *gc.C) {
 }
 
 type inferMachineMapSuite struct {
+	testing.IsolationSuite
+
 	data *charm.BundleData
 }
 
 var _ = gc.Suite(&inferMachineMapSuite{})
 
 func (s *inferMachineMapSuite) SetUpTest(c *gc.C) {
-	reader := bytes.NewBufferString(`
+	s.IsolationSuite.SetUpTest(c)
+	loggo.ConfigureLoggers("bundlechanges=trace")
+
+	bundle := `
         applications:
             django:
                 charm: cs:trusty/django-42
@@ -301,10 +308,15 @@ func (s *inferMachineMapSuite) SetUpTest(c *gc.C) {
                 constraints: "cpu-cores=4"
             8:
                 constraints: "cpu-cores=8"
-    `)
+    `
+	s.data = s.parseBundle(c, bundle)
+}
+
+func (s *inferMachineMapSuite) parseBundle(c *gc.C, bundle string) *charm.BundleData {
+	reader := bytes.NewBufferString(bundle)
 	data, err := charm.ReadBundleData(reader)
 	c.Assert(err, jc.ErrorIsNil)
-	s.data = data
+	return data
 }
 
 func (s *inferMachineMapSuite) TestInferMachineMapEmptyModel(c *gc.C) {
@@ -329,27 +341,27 @@ func (s *inferMachineMapSuite) TestInferMachineMapSuppliedMapping(c *gc.C) {
 
 func (s *inferMachineMapSuite) TestInferMachineMapPartial(c *gc.C) {
 	userSpecifiedMap := map[string]string{
-		"4": "0",
+		"4": "1",
 	}
 	model := &Model{
 		Applications: map[string]*Application{
 			"django": &Application{
 				Units: []Unit{
-					{"django/0", "0"},
-					{"django/1", "1"},
-					{"django/2", "2"},
+					{"django/0", "1"},
+					{"django/1", "2"},
+					{"django/2", "3"},
 				},
 			},
 		},
 		MachineMap: userSpecifiedMap,
+		logger:     loggo.GetLogger("bundlechanges"),
 	}
 	model.InferMachineMap(s.data)
 	// Since the user specified a mapping for machine 4 we use that, and
-	// machine 8 is specified in the placement directive for the third unit of
-	// django, so we use the top machine for that even if the unit isn't
-	// actually in a kvm container on that machine as the bundle requested.
+	// machine 8 effectively gets the first django unit that isn't a target
+	// in the supplied machine map.
 	c.Assert(model.MachineMap, jc.DeepEquals, map[string]string{
-		"4": "0", "8": "2",
+		"4": "1", "8": "2",
 	})
 }
 
@@ -366,11 +378,44 @@ func (s *inferMachineMapSuite) TestInferMachineMapDeployedUnits(c *gc.C) {
 				},
 			},
 		},
+		logger: loggo.GetLogger("bundlechanges"),
 	}
-	// If the user specified a mapping for those machines, use those.
 	model.InferMachineMap(s.data)
+	// Since the placement directives use a mix of new and non-new, this
+	// does make the inference harder. The first two machines identified
+	// map the bundle machine ids.
 	c.Assert(model.MachineMap, jc.DeepEquals, map[string]string{
-		"4": "1", "8": "2",
+		"4": "0", "8": "1",
+	})
+}
+
+func (s *inferMachineMapSuite) TestOffest(c *gc.C) {
+	data := s.parseBundle(c, `
+        applications:
+            django:
+                charm: cs:xenial/django-42
+                num_units: 3
+                to: [1, 2, 3]
+        machines:
+            1:
+            2:
+            3:
+`)
+	model := &Model{
+		Applications: map[string]*Application{
+			"django": &Application{
+				Units: []Unit{
+					{"django/0", "0"},
+					{"django/1", "1"},
+					{"django/2", "2"},
+				},
+			},
+		},
+		logger: loggo.GetLogger("bundlechanges"),
+	}
+	model.InferMachineMap(data)
+	c.Assert(model.MachineMap, jc.DeepEquals, map[string]string{
+		"1": "1", "2": "2", "3": "0",
 	})
 }
 

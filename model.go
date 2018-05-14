@@ -10,6 +10,7 @@ import (
 	"github.com/juju/naturalsort"
 	"github.com/juju/utils"
 	"github.com/juju/utils/set"
+	"github.com/kr/pretty"
 	"gopkg.in/juju/charm.v6"
 	"gopkg.in/juju/names.v2"
 )
@@ -37,6 +38,8 @@ type Model struct {
 
 	// This is a mapping of existing machines to machines in the bundle.
 	MachineMap map[string]string
+
+	logger Logger
 }
 
 type Relation struct {
@@ -44,6 +47,13 @@ type Relation struct {
 	Endpoint1 string
 	App2      string
 	Endpoint2 string
+}
+
+func (m *Model) pretty() string {
+	// Hide the logger from the model output.
+	another := *m
+	another.logger = nil
+	return pretty.Sprint(another)
 }
 
 func (m *Model) initializeSequence() {
@@ -143,77 +153,9 @@ func (m *Model) InferMachineMap(data *charm.BundleData) {
 	if m.MachineMap == nil {
 		m.MachineMap = make(map[string]string)
 	}
-	// NOTE: makes a copy of the placements for each app as we consume them
-	// as we iterate first time to allow for second pass to consume
-	// remaining placement directives
-	initialMachines := set.NewStrings()
-	for appName, app := range data.Applications {
-		for _, to := range app.To {
-			placement, _ := charm.ParsePlacement(to)
-			if placement == nil || placement.Machine == "" {
-				continue
-			}
-			// If this machine is mapped already, skip this one.
-			machine := placement.Machine
-			if _, ok := m.MachineMap[machine]; ok {
-				continue
-			}
-			if m.machineHasApp(machine, appName, placement.ContainerType) {
-				m.MachineMap[machine] = machine
-				initialMachines.Add(machine)
-			} else {
-			}
-		}
-	}
-
-	var ids []string
-	for id := range data.Machines {
-		ids = append(ids, id)
-	}
-	naturalsort.Sort(ids)
-
-mainloop:
-	for _, id := range ids {
-		// The simplst case is where the user has specified a mapping
-		// for us.
-		if _, found := m.MachineMap[id]; found {
-			continue
-		}
-		// Look for a unit placement directive that specifies the machine.
-		for appName, app := range data.Applications {
-			for index, to := range app.To {
-				// Here we explicitly ignore the error return of the parse placement
-				// as the bundle should have been fully validated by now, which does
-				// check the placement. However we do check to make sure the placement
-				// is not nil (which it would be in an error case), because we don't
-				// want to panic if for some weird reason, it does error.
-				placement, _ := charm.ParsePlacement(to)
-				if placement == nil || placement.Machine != id {
-					continue
-				}
-
-				// See if we have deployed this unit yet.
-				deployed := m.Applications[appName]
-				if deployed == nil {
-					continue
-				}
-
-				if len(deployed.Units) <= index {
-					continue
-				}
-				// Find the first unit that we have't already used.
-
-				unit := deployed.Units[index]
-				machine := topLevelMachine(unit.Machine)
-				if initialMachines.Contains(machine) {
-					// Can't match the same machine twice.
-					continue
-				}
-				m.MachineMap[id] = machine
-				continue mainloop
-			}
-		}
-	}
+	e := newInference(m, data)
+	e.processInitialPlacements()
+	e.processBundleMachines()
 }
 
 // BundleMachine will return a the existing machine for the specified bundle
@@ -352,27 +294,31 @@ func (m *Model) unsatisfiedMachineAndUnitPlacements(sourceApp string, placements
 }
 
 func (m *Model) machineHasApp(machine, appName, containerType string) bool {
+	return m.getAppUnitOnMachine(machine, appName, containerType) != ""
+}
+
+func (m *Model) getAppUnitOnMachine(machine, appName, containerType string) string {
 	if mappedMachine, ok := m.MachineMap[machine]; ok {
 		machine = mappedMachine
 	}
 	app := m.GetApplication(appName)
 	if app == nil {
-		return false
+		return ""
 	}
 	for _, u := range app.Units {
 		machineTag := names.NewMachineTag(u.Machine)
 		if containerType == "" {
 			if machineTag.ContainerType() == "" && machineTag.Id() == machine {
-				return true
+				return u.Name
 			}
 		} else {
 			if machineTag.ContainerType() == containerType &&
 				machineTag.Parent().Id() == machine {
-				return true
+				return u.Name
 			}
 		}
 	}
-	return false
+	return ""
 }
 
 func (a *Application) unitCount() int {
@@ -436,3 +382,154 @@ func (m *Machine) changedAnnotations(annotations map[string]string) map[string]s
 	}
 	return changes
 }
+
+type inferenceEngine struct {
+	model  *Model
+	bundle *charm.BundleData
+
+	appUnits      map[string][]Unit
+	appPlacements map[string][]string
+
+	initialMachines set.Strings
+	logger          Logger
+}
+
+func newInference(m *Model, data *charm.BundleData) *inferenceEngine {
+	log := m.logger
+	if log == nil {
+		log = &noOpLogger{}
+	}
+	appUnits := make(map[string][]Unit)
+	// The initialMachines starts by including all the targets defined
+	// by the user for the machine map.
+	initialMachines := set.NewStrings()
+	for _, target := range m.MachineMap {
+		initialMachines.Add(target)
+	}
+	for appName, app := range m.Applications {
+		var units []Unit
+		// If the unit is on a machine we have already been told the mapping for,
+		// skip it in the inference.
+		for _, unit := range app.Units {
+			machine := topLevelMachine(unit.Machine)
+			if !initialMachines.Contains(machine) {
+				units = append(units, unit)
+			}
+		}
+		appUnits[appName] = units
+	}
+	return &inferenceEngine{
+		model:           m,
+		bundle:          data,
+		appUnits:        appUnits,
+		appPlacements:   make(map[string][]string),
+		initialMachines: initialMachines,
+		logger:          log,
+	}
+}
+
+// processInitialPlacements goes through all the application placement directives
+// and looks to see if there is a machine in the model that has the placement
+// satisfied.
+func (e *inferenceEngine) processInitialPlacements() {
+	for appName, app := range e.bundle.Applications {
+		var unused []string
+		for _, to := range app.To {
+			unused = append(unused, to)
+			// Here we explicitly ignore the error return of the parse placement
+			// as the bundle should have been fully validated by now, which does
+			// check the placement. However we do check to make sure the placement
+			// is not nil (which it would be in an error case), because we don't
+			// want to panic if, for some weird reason, it does error.
+			placement, _ := charm.ParsePlacement(to)
+			if placement == nil || placement.Machine == "" {
+				continue
+			}
+			// If this machine is mapped already, skip this one.
+			machine := placement.Machine
+			if _, ok := e.model.MachineMap[machine]; ok {
+				continue
+			}
+			if uName := e.model.getAppUnitOnMachine(machine, appName, placement.ContainerType); uName != "" {
+				e.model.MachineMap[machine] = machine
+				e.initialMachines.Add(machine)
+				e.markUnitUsed(appName, uName)
+				e.logger.Tracef("unit %q satisfies %q", uName, to)
+				e.logger.Tracef("units left: %v", e.appUnits[appName])
+				// If we did use it, take it off the end.
+				unused = unused[:len(unused)-1]
+			}
+		}
+		e.appPlacements[appName] = unused
+		e.logger.Tracef("unused placements: %#v", unused)
+	}
+}
+
+func (e *inferenceEngine) markUnitUsed(appName, uName string) {
+	units := e.appUnits[appName]
+	for idx, unit := range units {
+		if unit.Name == uName {
+			e.appUnits[appName] = append(units[:idx], units[idx+1:]...)
+			return
+		}
+	}
+}
+
+// processBundleMachines is the second pass inference where we check each of the machines
+// defined in the bundle, and look to see if there are placement directives that target those
+// machines.
+func (e *inferenceEngine) processBundleMachines() {
+	var ids []string
+	for id := range e.bundle.Machines {
+		ids = append(ids, id)
+	}
+	naturalsort.Sort(ids)
+
+mainloop:
+	for _, id := range ids {
+		// The simplest case is where the user has specified a mapping
+		// for us.
+		if _, found := e.model.MachineMap[id]; found {
+			continue
+		}
+		e.logger.Tracef("machine: %s", id)
+		// Look for a unit placement directive that specifies the machine.
+		for appName := range e.bundle.Applications {
+			e.logger.Tracef("app: %s", appName)
+			for _, to := range e.appPlacements[appName] {
+				// Here we explicitly ignore the error return of the parse placement
+				// as the bundle should have been fully validated by now, which does
+				// check the placement. However we do check to make sure the placement
+				// is not nil (which it would be in an error case), because we don't
+				// want to panic if, for some weird reason, it does error.
+				e.logger.Tracef("to: %s", to)
+				placement, _ := charm.ParsePlacement(to)
+				if placement == nil || placement.Machine != id {
+					continue
+				}
+
+				deployed := e.appUnits[appName]
+				// See if we have deployed this unit yet.
+				if len(deployed) == 0 {
+					continue
+				}
+				// Find the first unit that we haven't already used.
+				unit := deployed[0]
+
+				e.logger.Tracef("unit: %#v", unit)
+				machine := topLevelMachine(unit.Machine)
+				if e.initialMachines.Contains(machine) {
+					// Can't match the same machine twice.
+					continue
+				}
+				e.model.MachineMap[id] = machine
+				e.appUnits[appName] = deployed[1:]
+				continue mainloop
+			}
+		}
+	}
+}
+
+type noOpLogger struct{}
+
+func (*noOpLogger) Tracef(string, ...interface{}) {}

@@ -2764,6 +2764,74 @@ func (s *changesSuite) TestAddMissingUnitToNotLastPlacementExisting(c *gc.C) {
 	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
 }
 
+func (s *changesSuite) TestFromJujuMassiveUnitColocation(c *gc.C) {
+	bundleContent := `
+        applications:
+            memcached:
+                charm: cs:xenial/mem-47
+                num_units: 3
+                to: [1, 2, 3]
+            django:
+                charm: cs:xenial/django-42
+                num_units: 4
+                to:
+                    - 1
+                    - lxd:memcached
+            node:
+                charm: cs:xenial/django-42
+                num_units: 1
+                to:
+                    - lxd:memcached
+        machines:
+            1:
+            2:
+            3:
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"django": &bundlechanges.Application{
+				Name:  "django",
+				Charm: "cs:xenial/django-42",
+				Units: []bundlechanges.Unit{
+					{Name: "django/2", Machine: "1/lxd/0"},
+					{Name: "django/3", Machine: "2/lxd/0"},
+					{Name: "django/0", Machine: "0"},
+					{Name: "django/1", Machine: "0/lxd/0"},
+				},
+			},
+			"memcached": &bundlechanges.Application{
+				Name:  "memcached",
+				Charm: "cs:xenial/mem-47",
+				Units: []bundlechanges.Unit{
+					{Name: "memcached/0", Machine: "0"},
+					{Name: "memcached/1", Machine: "1"},
+					{Name: "memcached/2", Machine: "2"},
+				},
+			},
+			"ror": &bundlechanges.Application{
+				Name:  "ror",
+				Charm: "cs:xenial/rails-0",
+				Units: []bundlechanges.Unit{
+					{Name: "ror/0", Machine: "0"},
+					{Name: "ror/1", Machine: "2/kvm/0"},
+					{Name: "ror/2", Machine: "3"},
+				},
+			},
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			"0": &bundlechanges.Machine{ID: "0"},
+			"1": &bundlechanges.Machine{ID: "1"},
+			"2": &bundlechanges.Machine{ID: "2"},
+			"3": &bundlechanges.Machine{ID: "3"},
+		},
+	}
+	expectedChanges := []string{
+		"deploy application node on xenial using cs:xenial/django-42",
+		"add unit node/0 to 0/lxd/0 to satisfy [lxd:memcached]",
+	}
+	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
+
 func (s *changesSuite) checkBundle(c *gc.C, bundleContent string, expectedChanges []string) {
 	s.checkBundleImpl(c, bundleContent, nil, expectedChanges, "")
 }

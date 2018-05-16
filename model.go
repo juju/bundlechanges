@@ -7,9 +7,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/juju/collections/set"
 	"github.com/juju/naturalsort"
-	"github.com/juju/utils"
-	"github.com/juju/utils/set"
 	"github.com/kr/pretty"
 	"gopkg.in/juju/charm.v6"
 	"gopkg.in/juju/names.v2"
@@ -256,7 +255,7 @@ func (m *Model) unitMachinesWithoutApp(sourceApp, targetApp, container string) [
 		}
 	}
 
-	return utils.SortStringsNaturally(machines.Values())
+	return naturalsort.Sort(machines.Values())
 }
 
 func (m *Model) unsatisfiedMachineAndUnitPlacements(sourceApp string, placements []string) []string {

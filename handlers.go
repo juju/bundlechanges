@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/juju/collections/set"
 	"github.com/juju/errors"
 	"github.com/juju/naturalsort"
-	"github.com/juju/utils/set"
 	"gopkg.in/juju/charm.v6"
 	"gopkg.in/juju/charmrepo.v2"
 )

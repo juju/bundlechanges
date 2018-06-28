@@ -73,6 +73,7 @@ func (s *changesSuite) TestMinimalBundle(c *gc.C) {
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]string{},
 			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
@@ -131,6 +132,7 @@ func (s *changesSuite) TestSimpleBundle(c *gc.C) {
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]string{},
 			map[string]int{"data": 3},
 		},
 		Requires: []string{"addCharm-0"},
@@ -179,6 +181,7 @@ func (s *changesSuite) TestSimpleBundle(c *gc.C) {
 			"mysql",
 			map[string]interface{}{},
 			"",
+			map[string]string{},
 			map[string]string{},
 			map[string]string{},
 			map[string]int{},
@@ -247,6 +250,7 @@ func (s *changesSuite) TestSameCharmReused(c *gc.C) {
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]string{},
 			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
@@ -264,6 +268,7 @@ func (s *changesSuite) TestSameCharmReused(c *gc.C) {
 			"otherwiki",
 			map[string]interface{}{},
 			"",
+			map[string]string{},
 			map[string]string{},
 			map[string]string{},
 			map[string]int{},
@@ -335,6 +340,7 @@ func (s *changesSuite) TestMachinesAndUnitsPlacementWithbindings(c *gc.C) {
 			map[string]interface{}{},
 			"spaces=baz cpu-cores=4 cpu-power=42",
 			map[string]string{},
+			map[string]string{},
 			map[string]string{"": "foo", "http": "bar"},
 			map[string]int{},
 		},
@@ -362,6 +368,7 @@ func (s *changesSuite) TestMachinesAndUnitsPlacementWithbindings(c *gc.C) {
 			"haproxy",
 			map[string]interface{}{"bad": "wolf", "number": 42.47},
 			"",
+			map[string]string{},
 			map[string]string{},
 			map[string]string{},
 			map[string]int{},
@@ -516,6 +523,7 @@ func (s *changesSuite) TestMachinesWithConstraintsAndAnnotations(c *gc.C) {
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]string{},
 			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
@@ -614,6 +622,7 @@ func (s *changesSuite) TestEndpointWithoutRelationName(c *gc.C) {
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]string{},
 			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
@@ -640,6 +649,7 @@ func (s *changesSuite) TestEndpointWithoutRelationName(c *gc.C) {
 			"mysql",
 			map[string]interface{}{},
 			"mem=42G",
+			map[string]string{},
 			map[string]string{},
 			map[string]string{},
 			map[string]int{},
@@ -694,6 +704,7 @@ func (s *changesSuite) TestUnitPlacedInApplication(c *gc.C) {
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]string{},
 			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
@@ -717,6 +728,7 @@ func (s *changesSuite) TestUnitPlacedInApplication(c *gc.C) {
 			"wordpress",
 			map[string]interface{}{},
 			"",
+			map[string]string{},
 			map[string]string{},
 			map[string]string{},
 			map[string]int{},
@@ -818,6 +830,7 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]string{},
 			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
@@ -845,6 +858,7 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]string{},
 			map[string]int{},
 		},
 		Requires: []string{"addCharm-2"},
@@ -870,6 +884,7 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			"ror",
 			map[string]interface{}{},
 			"",
+			map[string]string{},
 			map[string]string{},
 			map[string]string{},
 			map[string]int{},
@@ -1120,6 +1135,7 @@ func (s *changesSuite) TestUnitPlacedTomachines(c *gc.C) {
 			"",
 			map[string]string{},
 			map[string]string{},
+			map[string]string{},
 			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
@@ -1283,6 +1299,7 @@ func (s *changesSuite) TestUnitPlacedToNewMachineWithConstraints(c *gc.C) {
 			"cpu-cores=4",
 			map[string]string{},
 			map[string]string{},
+			map[string]string{},
 			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
@@ -1354,6 +1371,7 @@ func (s *changesSuite) TestApplicationWithStorage(c *gc.C) {
 				"tmpfs":       "tmpfs,1G",
 			},
 			map[string]string{},
+			map[string]string{},
 			map[string]int{},
 		},
 		Requires: []string{"addCharm-0"},
@@ -1408,6 +1426,7 @@ func (s *changesSuite) TestApplicationWithEndpointBindings(c *gc.C) {
 			map[string]interface{}{},
 			"",
 			map[string]string{},
+			map[string]string{},
 			map[string]string{"foo": "bar"},
 			map[string]int{},
 		},
@@ -1452,6 +1471,7 @@ machines:
 			"gui3",
 			map[string]interface{}{},
 			"",
+			map[string]string{},
 			map[string]string{},
 			map[string]string{},
 			map[string]int{},
@@ -1542,7 +1562,7 @@ func (s *changesSuite) assertParseData(c *gc.C, content string, expected []recor
 	// Retrieve and validate the bundle data.
 	data, err := charm.ReadBundleData(strings.NewReader(content))
 	c.Assert(err, jc.ErrorIsNil)
-	err = data.Verify(nil, nil)
+	err = data.Verify(nil, nil, nil)
 	c.Assert(err, jc.ErrorIsNil)
 
 	// Retrieve the changes, and convert them to a sequence of records.
@@ -1597,6 +1617,7 @@ func (s *changesSuite) assertLocalBundleChanges(c *gc.C, charmDir, bundleContent
 			map[string]interface{}{}, // options.
 			"",                  // constraints.
 			map[string]string{}, // storage.
+			map[string]string{}, // devices.
 			map[string]string{}, // endpoint bindings.
 			map[string]int{},    // resources.
 		},
@@ -2847,7 +2868,7 @@ func (s *changesSuite) checkBundleError(c *gc.C, bundleContent string, errMatch 
 func (s *changesSuite) checkBundleImpl(c *gc.C, bundleContent string, existingModel *bundlechanges.Model, expectedChanges []string, errMatch string) {
 	data, err := charm.ReadBundleData(strings.NewReader(bundleContent))
 	c.Assert(err, jc.ErrorIsNil)
-	err = data.Verify(nil, nil)
+	err = data.Verify(nil, nil, nil)
 	c.Assert(err, jc.ErrorIsNil)
 
 	// Retrieve the changes, and convert them to a sequence of records.

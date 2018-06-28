@@ -361,6 +361,10 @@ func (ch *AddApplicationChange) GUIArgs() []interface{} {
 	if storage == nil {
 		storage = make(map[string]string, 0)
 	}
+	devices := ch.Params.Devices
+	if devices == nil {
+		devices = map[string]string{}
+	}
 	endpointBindings := ch.Params.EndpointBindings
 	if endpointBindings == nil {
 		endpointBindings = make(map[string]string, 0)
@@ -376,6 +380,7 @@ func (ch *AddApplicationChange) GUIArgs() []interface{} {
 		options,
 		ch.Params.Constraints,
 		storage,
+		devices,
 		endpointBindings,
 		resources,
 	}
@@ -405,6 +410,8 @@ type AddApplicationParams struct {
 	Constraints string
 	// Storage holds the optional storage constraints.
 	Storage map[string]string
+	// Devices holds the optional devices constraints.
+	Devices map[string]string
 	// EndpointBindings holds the optional endpoint bindings
 	EndpointBindings map[string]string
 	// Resources identifies the revision to use for each resource

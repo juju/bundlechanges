@@ -62,7 +62,7 @@ func process(r io.Reader, w io.Writer) error {
 		return err
 	}
 	// Validate the bundle.
-	if err := data.Verify(nil, nil); err != nil {
+	if err := data.Verify(nil, nil, nil); err != nil {
 		return err
 	}
 	// Generate the changes and convert them to the standard form.

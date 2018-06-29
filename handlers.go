@@ -34,7 +34,7 @@ func (r *resolver) handleApplications() map[string]string {
 	// Iterate over the map using its sorted keys so that results are
 	// deterministic and easier to test.
 	names := make([]string, 0, len(applications))
-	for name, _ := range applications {
+	for name := range applications {
 		names = append(names, name)
 	}
 	naturalsort.Sort(names)
@@ -87,6 +87,7 @@ func (r *resolver) handleApplications() map[string]string {
 				Options:          application.Options,
 				Constraints:      application.Constraints,
 				Storage:          application.Storage,
+				Devices:          application.Devices,
 				EndpointBindings: application.EndpointBindings,
 				Resources:        resources,
 				LocalResources:   localResources,
@@ -256,7 +257,7 @@ func (r *resolver) handleRelations(addedApplications map[string]string) {
 
 		getEndpointNames := func(ep *endpoint) (string, string) {
 			// If the application exists, then we don't require it, and the param
-			// is the endoint string not a placeholder.
+			// is the endpoint string not a placeholder.
 			nice := ep.String()
 			if app := existing.GetApplication(ep.application); app != nil {
 				return nice, nice
@@ -517,7 +518,7 @@ func (p *unitProcessor) definedMachineForUnit(application *charm.ApplicationSpec
 }
 
 // definedUnitForUnit handles the placement directive where a unit is to be
-// colocated with another unit of a different application. Examples woule be
+// co-located with another unit of a different application. Examples would be
 // "foo/3" or "lxd:foo/2". If the placement specifies a container then the
 // container is placed on the same base machine as the other unit. This means
 // that if the target unit is also in a container, the containers become
@@ -811,7 +812,7 @@ func (r *resolver) handleUnits(addedApplications map[string]string, addedMachine
 	// Iterate over the map using its sorted keys so that results are
 	// deterministic and easier to test.
 	names := make([]string, 0, len(r.bundle.Applications))
-	for name, _ := range r.bundle.Applications {
+	for name := range r.bundle.Applications {
 		names = append(names, name)
 	}
 	naturalsort.Sort(names)

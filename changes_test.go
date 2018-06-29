@@ -1396,6 +1396,78 @@ func (s *changesSuite) TestApplicationWithStorage(c *gc.C) {
 	s.assertParseData(c, content, expected)
 }
 
+func (s *changesSuite) TestApplicationWithDevices(c *gc.C) {
+	content := `
+        services:
+            django:
+                charm: cs:trusty/django-42
+                num_units: 2
+                devices:
+                    description: a nvidia gpu device
+                    type: nvidia.com/gpu
+                    countmin: 1
+                    countmax: 2
+        `
+	expected := []record{{
+		Id:     "addCharm-0",
+		Method: "addCharm",
+		Params: bundlechanges.AddCharmParams{
+			Charm:  "cs:trusty/django-42",
+			Series: "trusty",
+		},
+		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty"},
+	}, {
+		Id:     "deploy-1",
+		Method: "deploy",
+		Params: bundlechanges.AddApplicationParams{
+			Charm:       "$addCharm-0",
+			Application: "django",
+			Series:      "trusty",
+			Devices: map[string]string{
+				"description": "a nvidia gpu device",
+				"type":        "nvidia.com/gpu",
+				"countmin":    "1",
+				"countmax":    "2",
+			},
+		},
+		GUIArgs: []interface{}{
+			"$addCharm-0",
+			"trusty",
+			"django",
+			map[string]interface{}{},
+			"",
+			map[string]string{},
+			map[string]string{
+				"description": "a nvidia gpu device",
+				"type":        "nvidia.com/gpu",
+				"countmin":    "1",
+				"countmax":    "2",
+			},
+			map[string]string{},
+			map[string]int{},
+		},
+		Requires: []string{"addCharm-0"},
+	}, {
+		Id:     "addUnit-2",
+		Method: "addUnit",
+		Params: bundlechanges.AddUnitParams{
+			Application: "$deploy-1",
+		},
+		GUIArgs:  []interface{}{"$deploy-1", nil},
+		Requires: []string{"deploy-1"},
+	}, {
+		Id:     "addUnit-3",
+		Method: "addUnit",
+		Params: bundlechanges.AddUnitParams{
+			Application: "$deploy-1",
+		},
+		GUIArgs:  []interface{}{"$deploy-1", nil},
+		Requires: []string{"deploy-1", "addUnit-2"},
+	}}
+
+	s.assertParseData(c, content, expected)
+}
+
 func (s *changesSuite) TestApplicationWithEndpointBindings(c *gc.C) {
 	content := `
         services:

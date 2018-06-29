@@ -34,7 +34,7 @@ func (r *resolver) handleApplications() map[string]string {
 	// Iterate over the map using its sorted keys so that results are
 	// deterministic and easier to test.
 	names := make([]string, 0, len(applications))
-	for name, _ := range applications {
+	for name := range applications {
 		names = append(names, name)
 	}
 	naturalsort.Sort(names)
@@ -257,7 +257,7 @@ func (r *resolver) handleRelations(addedApplications map[string]string) {
 
 		getEndpointNames := func(ep *endpoint) (string, string) {
 			// If the application exists, then we don't require it, and the param
-			// is the endoint string not a placeholder.
+			// is the endpoint string not a placeholder.
 			nice := ep.String()
 			if app := existing.GetApplication(ep.application); app != nil {
 				return nice, nice

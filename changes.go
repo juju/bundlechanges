@@ -351,8 +351,12 @@ type AddApplicationChange struct {
 	Params AddApplicationParams
 }
 
-// GUIArgs implements Change.GUIArgs.
-func (ch *AddApplicationChange) GUIArgs() []interface{} {
+// GUIArgsWithDevices implements Change.GUIArgs and adds devices support
+func (ch *AddApplicationChange) GUIArgsWithDevices() []interface{} {
+	return ch.buildArgs(true)
+}
+
+func (ch *AddApplicationChange) buildArgs(includeDevices bool) []interface{} {
 	options := ch.Params.Options
 	if options == nil {
 		options = make(map[string]interface{}, 0)
@@ -373,7 +377,7 @@ func (ch *AddApplicationChange) GUIArgs() []interface{} {
 	if resources == nil {
 		resources = make(map[string]int, 0)
 	}
-	return []interface{}{
+	args := []interface{}{
 		ch.Params.Charm,
 		ch.Params.Series,
 		ch.Params.Application,
@@ -384,37 +388,16 @@ func (ch *AddApplicationChange) GUIArgs() []interface{} {
 		endpointBindings,
 		resources,
 	}
+	if !includeDevices {
+		// delete devices after storage
+		args = append(args[:6], args[6+1:]...)
+	}
+	return args
 }
 
-// GUIArgsLegacy implements Change.GUIArgs for backward support with minimun effort.
-// TODO(ycliuhw): this should be removed once no need to support Bundle Facade V1
-func (ch *AddApplicationChange) GUIArgsLegacy() []interface{} {
-	options := ch.Params.Options
-	if options == nil {
-		options = make(map[string]interface{}, 0)
-	}
-	storage := ch.Params.Storage
-	if storage == nil {
-		storage = make(map[string]string, 0)
-	}
-	endpointBindings := ch.Params.EndpointBindings
-	if endpointBindings == nil {
-		endpointBindings = make(map[string]string, 0)
-	}
-	resources := ch.Params.Resources
-	if resources == nil {
-		resources = make(map[string]int, 0)
-	}
-	return []interface{}{
-		ch.Params.Charm,
-		ch.Params.Series,
-		ch.Params.Application,
-		options,
-		ch.Params.Constraints,
-		storage,
-		endpointBindings,
-		resources,
-	}
+// GUIArgs implements Change.GUIArgs.
+func (ch *AddApplicationChange) GUIArgs() []interface{} {
+	return ch.buildArgs(false)
 }
 
 // Description implements Change.

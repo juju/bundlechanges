@@ -667,6 +667,20 @@ func (cs *changeset) add(change Change) {
 	cs.changes = append(cs.changes, change)
 }
 
+// dependents returns a map of change-id -> changes that depend on
+// it. We can't calculate this as changes are added because in some
+// cases a change's requirements are updated after it's added to the
+// changeset.
+func (cs *changeset) dependents() map[string][]string {
+	result := make(map[string][]string)
+	for _, change := range cs.changes {
+		for _, dep := range change.Requires() {
+			result[dep] = append(result[dep], change.Id())
+		}
+	}
+	return result
+}
+
 // sorted returns the changes sorted by requirements, required first.
 func (cs *changeset) sorted() []Change {
 	done := set.NewStrings()

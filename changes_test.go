@@ -3265,6 +3265,295 @@ func (s *changesSuite) TestFromJujuMassiveUnitColocation(c *gc.C) {
 	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
 }
 
+func (s *changesSuite) TestInconsistentMappingError(c *gc.C) {
+	// https://bugs.launchpad.net/juju/+bug/1773357 This bug occurs
+	// when the model machine map is pre-set incorrectly, and the
+	// applications all have enough units, but the mapping omits some
+	// machines that host those units. FromData includes changes to
+	// create machines but then doesn't put any units on them. It
+	// should return an error indicating the inconsistency instead.
+	bundleContent := `
+        applications:
+            memcached:
+                charm: cs:xenial/mem-47
+                num_units: 2
+                to: [0, 1]
+        machines:
+            0:
+            1:
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"memcached": {
+				Name:  "memcached",
+				Charm: "cs:xenial/mem-47",
+				Units: []bundlechanges.Unit{
+					{Name: "memcached/1", Machine: "1"},
+					{Name: "memcached/2", Machine: "2"},
+					{Name: "memcached/3", Machine: "3"},
+				},
+			},
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			"1": {ID: "1"},
+			"2": {ID: "2"},
+			"3": {ID: "3"},
+		},
+		MachineMap: map[string]string{
+			// using --map-machines=existing
+			"1": "1",
+			"2": "2",
+			"3": "3",
+		},
+	}
+	s.checkBundleImpl(c, bundleContent, existingModel, nil, `bundle and machine mapping are inconsistent: need an explicit entry mapping bundle machine "0", perhaps to one of model machines \["2", "3"\] - the target should host \[memcached\]`)
+}
+
+func (s *changesSuite) TestConsistentMapping(c *gc.C) {
+	bundleContent := `
+        applications:
+            memcached:
+                charm: cs:xenial/mem-47
+                num_units: 2
+                to: [0, 1]
+        machines:
+            0:
+            1:
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"memcached": {
+				Name:  "memcached",
+				Charm: "cs:xenial/mem-47",
+				Units: []bundlechanges.Unit{
+					{Name: "memcached/1", Machine: "1"},
+					{Name: "memcached/2", Machine: "2"},
+					{Name: "memcached/3", Machine: "3"},
+				},
+			},
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			"1": {ID: "1"},
+			"2": {ID: "2"},
+			"3": {ID: "3"},
+		},
+		MachineMap: map[string]string{
+			// using --map-machines=existing
+			"1": "1",
+			"2": "2",
+			"3": "3",
+			// Plus an explicit mapping.
+			"0": "3",
+		},
+	}
+	// Now that we have a consistent mapping, no changes are needed.
+	s.checkBundleExistingModel(c, bundleContent, existingModel, nil)
+}
+
+func (s *changesSuite) TestContainerHosts(c *gc.C) {
+	// If we have a bundle that needs to create a container, we don't
+	// treat the machine hosting the container as not having
+	// dependants.
+	bundleContent := `
+        applications:
+            memcached:
+                charm: cs:xenial/mem-47
+                num_units: 2
+                to: [1, "lxd:2"]
+        machines:
+            1:
+            2:
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"memcached": {
+				Name:  "memcached",
+				Charm: "cs:xenial/mem-47",
+				Units: []bundlechanges.Unit{
+					{Name: "memcached/1", Machine: "1"},
+				},
+			},
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			"1": {ID: "1"},
+		},
+		MachineMap: map[string]string{
+			// using --map-machines=existing
+			"1": "1",
+		},
+	}
+	expectedChanges := []string{
+		"add new machine 2",
+		"add lxd container 2/lxd/0 on new machine 2",
+		"add unit memcached/2 to 2/lxd/0",
+	}
+	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
+
+func (s *changesSuite) TestSingleTarget(c *gc.C) {
+	bundleContent := `
+        applications:
+            memcached:
+                charm: cs:xenial/mem-47
+                num_units: 2
+                to: [0, 1]
+        machines:
+            0:
+            1:
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"memcached": {
+				Name:  "memcached",
+				Charm: "cs:xenial/mem-47",
+				Units: []bundlechanges.Unit{
+					{Name: "memcached/1", Machine: "1"},
+					{Name: "memcached/2", Machine: "2"},
+				},
+			},
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			"1": {ID: "1"},
+			"2": {ID: "2"},
+		},
+		MachineMap: map[string]string{
+			// using --map-machines=existing
+			"1": "1",
+			"2": "2",
+		},
+	}
+	s.checkBundleImpl(c, bundleContent, existingModel, nil, `bundle and machine mapping are inconsistent: need an explicit entry mapping bundle machine "0", perhaps to unreferenced model machine "2" - the target should host \[memcached\]`)
+}
+
+func (s *changesSuite) TestMultipleApplications(c *gc.C) {
+	bundleContent := `
+        applications:
+            memcached:
+                charm: cs:xenial/mem-47
+                num_units: 2
+                to: [0, 1]
+            prometheus:
+                charm: cs:xenial/prom-22
+                num_units: 1
+                to: [0]
+        machines:
+            0:
+            1:
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"memcached": {
+				Name:  "memcached",
+				Charm: "cs:xenial/mem-47",
+				Units: []bundlechanges.Unit{
+					{Name: "memcached/1", Machine: "1"},
+					{Name: "memcached/2", Machine: "2"},
+				},
+			},
+			"prometheus": {
+				Name:  "prometheus",
+				Charm: "cs:xenial/prom-22",
+				Units: []bundlechanges.Unit{
+					{Name: "prometheus/1", Machine: "2"},
+				},
+			},
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			"1": {ID: "1"},
+			"2": {ID: "2"},
+		},
+		MachineMap: map[string]string{
+			// using --map-machines=existing
+			"1": "1",
+			"2": "2",
+		},
+	}
+	s.checkBundleImpl(c, bundleContent, existingModel, nil, `bundle and machine mapping are inconsistent: need an explicit entry mapping bundle machine "0", perhaps to unreferenced model machine "2" - the target should host \[memcached, prometheus\]`)
+}
+
+func (s *changesSuite) TestNoApplications(c *gc.C) {
+	bundleContent := `
+        applications:
+            memcached:
+                charm: cs:xenial/mem-47
+                num_units: 2
+                to: ["lxd:0", 1]
+            prometheus:
+                charm: cs:xenial/prom-22
+                num_units: 1
+                to: [memcached/0]
+        machines:
+            0:
+            1:
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"memcached": {
+				Name:  "memcached",
+				Charm: "cs:xenial/mem-47",
+				Units: []bundlechanges.Unit{
+					{Name: "memcached/1", Machine: "1"},
+					{Name: "memcached/2", Machine: "2"},
+				},
+			},
+			"prometheus": {
+				Name:  "prometheus",
+				Charm: "cs:xenial/prom-22",
+				Units: []bundlechanges.Unit{
+					{Name: "prometheus/1", Machine: "2"},
+				},
+			},
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			"1": {ID: "1"},
+			"2": {ID: "2"},
+		},
+		MachineMap: map[string]string{
+			// using --map-machines=existing
+			"1": "1",
+			"2": "2",
+		},
+	}
+	// In this case we can't find any applications for bundle machine
+	// 0 because the applications don't refer to it with simple
+	// placement..
+	s.checkBundleImpl(c, bundleContent, existingModel, nil, `bundle and machine mapping are inconsistent: need an explicit entry mapping bundle machine "0", perhaps to unreferenced model machine "2"`)
+}
+
+func (s *changesSuite) TestNoPossibleTargets(c *gc.C) {
+	bundleContent := `
+        applications:
+            memcached:
+                charm: cs:xenial/mem-47
+                num_units: 2
+                to: [0, 1]
+        machines:
+            0:
+            1:
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"memcached": {
+				Name:  "memcached",
+				Charm: "cs:xenial/mem-47",
+				Units: []bundlechanges.Unit{
+					{Name: "memcached/1", Machine: "1"},
+					{Name: "memcached/2", Machine: "1"},
+				},
+			},
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			"1": {ID: "1"},
+		},
+		MachineMap: map[string]string{
+			// using --map-machines=existing
+			"1": "1",
+		},
+	}
+	// There *are* two units, but they're both on machine one.
+	s.checkBundleImpl(c, bundleContent, existingModel, nil, `bundle and machine mapping are inconsistent: need an explicit entry mapping bundle machine "0" - the target should host \[memcached\]`)
+}
+
 func (s *changesSuite) checkBundle(c *gc.C, bundleContent string, expectedChanges []string) {
 	s.checkBundleImpl(c, bundleContent, nil, expectedChanges, "")
 }

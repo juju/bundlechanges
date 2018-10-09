@@ -1993,10 +1993,10 @@ func (s *changesSuite) assertLocalBundleChanges(c *gc.C, charmDir, bundleContent
 			series,
 			"django",
 			map[string]interface{}{}, // options.
-			"",                  // constraints.
-			map[string]string{}, // storage.
-			map[string]string{}, // endpoint bindings.
-			map[string]int{},    // resources.
+			"",                       // constraints.
+			map[string]string{},      // storage.
+			map[string]string{},      // endpoint bindings.
+			map[string]int{},         // resources.
 		},
 		Requires: []string{"addCharm-0"},
 	}}
@@ -2025,11 +2025,11 @@ func (s *changesSuite) assertLocalBundleChangesWithDevices(c *gc.C, charmDir, bu
 			series,
 			"django",
 			map[string]interface{}{}, // options.
-			"",                  // constraints.
-			map[string]string{}, // storage.
-			map[string]string{}, // devices.
-			map[string]string{}, // endpoint bindings.
-			map[string]int{},    // resources.
+			"",                       // constraints.
+			map[string]string{},      // storage.
+			map[string]string{},      // devices.
+			map[string]string{},      // endpoint bindings.
+			map[string]int{},         // resources.
 		},
 		Requires: []string{"addCharm-0"},
 	}}
@@ -2105,7 +2105,7 @@ func (s *changesSuite) TestCharmInUseByAnotherApplication(c *gc.C) {
             `
 	existingModel := &bundlechanges.Model{
 		Applications: map[string]*bundlechanges.Application{
-			"other-app": &bundlechanges.Application{
+			"other-app": {
 				Charm: "cs:django-4",
 			},
 		},
@@ -2127,7 +2127,7 @@ func (s *changesSuite) TestCharmUpgrade(c *gc.C) {
             `
 	existingModel := &bundlechanges.Model{
 		Applications: map[string]*bundlechanges.Application{
-			"django": &bundlechanges.Application{
+			"django": {
 				Charm: "cs:django-4",
 				Units: []bundlechanges.Unit{
 					{"django/0", "0"},
@@ -2151,7 +2151,7 @@ func (s *changesSuite) TestAppExistsWithLessUnits(c *gc.C) {
             `
 	existingModel := &bundlechanges.Model{
 		Applications: map[string]*bundlechanges.Application{
-			"django": &bundlechanges.Application{
+			"django": {
 				Charm: "cs:django-4",
 				Units: []bundlechanges.Unit{
 					{"django/0", "0"},
@@ -2179,7 +2179,7 @@ func (s *changesSuite) TestNewMachineNumberHigherUnitHigher(c *gc.C) {
             `
 	existingModel := &bundlechanges.Model{
 		Applications: map[string]*bundlechanges.Application{
-			"django": &bundlechanges.Application{
+			"django": {
 				Charm: "cs:django-4",
 				Units: []bundlechanges.Unit{
 					{"django/0", "0"},
@@ -2211,7 +2211,7 @@ func (s *changesSuite) TestAppWithDifferentConstraints(c *gc.C) {
             `
 	existingModel := &bundlechanges.Model{
 		Applications: map[string]*bundlechanges.Application{
-			"django": &bundlechanges.Application{
+			"django": {
 				Charm: "cs:django-4",
 				Units: []bundlechanges.Unit{
 					{"django/0", "0"},
@@ -2242,7 +2242,7 @@ func (s *changesSuite) TestAppExistsWithEnoughUnits(c *gc.C) {
             `
 	existingModel := &bundlechanges.Model{
 		Applications: map[string]*bundlechanges.Application{
-			"django": &bundlechanges.Application{
+			"django": {
 				Charm: "cs:django-4",
 				Units: []bundlechanges.Unit{
 					{"django/0", "0"},
@@ -2271,7 +2271,7 @@ func (s *changesSuite) TestAppExistsWithChangedOptionsAndAnnotations(c *gc.C) {
             `
 	existingModel := &bundlechanges.Model{
 		Applications: map[string]*bundlechanges.Application{
-			"django": &bundlechanges.Application{
+			"django": {
 				Charm: "cs:django-4",
 				Options: map[string]interface{}{
 					"key-1": "value-1",
@@ -2380,7 +2380,7 @@ func (s *changesSuite) TestUnitPlaceNextToOtherNewUnitOnExistingMachine(c *gc.C)
             `
 	existingModel := &bundlechanges.Model{
 		Machines: map[string]*bundlechanges.Machine{
-			"0": &bundlechanges.Machine{ID: "0"},
+			"0": {ID: "0"},
 		},
 		MachineMap: map[string]string{"1": "0"},
 	}
@@ -2436,7 +2436,7 @@ func (s *changesSuite) TestApplicationPlacementSomeExisting(c *gc.C) {
             `
 	existingModel := &bundlechanges.Model{
 		Applications: map[string]*bundlechanges.Application{
-			"django": &bundlechanges.Application{
+			"django": {
 				Charm: "cs:django-4",
 				Units: []bundlechanges.Unit{
 					{"django/0", "0"},
@@ -2478,7 +2478,7 @@ func (s *changesSuite) TestApplicationPlacementSomeColocated(c *gc.C) {
             `
 	existingModel := &bundlechanges.Model{
 		Applications: map[string]*bundlechanges.Application{
-			"django": &bundlechanges.Application{
+			"django": {
 				Charm: "cs:django-4",
 				Units: []bundlechanges.Unit{
 					{"django/0", "0"},
@@ -2486,7 +2486,7 @@ func (s *changesSuite) TestApplicationPlacementSomeColocated(c *gc.C) {
 					{"django/3", "3"},
 				},
 			},
-			"nginx": &bundlechanges.Application{
+			"nginx": {
 				Charm: "cs:nginx",
 				Units: []bundlechanges.Unit{
 					{"nginx/0", "0"},
@@ -2564,7 +2564,7 @@ func (s *changesSuite) TestUnitDeployedDefinedMachine(c *gc.C) {
             `
 	existingModel := &bundlechanges.Model{
 		Applications: map[string]*bundlechanges.Application{
-			"mysql": &bundlechanges.Application{
+			"mysql": {
 				Charm: "cs:mysql",
 				Units: []bundlechanges.Unit{
 					{"mysql/0", "0/lxd/0"},
@@ -2572,8 +2572,8 @@ func (s *changesSuite) TestUnitDeployedDefinedMachine(c *gc.C) {
 			},
 		},
 		Machines: map[string]*bundlechanges.Machine{
-			"0":       &bundlechanges.Machine{ID: "0"},
-			"0/lxd/0": &bundlechanges.Machine{ID: "0/lxd/0"},
+			"0":       {ID: "0"},
+			"0/lxd/0": {ID: "0/lxd/0"},
 		},
 	}
 	expectedChanges := []string{
@@ -2605,7 +2605,7 @@ func (s *changesSuite) TestLXDContainerSequence(c *gc.C) {
             `
 	existingModel := &bundlechanges.Model{
 		Applications: map[string]*bundlechanges.Application{
-			"mysql": &bundlechanges.Application{
+			"mysql": {
 				Charm: "cs:mysql",
 				Units: []bundlechanges.Unit{
 					{"mysql/0", "0/lxd/0"},
@@ -2649,7 +2649,7 @@ func (s *changesSuite) TestMachineMapToExistingMachineSomeDeployed(c *gc.C) {
             `
 	existingModel := &bundlechanges.Model{
 		Applications: map[string]*bundlechanges.Application{
-			"mysql": &bundlechanges.Application{
+			"mysql": {
 				Charm: "cs:mysql",
 				Units: []bundlechanges.Unit{
 					{"mysql/0", "0/lxd/0"},
@@ -2657,10 +2657,10 @@ func (s *changesSuite) TestMachineMapToExistingMachineSomeDeployed(c *gc.C) {
 			},
 		},
 		Machines: map[string]*bundlechanges.Machine{
-			"0":       &bundlechanges.Machine{ID: "0"},
-			"0/lxd/0": &bundlechanges.Machine{ID: "0/lxd/0"},
-			"2":       &bundlechanges.Machine{ID: "2"},
-			"2/lxd/0": &bundlechanges.Machine{ID: "2/lxd/0"},
+			"0":       {ID: "0"},
+			"0/lxd/0": {ID: "0/lxd/0"},
+			"2":       {ID: "2"},
+			"2/lxd/0": {ID: "2/lxd/0"},
 		},
 		MachineMap: map[string]string{
 			"0": "2", // 0 in bundle is machine 2 in existing.
@@ -2702,7 +2702,7 @@ func (s *changesSuite) TestSettingAnnotationsForExistingMachine(c *gc.C) {
             `
 	existingModel := &bundlechanges.Model{
 		Applications: map[string]*bundlechanges.Application{
-			"mysql": &bundlechanges.Application{
+			"mysql": {
 				Charm: "cs:mysql",
 				Units: []bundlechanges.Unit{
 					{"mysql/0", "0/lxd/0"},
@@ -2710,9 +2710,9 @@ func (s *changesSuite) TestSettingAnnotationsForExistingMachine(c *gc.C) {
 			},
 		},
 		Machines: map[string]*bundlechanges.Machine{
-			"0":       &bundlechanges.Machine{ID: "0"},
-			"0/lxd/0": &bundlechanges.Machine{ID: "0/lxd/0"},
-			"2":       &bundlechanges.Machine{ID: "2"},
+			"0":       {ID: "0"},
+			"0/lxd/0": {ID: "0/lxd/0"},
+			"2":       {ID: "2"},
 		},
 		MachineMap: map[string]string{
 			"0": "2", // 0 in bundle is machine 2 in existing.
@@ -2771,7 +2771,7 @@ func (s *changesSuite) TestSiblingContainersSomeDeployed(c *gc.C) {
             `
 	existingModel := &bundlechanges.Model{
 		Applications: map[string]*bundlechanges.Application{
-			"mysql": &bundlechanges.Application{
+			"mysql": {
 				Charm: "cs:mysql",
 				Units: []bundlechanges.Unit{
 					{"mysql/0", "0/lxd/0"},
@@ -2779,7 +2779,7 @@ func (s *changesSuite) TestSiblingContainersSomeDeployed(c *gc.C) {
 					{"mysql/2", "2/lxd/0"},
 				},
 			},
-			"keystone": &bundlechanges.Application{
+			"keystone": {
 				Charm: "cs:keystone",
 				Units: []bundlechanges.Unit{
 					{"keystone/0", "0/lxd/1"},
@@ -2788,14 +2788,14 @@ func (s *changesSuite) TestSiblingContainersSomeDeployed(c *gc.C) {
 			},
 		},
 		Machines: map[string]*bundlechanges.Machine{
-			"0":       &bundlechanges.Machine{ID: "0"},
-			"0/lxd/0": &bundlechanges.Machine{ID: "0/lxd/0"},
-			"0/lxd/1": &bundlechanges.Machine{ID: "0/lxd/1"},
-			"1":       &bundlechanges.Machine{ID: "1"},
-			"1/lxd/0": &bundlechanges.Machine{ID: "1/lxd/0"},
-			"2":       &bundlechanges.Machine{ID: "2"},
-			"2/lxd/0": &bundlechanges.Machine{ID: "2/lxd/0"},
-			"2/lxd/1": &bundlechanges.Machine{ID: "2/lxd/1"},
+			"0":       {ID: "0"},
+			"0/lxd/0": {ID: "0/lxd/0"},
+			"0/lxd/1": {ID: "0/lxd/1"},
+			"1":       {ID: "1"},
+			"1/lxd/0": {ID: "1/lxd/0"},
+			"2":       {ID: "2"},
+			"2/lxd/0": {ID: "2/lxd/0"},
+			"2/lxd/1": {ID: "2/lxd/1"},
 		},
 		Sequence: map[string]int{
 			"machine":              3,
@@ -3062,13 +3062,13 @@ func (s *changesSuite) TestAddUnitToExistingApp(c *gc.C) {
             `
 	existingModel := &bundlechanges.Model{
 		Applications: map[string]*bundlechanges.Application{
-			"mediawiki": &bundlechanges.Application{
+			"mediawiki": {
 				Charm: "cs:precise/mediawiki-10",
 				Units: []bundlechanges.Unit{
 					{"mediawiki/0", "1"},
 				},
 			},
-			"mysql": &bundlechanges.Application{
+			"mysql": {
 				Charm: "cs:precise/mysql-28",
 				Units: []bundlechanges.Unit{
 					{"mysql/0", "0"},
@@ -3076,8 +3076,8 @@ func (s *changesSuite) TestAddUnitToExistingApp(c *gc.C) {
 			},
 		},
 		Machines: map[string]*bundlechanges.Machine{
-			"0": &bundlechanges.Machine{ID: "0"},
-			"1": &bundlechanges.Machine{ID: "1"},
+			"0": {ID: "0"},
+			"1": {ID: "1"},
 		},
 		Relations: []bundlechanges.Relation{
 			{
@@ -3136,7 +3136,7 @@ func (s *changesSuite) TestAddMissingUnitToNotLastPlacement(c *gc.C) {
             `
 	existingModel := &bundlechanges.Model{
 		Applications: map[string]*bundlechanges.Application{
-			"foo": &bundlechanges.Application{
+			"foo": {
 				Charm: "cs:foo",
 				Units: []bundlechanges.Unit{
 					{"foo/1", "1"},
@@ -3145,9 +3145,9 @@ func (s *changesSuite) TestAddMissingUnitToNotLastPlacement(c *gc.C) {
 			},
 		},
 		Machines: map[string]*bundlechanges.Machine{
-			"0": &bundlechanges.Machine{ID: "0"},
-			"1": &bundlechanges.Machine{ID: "1"},
-			"2": &bundlechanges.Machine{ID: "2"},
+			"0": {ID: "0"},
+			"1": {ID: "1"},
+			"2": {ID: "2"},
 		},
 	}
 	expectedChanges := []string{
@@ -3171,7 +3171,7 @@ func (s *changesSuite) TestAddMissingUnitToNotLastPlacementExisting(c *gc.C) {
             `
 	existingModel := &bundlechanges.Model{
 		Applications: map[string]*bundlechanges.Application{
-			"foo": &bundlechanges.Application{
+			"foo": {
 				Charm: "cs:foo",
 				Units: []bundlechanges.Unit{
 					{"foo/1", "1"},
@@ -3180,9 +3180,9 @@ func (s *changesSuite) TestAddMissingUnitToNotLastPlacementExisting(c *gc.C) {
 			},
 		},
 		Machines: map[string]*bundlechanges.Machine{
-			"0": &bundlechanges.Machine{ID: "0"},
-			"1": &bundlechanges.Machine{ID: "1"},
-			"2": &bundlechanges.Machine{ID: "2"},
+			"0": {ID: "0"},
+			"1": {ID: "1"},
+			"2": {ID: "2"},
 		},
 		MachineMap: map[string]string{
 			// map existing machines.
@@ -3222,7 +3222,7 @@ func (s *changesSuite) TestFromJujuMassiveUnitColocation(c *gc.C) {
             `
 	existingModel := &bundlechanges.Model{
 		Applications: map[string]*bundlechanges.Application{
-			"django": &bundlechanges.Application{
+			"django": {
 				Name:  "django",
 				Charm: "cs:xenial/django-42",
 				Units: []bundlechanges.Unit{
@@ -3232,7 +3232,7 @@ func (s *changesSuite) TestFromJujuMassiveUnitColocation(c *gc.C) {
 					{Name: "django/1", Machine: "0/lxd/0"},
 				},
 			},
-			"memcached": &bundlechanges.Application{
+			"memcached": {
 				Name:  "memcached",
 				Charm: "cs:xenial/mem-47",
 				Units: []bundlechanges.Unit{
@@ -3241,7 +3241,7 @@ func (s *changesSuite) TestFromJujuMassiveUnitColocation(c *gc.C) {
 					{Name: "memcached/2", Machine: "2"},
 				},
 			},
-			"ror": &bundlechanges.Application{
+			"ror": {
 				Name:  "ror",
 				Charm: "cs:xenial/rails-0",
 				Units: []bundlechanges.Unit{
@@ -3252,10 +3252,10 @@ func (s *changesSuite) TestFromJujuMassiveUnitColocation(c *gc.C) {
 			},
 		},
 		Machines: map[string]*bundlechanges.Machine{
-			"0": &bundlechanges.Machine{ID: "0"},
-			"1": &bundlechanges.Machine{ID: "1"},
-			"2": &bundlechanges.Machine{ID: "2"},
-			"3": &bundlechanges.Machine{ID: "3"},
+			"0": {ID: "0"},
+			"1": {ID: "1"},
+			"2": {ID: "2"},
+			"3": {ID: "3"},
 		},
 	}
 	expectedChanges := []string{
@@ -3263,6 +3263,295 @@ func (s *changesSuite) TestFromJujuMassiveUnitColocation(c *gc.C) {
 		"add unit node/0 to 0/lxd/0 to satisfy [lxd:memcached]",
 	}
 	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
+
+func (s *changesSuite) TestInconsistentMappingError(c *gc.C) {
+	// https://bugs.launchpad.net/juju/+bug/1773357 This bug occurs
+	// when the model machine map is pre-set incorrectly, and the
+	// applications all have enough units, but the mapping omits some
+	// machines that host those units. FromData includes changes to
+	// create machines but then doesn't put any units on them. It
+	// should return an error indicating the inconsistency instead.
+	bundleContent := `
+        applications:
+            memcached:
+                charm: cs:xenial/mem-47
+                num_units: 2
+                to: [0, 1]
+        machines:
+            0:
+            1:
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"memcached": {
+				Name:  "memcached",
+				Charm: "cs:xenial/mem-47",
+				Units: []bundlechanges.Unit{
+					{Name: "memcached/1", Machine: "1"},
+					{Name: "memcached/2", Machine: "2"},
+					{Name: "memcached/3", Machine: "3"},
+				},
+			},
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			"1": {ID: "1"},
+			"2": {ID: "2"},
+			"3": {ID: "3"},
+		},
+		MachineMap: map[string]string{
+			// using --map-machines=existing
+			"1": "1",
+			"2": "2",
+			"3": "3",
+		},
+	}
+	s.checkBundleImpl(c, bundleContent, existingModel, nil, `bundle and machine mapping are inconsistent: need an explicit entry mapping bundle machine "0", perhaps to one of model machines \["2", "3"\] - the target should host \[memcached\]`)
+}
+
+func (s *changesSuite) TestConsistentMapping(c *gc.C) {
+	bundleContent := `
+        applications:
+            memcached:
+                charm: cs:xenial/mem-47
+                num_units: 2
+                to: [0, 1]
+        machines:
+            0:
+            1:
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"memcached": {
+				Name:  "memcached",
+				Charm: "cs:xenial/mem-47",
+				Units: []bundlechanges.Unit{
+					{Name: "memcached/1", Machine: "1"},
+					{Name: "memcached/2", Machine: "2"},
+					{Name: "memcached/3", Machine: "3"},
+				},
+			},
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			"1": {ID: "1"},
+			"2": {ID: "2"},
+			"3": {ID: "3"},
+		},
+		MachineMap: map[string]string{
+			// using --map-machines=existing
+			"1": "1",
+			"2": "2",
+			"3": "3",
+			// Plus an explicit mapping.
+			"0": "3",
+		},
+	}
+	// Now that we have a consistent mapping, no changes are needed.
+	s.checkBundleExistingModel(c, bundleContent, existingModel, nil)
+}
+
+func (s *changesSuite) TestContainerHosts(c *gc.C) {
+	// If we have a bundle that needs to create a container, we don't
+	// treat the machine hosting the container as not having
+	// dependants.
+	bundleContent := `
+        applications:
+            memcached:
+                charm: cs:xenial/mem-47
+                num_units: 2
+                to: [1, "lxd:2"]
+        machines:
+            1:
+            2:
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"memcached": {
+				Name:  "memcached",
+				Charm: "cs:xenial/mem-47",
+				Units: []bundlechanges.Unit{
+					{Name: "memcached/1", Machine: "1"},
+				},
+			},
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			"1": {ID: "1"},
+		},
+		MachineMap: map[string]string{
+			// using --map-machines=existing
+			"1": "1",
+		},
+	}
+	expectedChanges := []string{
+		"add new machine 2",
+		"add lxd container 2/lxd/0 on new machine 2",
+		"add unit memcached/2 to 2/lxd/0",
+	}
+	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
+
+func (s *changesSuite) TestSingleTarget(c *gc.C) {
+	bundleContent := `
+        applications:
+            memcached:
+                charm: cs:xenial/mem-47
+                num_units: 2
+                to: [0, 1]
+        machines:
+            0:
+            1:
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"memcached": {
+				Name:  "memcached",
+				Charm: "cs:xenial/mem-47",
+				Units: []bundlechanges.Unit{
+					{Name: "memcached/1", Machine: "1"},
+					{Name: "memcached/2", Machine: "2"},
+				},
+			},
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			"1": {ID: "1"},
+			"2": {ID: "2"},
+		},
+		MachineMap: map[string]string{
+			// using --map-machines=existing
+			"1": "1",
+			"2": "2",
+		},
+	}
+	s.checkBundleImpl(c, bundleContent, existingModel, nil, `bundle and machine mapping are inconsistent: need an explicit entry mapping bundle machine "0", perhaps to unreferenced model machine "2" - the target should host \[memcached\]`)
+}
+
+func (s *changesSuite) TestMultipleApplications(c *gc.C) {
+	bundleContent := `
+        applications:
+            memcached:
+                charm: cs:xenial/mem-47
+                num_units: 2
+                to: [0, 1]
+            prometheus:
+                charm: cs:xenial/prom-22
+                num_units: 1
+                to: [0]
+        machines:
+            0:
+            1:
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"memcached": {
+				Name:  "memcached",
+				Charm: "cs:xenial/mem-47",
+				Units: []bundlechanges.Unit{
+					{Name: "memcached/1", Machine: "1"},
+					{Name: "memcached/2", Machine: "2"},
+				},
+			},
+			"prometheus": {
+				Name:  "prometheus",
+				Charm: "cs:xenial/prom-22",
+				Units: []bundlechanges.Unit{
+					{Name: "prometheus/1", Machine: "2"},
+				},
+			},
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			"1": {ID: "1"},
+			"2": {ID: "2"},
+		},
+		MachineMap: map[string]string{
+			// using --map-machines=existing
+			"1": "1",
+			"2": "2",
+		},
+	}
+	s.checkBundleImpl(c, bundleContent, existingModel, nil, `bundle and machine mapping are inconsistent: need an explicit entry mapping bundle machine "0", perhaps to unreferenced model machine "2" - the target should host \[memcached, prometheus\]`)
+}
+
+func (s *changesSuite) TestNoApplications(c *gc.C) {
+	bundleContent := `
+        applications:
+            memcached:
+                charm: cs:xenial/mem-47
+                num_units: 2
+                to: ["lxd:0", 1]
+            prometheus:
+                charm: cs:xenial/prom-22
+                num_units: 1
+                to: [memcached/0]
+        machines:
+            0:
+            1:
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"memcached": {
+				Name:  "memcached",
+				Charm: "cs:xenial/mem-47",
+				Units: []bundlechanges.Unit{
+					{Name: "memcached/1", Machine: "1"},
+					{Name: "memcached/2", Machine: "2"},
+				},
+			},
+			"prometheus": {
+				Name:  "prometheus",
+				Charm: "cs:xenial/prom-22",
+				Units: []bundlechanges.Unit{
+					{Name: "prometheus/1", Machine: "2"},
+				},
+			},
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			"1": {ID: "1"},
+			"2": {ID: "2"},
+		},
+		MachineMap: map[string]string{
+			// using --map-machines=existing
+			"1": "1",
+			"2": "2",
+		},
+	}
+	// In this case we can't find any applications for bundle machine
+	// 0 because the applications don't refer to it with simple
+	// placement..
+	s.checkBundleImpl(c, bundleContent, existingModel, nil, `bundle and machine mapping are inconsistent: need an explicit entry mapping bundle machine "0", perhaps to unreferenced model machine "2"`)
+}
+
+func (s *changesSuite) TestNoPossibleTargets(c *gc.C) {
+	bundleContent := `
+        applications:
+            memcached:
+                charm: cs:xenial/mem-47
+                num_units: 2
+                to: [0, 1]
+        machines:
+            0:
+            1:
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"memcached": {
+				Name:  "memcached",
+				Charm: "cs:xenial/mem-47",
+				Units: []bundlechanges.Unit{
+					{Name: "memcached/1", Machine: "1"},
+					{Name: "memcached/2", Machine: "1"},
+				},
+			},
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			"1": {ID: "1"},
+		},
+		MachineMap: map[string]string{
+			// using --map-machines=existing
+			"1": "1",
+		},
+	}
+	// There *are* two units, but they're both on machine one.
+	s.checkBundleImpl(c, bundleContent, existingModel, nil, `bundle and machine mapping are inconsistent: need an explicit entry mapping bundle machine "0" - the target should host \[memcached\]`)
 }
 
 func (s *changesSuite) checkBundle(c *gc.C, bundleContent string, expectedChanges []string) {

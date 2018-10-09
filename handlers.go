@@ -180,7 +180,7 @@ func (r *resolver) handleMachines() map[string]*AddMachineChange {
 	// Iterate over the map using its sorted keys so that results are
 	// deterministic and easier to test.
 	names := make([]string, 0, len(machines))
-	for name, _ := range machines {
+	for name := range machines {
 		names = append(names, name)
 	}
 	naturalsort.Sort(names)
@@ -833,7 +833,91 @@ func (r *resolver) handleUnits(addedApplications map[string]string, addedMachine
 	}
 
 	processor.addAllNeededUnits()
-	return errors.Trace(processor.processUnitPlacement())
+	err := processor.processUnitPlacement()
+	if err != nil {
+		return errors.Trace(err)
+	}
+	return errors.Trace(r.checkAllMachinesUsed(addedMachines))
+}
+
+// checkAllMachinesUsed ensures that we haven't added any machines
+// that don't host any units or containers - this indicates an
+// inconsistency between the bundle and the machine map to the
+// existing model.
+func (r *resolver) checkAllMachinesUsed(addedMachines map[string]*AddMachineChange) error {
+	dependents := r.changes.dependents()
+	for _, change := range addedMachines {
+		if len(dependents[change.Id()]) == 0 {
+			return r.newMachineMapError(change)
+		}
+	}
+	return nil
+}
+
+func (r *resolver) newMachineMapError(machineChange *AddMachineChange) *InconsistentMachineMapError {
+	// The machine map needs some extra entry for this machine, the
+	// possible target machines are the ones in the model that aren't
+	// already referred to from the bundle (via the machine map).
+	modelMachines := set.NewStrings()
+	for machineID := range r.model.Machines {
+		modelMachines.Add(machineID)
+	}
+	for bundleMachineID := range r.bundle.Machines {
+		modelMachineID, found := r.model.MachineMap[bundleMachineID]
+		if !found {
+			continue
+		}
+		modelMachines.Remove(modelMachineID)
+	}
+	targetIDs := naturalsort.Sort(modelMachines.Values())
+
+	var applications []string
+	for name, application := range r.bundle.Applications {
+		for _, to := range application.To {
+			if to == machineChange.Params.bundleMachineID {
+				applications = append(applications, name)
+			}
+		}
+	}
+
+	return &InconsistentMachineMapError{
+		BundleMachine:     machineChange.Params.bundleMachineID,
+		PossibleTargetIDs: targetIDs,
+		Applications:      naturalsort.Sort(applications),
+	}
+}
+
+// InconsistentMachineMapError indicates that there is a mismatch
+// between the bundle machines and the machine map which should be
+// resolved with explicit entries.
+type InconsistentMachineMapError struct {
+	BundleMachine     string
+	PossibleTargetIDs []string
+	Applications      []string
+}
+
+func (err *InconsistentMachineMapError) Error() string {
+	quotedIDs := make([]string, len(err.PossibleTargetIDs))
+	for i, id := range err.PossibleTargetIDs {
+		quotedIDs[i] = fmt.Sprintf("%q", id)
+	}
+	var modelMachines string
+	if len(quotedIDs) == 1 {
+		modelMachines = fmt.Sprintf(", perhaps to unreferenced model machine %s", quotedIDs[0])
+	} else if len(quotedIDs) > 1 {
+		modelMachines = fmt.Sprintf(", perhaps to one of model machines [%s]", strings.Join(quotedIDs, ", "))
+	}
+	var applications string
+	if len(err.Applications) != 0 {
+		applications = fmt.Sprintf(" - the target should host [%s]",
+			strings.Join(err.Applications, ", "))
+	}
+	return fmt.Sprintf(
+		`bundle and machine mapping are inconsistent: need an explicit entry mapping bundle machine %q%s%s`,
+		err.BundleMachine,
+		modelMachines,
+		applications,
+	)
 }
 
 func placeholder(changeID string) string {

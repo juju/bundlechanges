@@ -327,8 +327,8 @@ func (a *Application) unitCount() int {
 	return len(a.Units)
 }
 
-func (a *Application) changedAnnotations(annotations map[string]string) map[string]string {
-	if a == nil || len(a.Annotations) == 0 {
+func (a *Application) changedAnnotations(annotations map[string]string, bundleURL string) map[string]string {
+	if (a == nil || len(a.Annotations) == 0) && len(bundleURL) == 0 {
 		return annotations
 	}
 	changes := make(map[string]string)
@@ -337,6 +337,9 @@ func (a *Application) changedAnnotations(annotations map[string]string) map[stri
 		if !found || current != value {
 			changes[key] = value
 		}
+	}
+	if len(bundleURL) > 0 {
+		changes["bundleURL"] = bundleURL
 	}
 	return changes
 }

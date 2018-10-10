@@ -15,10 +15,11 @@ import (
 )
 
 type resolver struct {
-	bundle  *charm.BundleData
-	model   *Model
-	logger  Logger
-	changes *changeset
+	bundle    *charm.BundleData
+	model     *Model
+	bundleURL string
+	logger    Logger
+	changes   *changeset
 }
 
 // handleApplications populates the change set with "addCharm"/"addApplication" records.
@@ -150,7 +151,7 @@ func (r *resolver) handleApplications() map[string]string {
 		}
 
 		// Add application annotations.
-		if annotations := existingApp.changedAnnotations(application.Annotations); len(annotations) > 0 {
+		if annotations := existingApp.changedAnnotations(application.Annotations, r.bundleURL); len(annotations) > 0 {
 			paramId := name
 			var deps []string
 			if existingApp == nil {

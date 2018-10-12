@@ -426,22 +426,15 @@ var _ = gc.Suite(&applicationSuite{})
 func (*applicationSuite) TestNilApplication(c *gc.C) {
 	var app *Application
 	annotations := map[string]string{"a": "b", "c": "d"}
-	toChange := app.changedAnnotations(annotations, "")
+	toChange := app.changedAnnotations(annotations)
 	c.Check(toChange, jc.DeepEquals, annotations)
 }
 
 func (*applicationSuite) TestEmptyApplication(c *gc.C) {
 	app := &Application{}
 	annotations := map[string]string{"a": "b", "c": "d"}
-	toChange := app.changedAnnotations(annotations, "")
+	toChange := app.changedAnnotations(annotations)
 	c.Assert(toChange, jc.DeepEquals, annotations)
-}
-
-func (*applicationSuite) TestEmptyAnnotation(c *gc.C) {
-	app := &Application{}
-	annotations := map[string]string{}
-	toChange := app.changedAnnotations(annotations, "")
-	c.Assert(toChange, jc.DeepEquals, map[string]string{})
 }
 
 func (*applicationSuite) TestChangedAnnotationsSomeChanges(c *gc.C) {
@@ -449,25 +442,8 @@ func (*applicationSuite) TestChangedAnnotationsSomeChanges(c *gc.C) {
 		Annotations: map[string]string{"a": "b", "c": "g", "f": "p"},
 	}
 	annotations := map[string]string{"a": "b", "c": "d"}
-	toChange := app.changedAnnotations(annotations, "")
+	toChange := app.changedAnnotations(annotations)
 	c.Assert(toChange, jc.DeepEquals, map[string]string{"c": "d"})
-}
-
-func (*applicationSuite) TestNoAnnotationsBundleURL(c *gc.C) {
-	app := &Application{}
-	annotations := map[string]string{}
-	toChange := app.changedAnnotations(annotations, "cs:bundle/cdk")
-	c.Assert(toChange, jc.DeepEquals, map[string]string{"bundleURL": "cs:bundle/cdk"})
-}
-
-func (*applicationSuite) TestAnnotationsBundleURL(c *gc.C) {
-	app := &Application{}
-	annotations := map[string]string{"gui-x": "123", "gui-y": "456"}
-	toChange := app.changedAnnotations(annotations, "cs:bundle/cdk")
-	c.Assert(toChange, jc.DeepEquals, map[string]string{
-		"gui-x":     "123",
-		"gui-y":     "456",
-		"bundleURL": "cs:bundle/cdk"})
 }
 
 func (*applicationSuite) TestChangedOptionsSomeChanges(c *gc.C) {

@@ -215,9 +215,6 @@ func (s *diffSuite) TestApplicationCharm(c *gc.C) {
 // 	c.Fatalf("writeme")
 // }
 
-// TODO(bundlediff): handle num units for subordinates correctly. If
-// the model says the application is a subordinate we don't compare
-// the number of units.
 func (s *diffSuite) TestApplicationNumUnits(c *gc.C) {
 	bundleContent := `
         applications:
@@ -254,6 +251,59 @@ func (s *diffSuite) TestApplicationNumUnits(c *gc.C) {
 			},
 		},
 	}
+	s.checkDiff(c, bundleContent, model, expectedDiff)
+}
+
+func (s *diffSuite) TestApplicationSubordinateNumUnits(c *gc.C) {
+	bundleContent := `
+        applications:
+            prometheus:
+                charm: cs:xenial/prometheus-7
+                num_units: 2
+                to: [0, 1]
+            nrpe:
+                charm: cs:xenial/nrpe-12
+        machines:
+            0:
+            1:
+        relations:
+            - - nrpe:collector
+              - prometheus:nrpe
+            `
+	model := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"prometheus": {
+				Name:  "prometheus",
+				Charm: "cs:xenial/prometheus-7",
+				Units: []bundlechanges.Unit{
+					{Name: "prometheus/0", Machine: "0"},
+					{Name: "prometheus/1", Machine: "1"},
+				},
+			},
+			"nrpe": {
+				Name:          "nrpe",
+				Charm:         "cs:xenial/nrpe-12",
+				SubordinateTo: []string{"prometheus"},
+				Units: []bundlechanges.Unit{
+					{Name: "nrpe/0", Machine: "0"},
+					{Name: "nrpe/1", Machine: "1"},
+				},
+			},
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			"0": {ID: "0"},
+			"1": {ID: "1"},
+		},
+		Relations: []bundlechanges.Relation{{
+			App1:      "prometheus",
+			Endpoint1: "nrpe",
+			App2:      "nrpe",
+			Endpoint2: "collector",
+		}},
+	}
+	// We don't complain about num_units differing for subordinate
+	// applications.
+	expectedDiff := &bundlechanges.BundleDiff{}
 	s.checkDiff(c, bundleContent, model, expectedDiff)
 }
 

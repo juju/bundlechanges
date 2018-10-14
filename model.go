@@ -82,7 +82,7 @@ func (m *Model) initializeSequence() {
 		}
 	}
 
-	for machineID, _ := range m.Machines {
+	for machineID := range m.Machines {
 		// Continued paranoia.
 		if !names.IsValidMachine(machineID) {
 			continue
@@ -188,12 +188,13 @@ func (m *Model) getUnitMachine(appName string, index int) string {
 
 // Application represents an existing charm deployed in the model.
 type Application struct {
-	Name        string
-	Charm       string // The charm URL.
-	Options     map[string]interface{}
-	Annotations map[string]string
-	Constraints string // TODO: not updated yet.
-	Exposed     bool
+	Name          string
+	Charm         string // The charm URL.
+	Options       map[string]interface{}
+	Annotations   map[string]string
+	Constraints   string // TODO: not updated yet.
+	Exposed       bool
+	SubordinateTo []string
 	// TODO: handle changes in:
 	//   endpoint bindings -- possible even?
 	//   storage

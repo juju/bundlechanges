@@ -90,7 +90,6 @@ func (d *differ) diffApplication(name string) *ApplicationDiff {
 	}
 	result := &ApplicationDiff{
 		Charm:       d.diffStrings(bundle.Charm, model.Charm),
-		NumUnits:    d.diffInts(bundle.NumUnits, len(model.Units)),
 		Expose:      d.diffBools(bundle.Expose, model.Exposed),
 		Constraints: d.diffStrings(bundle.Constraints, model.Constraints),
 		Options:     d.diffOptions(bundle.Options, model.Options),
@@ -99,6 +98,10 @@ func (d *differ) diffApplication(name string) *ApplicationDiff {
 
 	if d.config.IncludeAnnotations {
 		result.Annotations = d.diffAnnotations(bundle.Annotations, model.Annotations)
+	}
+	if len(model.SubordinateTo) == 0 {
+		// We don't check num_units for subordinate apps.
+		result.NumUnits = d.diffInts(bundle.NumUnits, len(model.Units))
 	}
 
 	if result.Empty() {

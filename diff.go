@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/juju/collections/set"
+	"github.com/juju/errors"
 	"gopkg.in/juju/charm.v6"
 )
 
@@ -36,9 +37,26 @@ type DiffConfig struct {
 	Logger             Logger
 }
 
+// Validate returns whether this is a valid configuration for diffing.
+func (config DiffConfig) Validate() error {
+	if config.Bundle == nil {
+		return errors.NotValidf("nil bundle")
+	}
+	if config.Model == nil {
+		return errors.NotValidf("nil model")
+	}
+	if config.Logger == nil {
+		return errors.NotValidf("nil logger")
+	}
+	return config.Bundle.Verify(nil, nil, nil)
+}
+
 // BuildDiff returns a BundleDiff with the differences between the
 // passed in bundle and model.
 func BuildDiff(config DiffConfig) (*BundleDiff, error) {
+	if err := config.Validate(); err != nil {
+		return nil, errors.Trace(err)
+	}
 	differ := &differ{config: config}
 	return differ.build()
 }
@@ -366,8 +384,6 @@ type RelationsDiff struct {
 // relationFromEndpoints returns a (canonicalised) Relation from a
 // [app1:ep1 app2:ep2] bundle relation.
 func relationFromEndpoints(relation []string) Relation {
-	// TODO(bundlediff): verify bundle before we begin so we can rely
-	// on the relations always being 2 app:endpoint strings.
 	relation = relation[:]
 	sort.Strings(relation)
 	parts1 := strings.SplitN(relation[0], ":", 2)

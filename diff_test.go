@@ -744,6 +744,60 @@ func (s *diffSuite) TestRelations(c *gc.C) {
 	s.checkDiff(c, bundleContent, model, expectedDiff)
 }
 
+func (s *diffSuite) TestValidationMissingBundle(c *gc.C) {
+	config := bundlechanges.DiffConfig{
+		Bundle: nil,
+		Model:  &bundlechanges.Model{},
+		Logger: loggo.GetLogger("diff_test"),
+	}
+	s.checkDiffImpl(c, config, nil, "nil bundle not valid")
+}
+
+func (s *diffSuite) TestValidationMissingModel(c *gc.C) {
+	bundleContent := `
+        applications:
+            prometheus:
+                charm: cs:xenial/prometheus-7
+                num_units: 1
+                to: [0]
+        machines:
+            0:
+            `
+	config := bundlechanges.DiffConfig{
+		Bundle: s.readBundle(c, bundleContent),
+		Model:  nil,
+		Logger: loggo.GetLogger("diff_test"),
+	}
+	s.checkDiffImpl(c, config, nil, "nil model not valid")
+}
+
+func (s *diffSuite) TestValidationMissingLogger(c *gc.C) {
+	bundleContent := `
+        applications:
+            prometheus:
+                charm: cs:xenial/prometheus-7
+                num_units: 1
+                to: [0]
+        machines:
+            0:
+            `
+	config := bundlechanges.DiffConfig{
+		Bundle: s.readBundle(c, bundleContent),
+		Model:  &bundlechanges.Model{},
+		Logger: nil,
+	}
+	s.checkDiffImpl(c, config, nil, "nil logger not valid")
+}
+
+func (s *diffSuite) TestValidationInvalidBundle(c *gc.C) {
+	config := bundlechanges.DiffConfig{
+		Bundle: &charm.BundleData{},
+		Model:  &bundlechanges.Model{},
+		Logger: loggo.GetLogger("diff_test"),
+	}
+	s.checkDiffImpl(c, config, nil, "at least one application must be specified")
+}
+
 func (s *diffSuite) checkDiff(c *gc.C, bundleContent string, model *bundlechanges.Model, expected *bundlechanges.BundleDiff) {
 	config := bundlechanges.DiffConfig{
 		Bundle:             s.readBundle(c, bundleContent),

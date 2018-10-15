@@ -534,13 +534,16 @@ func (s *diffSuite) TestModelMissingMachine(c *gc.C) {
 				Name:  "prometheus",
 				Charm: "cs:xenial/prometheus-7",
 				Units: []bundlechanges.Unit{
-					{Name: "prometheus/0", Machine: "0"},
-					{Name: "prometheus/1", Machine: "0"},
+					{Name: "prometheus/0", Machine: "2"},
+					{Name: "prometheus/1", Machine: "2"},
 				},
 			},
 		},
 		Machines: map[string]*bundlechanges.Machine{
-			"0": {ID: "0"},
+			"2": {ID: "2"},
+		},
+		MachineMap: map[string]string{
+			"0": "2",
 		},
 	}
 	expectedDiff := &bundlechanges.BundleDiff{
@@ -576,10 +579,13 @@ func (s *diffSuite) TestBundleMissingMachine(c *gc.C) {
 			"0": {ID: "0"},
 			"1": {ID: "1"},
 		},
+		MachineMap: map[string]string{
+			"0": "1",
+		},
 	}
 	expectedDiff := &bundlechanges.BundleDiff{
 		Machines: map[string]*bundlechanges.MachineDiff{
-			"1": {Missing: "bundle"},
+			"0": {Missing: "bundle"},
 		},
 	}
 	s.checkDiff(c, bundleContent, model, expectedDiff)

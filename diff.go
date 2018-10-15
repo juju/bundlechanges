@@ -129,50 +129,58 @@ func (d *differ) diffApplication(name string) *ApplicationDiff {
 }
 
 func (d *differ) diffMachines() map[string]*MachineDiff {
-	// Collect machines from both sides.
-	allNames := set.NewStrings()
-	for name := range d.config.Bundle.Machines {
-		allNames.Add(name)
-	}
+	unseen := set.NewStrings()
 	for name := range d.config.Model.Machines {
-		allNames.Add(name)
+		unseen.Add(name)
 	}
-
+	// Go through the machines from the bundle, but keep track of
+	// which model machines we've seen.
 	results := make(map[string]*MachineDiff)
-	for _, name := range allNames.SortedValues() {
-		diff := d.diffMachine(name)
-		if diff != nil {
-			results[name] = diff
+	for bundleName, bundleMachine := range d.config.Bundle.Machines {
+		modelName := d.toModelMachineName(bundleName)
+		unseen.Remove(modelName)
+
+		if bundleMachine == nil {
+			// This is equivalent to an empty machine spec.
+			bundleMachine = &charm.MachineSpec{}
+		}
+		modelMachine, found := d.config.Model.Machines[modelName]
+		if !found {
+			results[modelName] = &MachineDiff{Missing: ModelSide}
+			continue
+		}
+		// TODO(bundlediff): series
+		diff := &MachineDiff{}
+
+		if d.config.IncludeAnnotations {
+			diff.Annotations = d.diffAnnotations(
+				bundleMachine.Annotations,
+				modelMachine.Annotations,
+			)
+		}
+
+		if !diff.Empty() {
+			results[modelName] = diff
 		}
 	}
+
+	// Add missing bundle machines for any model machines that weren't
+	// seen.
+	for _, modelName := range unseen.Values() {
+		results[modelName] = &MachineDiff{Missing: BundleSide}
+	}
+
 	if len(results) == 0 {
 		return nil
 	}
 	return results
 }
 
-func (d *differ) diffMachine(name string) *MachineDiff {
-	bundle, found := d.config.Bundle.Machines[name]
+func (d *differ) toModelMachineName(bundleMachineName string) string {
+	result, found := d.config.Model.MachineMap[bundleMachineName]
 	if !found {
-		return &MachineDiff{Missing: BundleSide}
-	}
-	if bundle == nil {
-		// This is equivalent to an empty machine spec.
-		bundle = &charm.MachineSpec{}
-	}
-	model, found := d.config.Model.Machines[name]
-	if !found {
-		return &MachineDiff{Missing: ModelSide}
-	}
-	// TODO(bundlediff): series
-	result := &MachineDiff{}
-
-	if d.config.IncludeAnnotations {
-		result.Annotations = d.diffAnnotations(bundle.Annotations, model.Annotations)
-	}
-
-	if result.Empty() {
-		return nil
+		// We always assume use-existing-machines.
+		return bundleMachineName
 	}
 	return result
 }

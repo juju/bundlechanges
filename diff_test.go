@@ -61,7 +61,7 @@ func (s *diffSuite) TestSeriesNotEmpty(c *gc.C) {
 func (s *diffSuite) TestRelationsNotEmpty(c *gc.C) {
 	diff := &bundlechanges.BundleDiff{}
 	diff.Relations = &bundlechanges.RelationsDiff{
-		BundleExtra: [][]string{
+		BundleAdditions: [][]string{
 			{"sinkane:telephone", "bad-sav:hensteeth"},
 		},
 	}
@@ -816,10 +816,10 @@ func (s *diffSuite) TestRelations(c *gc.C) {
 	}
 	expectedDiff := &bundlechanges.BundleDiff{
 		Relations: &bundlechanges.RelationsDiff{
-			BundleExtra: [][]string{
+			BundleAdditions: [][]string{
 				{"memcached:admin", "prometheus:tickling"},
 			},
-			ModelExtra: [][]string{
+			ModelAdditions: [][]string{
 				{"memcached:alligator", "memcached:zebra"},
 				{"memcached:fish", "prometheus:juju-info"},
 			},

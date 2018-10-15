@@ -70,7 +70,6 @@ func (d *differ) build() (*BundleDiff, error) {
 		Applications: d.diffApplications(),
 		Machines:     d.diffMachines(),
 		Relations:    d.diffRelations(),
-		// TODO(bundlediff): diff series.
 	}, nil
 }
 
@@ -194,33 +193,33 @@ func (d *differ) diffRelations() *RelationsDiff {
 	}
 
 	modelSet := make(map[Relation]bool)
-	var modelExtra []Relation
+	var modelAdditions []Relation
 	for _, original := range d.config.Model.Relations {
 		relation := canonicalRelation(original)
 		modelSet[relation] = true
 		_, found := bundleSet[relation]
 		if !found {
-			modelExtra = append(modelExtra, relation)
+			modelAdditions = append(modelAdditions, relation)
 		}
 	}
 
-	var bundleExtra []Relation
+	var bundleAdditions []Relation
 	for relation := range bundleSet {
 		_, found := modelSet[relation]
 		if !found {
-			bundleExtra = append(bundleExtra, relation)
+			bundleAdditions = append(bundleAdditions, relation)
 		}
 	}
 
-	if len(bundleExtra) == 0 && len(modelExtra) == 0 {
+	if len(bundleAdditions) == 0 && len(modelAdditions) == 0 {
 		return nil
 	}
 
-	sort.Slice(bundleExtra, relationLess(bundleExtra))
-	sort.Slice(modelExtra, relationLess(modelExtra))
+	sort.Slice(bundleAdditions, relationLess(bundleAdditions))
+	sort.Slice(modelAdditions, relationLess(modelAdditions))
 	return &RelationsDiff{
-		BundleExtra: toRelationSlices(bundleExtra),
-		ModelExtra:  toRelationSlices(modelExtra),
+		BundleAdditions: toRelationSlices(bundleAdditions),
+		ModelAdditions:  toRelationSlices(modelAdditions),
 	}
 }
 
@@ -387,8 +386,8 @@ func (d *MachineDiff) Empty() bool {
 // RelationsDiff stores differences between relations in a bundle and
 // model.
 type RelationsDiff struct {
-	BundleExtra [][]string `yaml:"bundle-extra,omitempty"`
-	ModelExtra  [][]string `yaml:"model-extra,omitempty"`
+	BundleAdditions [][]string `yaml:"bundle-additions,omitempty"`
+	ModelAdditions  [][]string `yaml:"model-additions,omitempty"`
 }
 
 // relationFromEndpoints returns a (canonicalised) Relation from a

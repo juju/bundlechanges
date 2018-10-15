@@ -195,6 +195,7 @@ type Application struct {
 	Constraints   string // TODO: not updated yet.
 	Exposed       bool
 	SubordinateTo []string
+	Series        string
 	// TODO: handle changes in:
 	//   endpoint bindings -- possible even?
 	//   storage
@@ -211,6 +212,7 @@ type Unit struct {
 // Machine represents an existing machine in the model.
 type Machine struct {
 	ID          string
+	Series      string
 	Annotations map[string]string
 }
 

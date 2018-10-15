@@ -109,9 +109,9 @@ func (d *differ) diffApplication(name string) *ApplicationDiff {
 	result := &ApplicationDiff{
 		Charm:       d.diffStrings(bundle.Charm, model.Charm),
 		Expose:      d.diffBools(bundle.Expose, model.Exposed),
+		Series:      d.diffStrings(bundle.Series, model.Series),
 		Constraints: d.diffStrings(bundle.Constraints, model.Constraints),
 		Options:     d.diffOptions(bundle.Options, model.Options),
-		// TODO(bundlediff): series
 	}
 
 	if d.config.IncludeAnnotations {
@@ -149,13 +149,15 @@ func (d *differ) diffMachines() map[string]*MachineDiff {
 			results[modelName] = &MachineDiff{Missing: ModelSide}
 			continue
 		}
-		// TODO(bundlediff): series
-		diff := &MachineDiff{}
+		diff := &MachineDiff{
+			Series: d.diffStrings(
+				bundleMachine.Series, modelMachine.Series,
+			),
+		}
 
 		if d.config.IncludeAnnotations {
 			diff.Annotations = d.diffAnnotations(
-				bundleMachine.Annotations,
-				modelMachine.Annotations,
+				bundleMachine.Annotations, modelMachine.Annotations,
 			)
 		}
 

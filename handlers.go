@@ -15,10 +15,11 @@ import (
 )
 
 type resolver struct {
-	bundle  *charm.BundleData
-	model   *Model
-	logger  Logger
-	changes *changeset
+	bundle    *charm.BundleData
+	model     *Model
+	bundleURL string
+	logger    Logger
+	changes   *changeset
 }
 
 // handleApplications populates the change set with "addCharm"/"addApplication" records.
@@ -149,6 +150,16 @@ func (r *resolver) handleApplications() map[string]string {
 			}
 		}
 
+		if r.bundleURL != "" {
+			if application.Annotations == nil {
+				application.Annotations = make(map[string]string)
+			}
+			// If a bundleURL already exists on a model and you're applying a new
+			// bundle that overrides it, we will take the new bundleURL as you're now
+			// making those existing applications to match the new bundle spec.
+			application.Annotations["bundleURL"] = r.bundleURL
+		}
+
 		// Add application annotations.
 		if annotations := existingApp.changedAnnotations(application.Annotations); len(annotations) > 0 {
 			paramId := name
@@ -160,7 +171,7 @@ func (r *resolver) handleApplications() map[string]string {
 			add(newSetAnnotationsChange(SetAnnotationsParams{
 				EntityType:  ApplicationType,
 				Id:          paramId,
-				Annotations: application.Annotations,
+				Annotations: annotations,
 				target:      name,
 			}, deps...))
 		}

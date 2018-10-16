@@ -81,6 +81,82 @@ func (s *changesSuite) TestMinimalBundle(c *gc.C) {
 	s.assertParseData(c, content, expected)
 }
 
+func (s *changesSuite) TestBundleURLAnnotationSet(c *gc.C) {
+	content := `
+        services:
+            django:
+                charm: django`
+
+	expected := []record{{
+		Id:     "addCharm-0",
+		Method: "addCharm",
+		Params: bundlechanges.AddCharmParams{
+			Charm: "django",
+		},
+		GUIArgs: []interface{}{"django", ""},
+	}, {
+		Id:     "deploy-1",
+		Method: "deploy",
+		Params: bundlechanges.AddApplicationParams{
+			Charm:       "$addCharm-0",
+			Application: "django",
+		},
+		GUIArgs: []interface{}{
+			"$addCharm-0",
+			"",
+			"django",
+			map[string]interface{}{},
+			"",
+			map[string]string{},
+			map[string]string{},
+			map[string]int{},
+		},
+		Requires: []string{"addCharm-0"},
+	}, {
+		Id:     "setAnnotations-2",
+		Method: "setAnnotations",
+		Params: bundlechanges.SetAnnotationsParams{
+			Id:         "$deploy-1",
+			EntityType: "application",
+			Annotations: map[string]string{
+				"bundleURL": "cs:bundle/blog",
+			},
+		},
+		GUIArgs: []interface{}{
+			"$deploy-1",
+			"application",
+			map[string]string{
+				"bundleURL": "cs:bundle/blog",
+			},
+		},
+		Requires: []string{"deploy-1"},
+	}}
+
+	data, err := charm.ReadBundleData(strings.NewReader(content))
+	c.Assert(err, jc.ErrorIsNil)
+	err = data.Verify(nil, nil, nil)
+	c.Assert(err, jc.ErrorIsNil)
+	// Retrieve the changes, and convert them to a sequence of records.
+	changes, err := bundlechanges.FromData(bundlechanges.ChangesConfig{
+		Bundle:    data,
+		BundleURL: "cs:bundle/blog",
+		Logger:    loggo.GetLogger("bundlechanges"),
+	})
+	c.Assert(err, jc.ErrorIsNil)
+	records := make([]record, len(changes))
+	for i, change := range changes {
+		r := record{
+			Id:       change.Id(),
+			Requires: change.Requires(),
+			Method:   change.Method(),
+			GUIArgs:  change.GUIArgs(),
+			Params:   copyParams(change),
+		}
+		records[i] = r
+	}
+	c.Check(records, jc.DeepEquals, expected)
+}
+
 func (s *changesSuite) TestMinimalBundleWithDevices(c *gc.C) {
 	content := `
         services:

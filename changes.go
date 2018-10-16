@@ -18,9 +18,10 @@ type Logger interface {
 
 // ChangesConfig is used to provide the required data for determining changes.
 type ChangesConfig struct {
-	Bundle *charm.BundleData
-	Model  *Model
-	Logger Logger
+	Bundle    *charm.BundleData
+	Model     *Model
+	Logger    Logger
+	BundleURL string
 	// TODO: add charm metadata for validation.
 }
 
@@ -51,10 +52,11 @@ func FromData(config ChangesConfig) ([]Change, error) {
 	model.InferMachineMap(config.Bundle)
 	changes := &changeset{}
 	resolver := resolver{
-		bundle:  config.Bundle,
-		model:   model,
-		logger:  config.Logger,
-		changes: changes,
+		bundle:    config.Bundle,
+		model:     model,
+		bundleURL: config.BundleURL,
+		logger:    config.Logger,
+		changes:   changes,
 	}
 	addedApplications := resolver.handleApplications()
 	addedMachines := resolver.handleMachines()

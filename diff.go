@@ -129,23 +129,23 @@ func (d *differ) diffApplication(name string) *ApplicationDiff {
 
 func (d *differ) diffMachines() map[string]*MachineDiff {
 	unseen := set.NewStrings()
-	for name := range d.config.Model.Machines {
-		unseen.Add(name)
+	for machineID := range d.config.Model.Machines {
+		unseen.Add(machineID)
 	}
 	// Go through the machines from the bundle, but keep track of
 	// which model machines we've seen.
 	results := make(map[string]*MachineDiff)
-	for bundleName, bundleMachine := range d.config.Bundle.Machines {
-		modelName := d.toModelMachineName(bundleName)
-		unseen.Remove(modelName)
+	for bundleID, bundleMachine := range d.config.Bundle.Machines {
+		modelID := d.toModelMachineID(bundleID)
+		unseen.Remove(modelID)
 
 		if bundleMachine == nil {
 			// This is equivalent to an empty machine spec.
 			bundleMachine = &charm.MachineSpec{}
 		}
-		modelMachine, found := d.config.Model.Machines[modelName]
+		modelMachine, found := d.config.Model.Machines[modelID]
 		if !found {
-			results[modelName] = &MachineDiff{Missing: ModelSide}
+			results[modelID] = &MachineDiff{Missing: ModelSide}
 			continue
 		}
 		diff := &MachineDiff{
@@ -153,15 +153,13 @@ func (d *differ) diffMachines() map[string]*MachineDiff {
 				bundleMachine.Series, modelMachine.Series,
 			),
 		}
-
 		if d.config.IncludeAnnotations {
 			diff.Annotations = d.diffAnnotations(
 				bundleMachine.Annotations, modelMachine.Annotations,
 			)
 		}
-
 		if !diff.Empty() {
-			results[modelName] = diff
+			results[modelID] = diff
 		}
 	}
 
@@ -177,11 +175,11 @@ func (d *differ) diffMachines() map[string]*MachineDiff {
 	return results
 }
 
-func (d *differ) toModelMachineName(bundleMachineName string) string {
-	result, found := d.config.Model.MachineMap[bundleMachineName]
+func (d *differ) toModelMachineID(bundleMachineID string) string {
+	result, found := d.config.Model.MachineMap[bundleMachineID]
 	if !found {
 		// We always assume use-existing-machines.
-		return bundleMachineName
+		return bundleMachineID
 	}
 	return result
 }
@@ -294,15 +292,10 @@ func (d *differ) diffBools(bundle, model bool) *BoolDiff {
 	return &BoolDiff{Bundle: bundle, Model: model}
 }
 
-func (d *differ) log(message string, args ...interface{}) {
-	d.config.Logger.Tracef(message, args...)
-}
-
 // BundleDiff stores differences between a bundle and a model.
 type BundleDiff struct {
 	Applications map[string]*ApplicationDiff `yaml:"applications,omitempty"`
 	Machines     map[string]*MachineDiff     `yaml:"machines,omitempty"`
-	Series       *StringDiff                 `yaml:"series,omitempty"`
 	Relations    *RelationsDiff              `yaml:"relations,omitempty"`
 }
 
@@ -311,7 +304,6 @@ type BundleDiff struct {
 func (d *BundleDiff) Empty() bool {
 	return len(d.Applications) == 0 &&
 		len(d.Machines) == 0 &&
-		d.Series == nil &&
 		d.Relations == nil
 }
 

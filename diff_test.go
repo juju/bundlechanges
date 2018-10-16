@@ -18,13 +18,15 @@ import (
 
 type diffSuite struct {
 	jujutesting.IsolationSuite
+	logger loggo.Logger
 }
 
 var _ = gc.Suite(&diffSuite{})
 
 func (s *diffSuite) SetUpTest(c *gc.C) {
 	s.IsolationSuite.SetUpTest(c)
-	loggo.ConfigureLoggers("diff_test=trace")
+	s.logger = loggo.GetLogger("diff_test")
+	s.logger.SetLogLevel(loggo.TRACE)
 }
 
 func (s *diffSuite) TestNewDiffEmpty(c *gc.C) {
@@ -49,12 +51,6 @@ func (s *diffSuite) TestMachinesNotEmpty(c *gc.C) {
 	diff.Machines["1"] = &bundlechanges.MachineDiff{
 		Missing: bundlechanges.BundleSide,
 	}
-	c.Assert(diff.Empty(), jc.IsFalse)
-}
-
-func (s *diffSuite) TestSeriesNotEmpty(c *gc.C) {
-	diff := &bundlechanges.BundleDiff{}
-	diff.Series = &bundlechanges.StringDiff{"xenial", "bionic"}
 	c.Assert(diff.Empty(), jc.IsFalse)
 }
 
@@ -482,6 +478,7 @@ func (s *diffSuite) TestApplicationAnnotationsWithOptionOff(c *gc.C) {
                 charm: cs:xenial/prometheus-7
                 num_units: 1
                 annotations:
+                    clint: hat
                     griffin: shoes
                     travis: glasses
                 to: [0]
@@ -494,6 +491,7 @@ func (s *diffSuite) TestApplicationAnnotationsWithOptionOff(c *gc.C) {
 				Name:  "prometheus",
 				Charm: "cs:xenial/prometheus-7",
 				Annotations: map[string]string{
+					"clint":   "hat",
 					"griffin": "shorts",
 					"justin":  "tshirt",
 				},
@@ -511,7 +509,7 @@ func (s *diffSuite) TestApplicationAnnotationsWithOptionOff(c *gc.C) {
 		Bundle:             s.readBundle(c, bundleContent),
 		Model:              model,
 		IncludeAnnotations: false,
-		Logger:             loggo.GetLogger("diff_test"),
+		Logger:             s.logger,
 	}
 	s.checkDiffImpl(c, config, expectedDiff, "")
 }
@@ -753,7 +751,7 @@ func (s *diffSuite) TestMachineAnnotationsWithOptionOff(c *gc.C) {
 		Bundle:             s.readBundle(c, bundleContent),
 		Model:              model,
 		IncludeAnnotations: false,
-		Logger:             loggo.GetLogger("diff_test"),
+		Logger:             s.logger,
 	}
 	s.checkDiffImpl(c, config, expectedDiff, "")
 }
@@ -832,7 +830,7 @@ func (s *diffSuite) TestValidationMissingBundle(c *gc.C) {
 	config := bundlechanges.DiffConfig{
 		Bundle: nil,
 		Model:  &bundlechanges.Model{},
-		Logger: loggo.GetLogger("diff_test"),
+		Logger: s.logger,
 	}
 	s.checkDiffImpl(c, config, nil, "nil bundle not valid")
 }
@@ -850,7 +848,7 @@ func (s *diffSuite) TestValidationMissingModel(c *gc.C) {
 	config := bundlechanges.DiffConfig{
 		Bundle: s.readBundle(c, bundleContent),
 		Model:  nil,
-		Logger: loggo.GetLogger("diff_test"),
+		Logger: s.logger,
 	}
 	s.checkDiffImpl(c, config, nil, "nil model not valid")
 }
@@ -877,7 +875,7 @@ func (s *diffSuite) TestValidationInvalidBundle(c *gc.C) {
 	config := bundlechanges.DiffConfig{
 		Bundle: &charm.BundleData{},
 		Model:  &bundlechanges.Model{},
-		Logger: loggo.GetLogger("diff_test"),
+		Logger: s.logger,
 	}
 	s.checkDiffImpl(c, config, nil, "at least one application must be specified")
 }
@@ -887,7 +885,7 @@ func (s *diffSuite) checkDiff(c *gc.C, bundleContent string, model *bundlechange
 		Bundle:             s.readBundle(c, bundleContent),
 		Model:              model,
 		IncludeAnnotations: true,
-		Logger:             loggo.GetLogger("diff_test"),
+		Logger:             s.logger,
 	}
 	s.checkDiffImpl(c, config, expected, "")
 }

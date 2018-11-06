@@ -59,11 +59,17 @@ func FromData(config ChangesConfig) ([]Change, error) {
 		changes:   changes,
 	}
 	addedApplications := resolver.handleApplications()
-	addedMachines := resolver.handleMachines()
+
+	var addedMachines map[string]*AddMachineChange
+	if resolver.bundle.Type != kubernetes {
+		addedMachines = resolver.handleMachines()
+	}
 	resolver.handleRelations(addedApplications)
-	err := resolver.handleUnits(addedApplications, addedMachines)
-	if err != nil {
-		return nil, errors.Trace(err)
+	if resolver.bundle.Type != kubernetes {
+		err := resolver.handleUnits(addedApplications, addedMachines)
+		if err != nil {
+			return nil, errors.Trace(err)
+		}
 	}
 	return changes.sorted(), nil
 }
@@ -389,6 +395,8 @@ func (ch *AddApplicationChange) buildArgs(includeDevices bool) []interface{} {
 		devices,
 		endpointBindings,
 		resources,
+		ch.Params.NumUnits,
+		ch.Params.Placement,
 	}
 	if !includeDevices {
 		// delete devices after storage
@@ -408,7 +416,15 @@ func (ch *AddApplicationChange) Description() string {
 	if ch.Params.Series != "" {
 		series = " on " + ch.Params.Series
 	}
-	return fmt.Sprintf("deploy application %s%s using %s", ch.Params.Application, series, ch.Params.charmURL)
+	unitsInfo := ""
+	if ch.Params.NumUnits > 0 {
+		plural := ""
+		if ch.Params.NumUnits > 1 {
+			plural = "s"
+		}
+		unitsInfo = fmt.Sprintf(" with %d unit%s", ch.Params.NumUnits, plural)
+	}
+	return fmt.Sprintf("deploy application %s%s%s using %s", ch.Params.Application, unitsInfo, series, ch.Params.charmURL)
 }
 
 // AddApplicationParams holds parameters for deploying a Juju application.
@@ -420,6 +436,13 @@ type AddApplicationParams struct {
 	Series string
 	// Application holds the application name.
 	Application string
+	// NumUnits holds the number of units required.
+	// For IAAS models, this will be 0 and separate AddUnitChanges will be used.
+	// For Kubernetes models, this will be used to scale the application.
+	NumUnits int
+	// Placement holds the placement directive for units of this application.
+	// Only applicable for Kubernetes models.
+	Placement string
 	// Options holds application options.
 	Options map[string]interface{}
 	// Constraints holds the optional application constraints.
@@ -533,6 +556,45 @@ func (ch *ExposeChange) Description() string {
 type ExposeParams struct {
 	// Application holds the placeholder name of the application that must be exposed.
 	Application string
+
+	appName string
+}
+
+// newScaleChange creates a new change for scaling a Kubernetes application.
+func newScaleChange(params ScaleParams, requires ...string) *ScaleChange {
+	return &ScaleChange{
+		changeInfo: changeInfo{
+			requires: requires,
+			method:   "scale",
+		},
+		Params: params,
+	}
+}
+
+// ScaleChange holds a change for scaling an application.
+type ScaleChange struct {
+	changeInfo
+	// Params holds parameters for scaling an application.
+	Params ScaleParams
+}
+
+// GUIArgs implements Change.GUIArgs.
+func (ch *ScaleChange) GUIArgs() []interface{} {
+	return []interface{}{ch.Params.Application, ch.Params.Scale}
+}
+
+// Description implements Change.
+func (ch *ScaleChange) Description() string {
+	return fmt.Sprintf("scale %s to %d units", ch.Params.appName, ch.Params.Scale)
+}
+
+// ScaleParams holds parameters for scaling an application.
+type ScaleParams struct {
+	// Application holds the placeholder name of the application to be scaled.
+	Application string
+
+	// Scale is the new scale value to use.
+	Scale int
 
 	appName string
 }

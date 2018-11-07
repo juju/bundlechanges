@@ -118,7 +118,14 @@ func (d *differ) diffApplication(name string) *ApplicationDiff {
 	}
 	if len(model.SubordinateTo) == 0 {
 		// We don't check num_units for subordinate apps.
-		result.NumUnits = d.diffInts(bundle.NumUnits, len(model.Units))
+		if d.config.Bundle.Type == kubernetes {
+			result.Scale = d.diffInts(bundle.NumUnits, model.Scale)
+		} else {
+			result.NumUnits = d.diffInts(bundle.NumUnits, len(model.Units))
+		}
+	}
+	if d.config.Bundle.Type == kubernetes && len(bundle.To) > 0 {
+		result.Placement = d.diffStrings(bundle.To[0], model.Placement)
 	}
 
 	if result.Empty() {
@@ -312,7 +319,9 @@ type ApplicationDiff struct {
 	Missing     DiffSide              `yaml:"missing,omitempty"`
 	Charm       *StringDiff           `yaml:"charm,omitempty"`
 	Series      *StringDiff           `yaml:"series,omitempty"`
+	Placement   *StringDiff           `yaml:"placement,omitempty"`
 	NumUnits    *IntDiff              `yaml:"num_units,omitempty"`
+	Scale       *IntDiff              `yaml:"scale,omitempty"`
 	Expose      *BoolDiff             `yaml:"expose,omitempty"`
 	Options     map[string]OptionDiff `yaml:"options,omitempty"`
 	Annotations map[string]StringDiff `yaml:"annotations,omitempty"`
@@ -328,7 +337,9 @@ func (d *ApplicationDiff) Empty() bool {
 	return d.Missing == None &&
 		d.Charm == nil &&
 		d.Series == nil &&
+		d.Placement == nil &&
 		d.NumUnits == nil &&
+		d.Scale == nil &&
 		d.Expose == nil &&
 		len(d.Options) == 0 &&
 		len(d.Annotations) == 0 &&

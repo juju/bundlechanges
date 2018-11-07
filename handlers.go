@@ -28,6 +28,9 @@ func (r *resolver) handleApplications() map[string]string {
 	add := r.changes.add
 	applications := r.bundle.Applications
 	defaultSeries := r.bundle.Series
+	if r.bundle.Type == kubernetes {
+		defaultSeries = kubernetes
+	}
 	existing := r.model
 
 	charms := make(map[string]string, len(applications))
@@ -80,11 +83,22 @@ func (r *resolver) handleApplications() map[string]string {
 				charmOrChange = placeholder(charmChange)
 			}
 
+			// For Kubernetes bundles, we include the scale (num units) and placement.
+			numUnits := 0
+			placement := ""
+			if r.bundle.Type == kubernetes {
+				numUnits = application.NumUnits
+				if len(application.To) > 0 {
+					placement = application.To[0]
+				}
+			}
 			// Add the addApplication record for this application.
 			change = newAddApplicationChange(AddApplicationParams{
 				Charm:            charmOrChange,
 				Series:           series,
 				Application:      name,
+				NumUnits:         numUnits,
+				Placement:        placement,
 				Options:          application.Options,
 				Constraints:      application.Constraints,
 				Storage:          application.Storage,
@@ -146,6 +160,14 @@ func (r *resolver) handleApplications() map[string]string {
 				add(newExposeChange(ExposeParams{
 					Application: name,
 					appName:     name,
+				}))
+			}
+
+			if r.bundle.Type == kubernetes && existingApp.Scale != application.NumUnits {
+				add(newScaleChange(ScaleParams{
+					Application: name,
+					appName:     name,
+					Scale:       application.NumUnits,
 				}))
 			}
 		}

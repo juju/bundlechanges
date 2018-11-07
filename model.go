@@ -14,6 +14,8 @@ import (
 	"gopkg.in/juju/names.v2"
 )
 
+const kubernetes = "kubernetes"
+
 // Model represents the existing deployment if any.
 type Model struct {
 	Applications map[string]*Application
@@ -190,16 +192,17 @@ func (m *Model) getUnitMachine(appName string, index int) string {
 type Application struct {
 	Name          string
 	Charm         string // The charm URL.
+	Scale         int
 	Options       map[string]interface{}
 	Annotations   map[string]string
 	Constraints   string // TODO: not updated yet.
 	Exposed       bool
 	SubordinateTo []string
 	Series        string
+	Placement     string
 	// TODO: handle changes in:
 	//   endpoint bindings -- possible even?
 	//   storage
-	//   series
 
 	Units []Unit
 }

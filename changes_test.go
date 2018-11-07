@@ -47,7 +47,7 @@ type record struct {
 
 func (s *changesSuite) TestMinimalBundle(c *gc.C) {
 	content := `
-        services:
+        applications:
             django:
                 charm: django
    `
@@ -74,6 +74,8 @@ func (s *changesSuite) TestMinimalBundle(c *gc.C) {
 			map[string]string{},
 			map[string]string{},
 			map[string]int{},
+			0,
+			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}}
@@ -110,6 +112,8 @@ func (s *changesSuite) TestBundleURLAnnotationSet(c *gc.C) {
 			map[string]string{},
 			map[string]string{},
 			map[string]int{},
+			0,
+			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -159,7 +163,7 @@ func (s *changesSuite) TestBundleURLAnnotationSet(c *gc.C) {
 
 func (s *changesSuite) TestMinimalBundleWithDevices(c *gc.C) {
 	content := `
-        services:
+        applications:
             django:
                 charm: django
    `
@@ -187,6 +191,8 @@ func (s *changesSuite) TestMinimalBundleWithDevices(c *gc.C) {
 			map[string]string{},
 			map[string]string{},
 			map[string]int{},
+			0,
+			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}}
@@ -196,7 +202,7 @@ func (s *changesSuite) TestMinimalBundleWithDevices(c *gc.C) {
 
 func (s *changesSuite) TestSimpleBundle(c *gc.C) {
 	content := `
-        services:
+        applications:
             mediawiki:
                 charm: cs:precise/mediawiki-10
                 num_units: 1
@@ -245,6 +251,8 @@ func (s *changesSuite) TestSimpleBundle(c *gc.C) {
 			map[string]string{},
 			map[string]string{},
 			map[string]int{"data": 3},
+			0,
+			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -295,6 +303,8 @@ func (s *changesSuite) TestSimpleBundle(c *gc.C) {
 			map[string]string{},
 			map[string]string{},
 			map[string]int{},
+			0,
+			"",
 		},
 		Requires: []string{"addCharm-4"},
 	}, {
@@ -329,7 +339,7 @@ func (s *changesSuite) TestSimpleBundle(c *gc.C) {
 
 func (s *changesSuite) TestSimpleBundleWithDevices(c *gc.C) {
 	content := `
-        services:
+        applications:
             mediawiki:
                 charm: cs:precise/mediawiki-10
                 num_units: 1
@@ -379,6 +389,8 @@ func (s *changesSuite) TestSimpleBundleWithDevices(c *gc.C) {
 			map[string]string{},
 			map[string]string{},
 			map[string]int{"data": 3},
+			0,
+			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -430,6 +442,8 @@ func (s *changesSuite) TestSimpleBundleWithDevices(c *gc.C) {
 			map[string]string{},
 			map[string]string{},
 			map[string]int{},
+			0,
+			"",
 		},
 		Requires: []string{"addCharm-4"},
 	}, {
@@ -462,9 +476,136 @@ func (s *changesSuite) TestSimpleBundleWithDevices(c *gc.C) {
 	s.assertParseDataWithDevices(c, content, expected)
 }
 
+func (s *changesSuite) TestKubernetesBundle(c *gc.C) {
+	content := `
+        bundle: kubernetes
+        applications:
+            mediawiki:
+                charm: cs:mediawiki-k8s-10
+                num_units: 1
+                expose: true
+                options:
+                    debug: false
+                annotations:
+                    gui-x: "609"
+                    gui-y: "-15"
+                resources:
+                    data: 3
+            mysql:
+                charm: cs:mysql-k8s-28
+                num_units: 2
+                placement: foo=bar
+                resources:
+                  data: "./resources/data.tar"
+        relations:
+            - - mediawiki:db
+              - mysql:db
+        `
+	expected := []record{{
+		Id:     "addCharm-0",
+		Method: "addCharm",
+		Params: bundlechanges.AddCharmParams{
+			Charm:  "cs:mediawiki-k8s-10",
+			Series: "kubernetes",
+		},
+		GUIArgs: []interface{}{"cs:mediawiki-k8s-10", "kubernetes"},
+	}, {
+		Id:     "deploy-1",
+		Method: "deploy",
+		Params: bundlechanges.AddApplicationParams{
+			Charm:       "$addCharm-0",
+			Application: "mediawiki",
+			Series:      "kubernetes",
+			NumUnits:    1,
+			Options:     map[string]interface{}{"debug": false},
+			Resources:   map[string]int{"data": 3},
+		},
+		GUIArgs: []interface{}{
+			"$addCharm-0",
+			"kubernetes",
+			"mediawiki",
+			map[string]interface{}{"debug": false},
+			"",
+			map[string]string{},
+			map[string]string{},
+			map[string]string{},
+			map[string]int{"data": 3},
+			1,
+			"",
+		},
+		Requires: []string{"addCharm-0"},
+	}, {
+		Id:     "expose-2",
+		Method: "expose",
+		Params: bundlechanges.ExposeParams{
+			Application: "$deploy-1",
+		},
+		GUIArgs:  []interface{}{"$deploy-1"},
+		Requires: []string{"deploy-1"},
+	}, {
+		Id:     "setAnnotations-3",
+		Method: "setAnnotations",
+		Params: bundlechanges.SetAnnotationsParams{
+			Id:          "$deploy-1",
+			EntityType:  bundlechanges.ApplicationType,
+			Annotations: map[string]string{"gui-x": "609", "gui-y": "-15"},
+		},
+		GUIArgs: []interface{}{
+			"$deploy-1",
+			"application",
+			map[string]string{"gui-x": "609", "gui-y": "-15"},
+		},
+		Requires: []string{"deploy-1"},
+	}, {
+		Id:     "addCharm-4",
+		Method: "addCharm",
+		Params: bundlechanges.AddCharmParams{
+			Charm:  "cs:mysql-k8s-28",
+			Series: "kubernetes",
+		},
+		GUIArgs: []interface{}{"cs:mysql-k8s-28", "kubernetes"},
+	}, {
+		Id:     "deploy-5",
+		Method: "deploy",
+		Params: bundlechanges.AddApplicationParams{
+			Charm:          "$addCharm-4",
+			Application:    "mysql",
+			Series:         "kubernetes",
+			NumUnits:       2,
+			Placement:      "foo=bar",
+			LocalResources: map[string]string{"data": "./resources/data.tar"},
+		},
+		GUIArgs: []interface{}{
+			"$addCharm-4",
+			"kubernetes",
+			"mysql",
+			map[string]interface{}{},
+			"",
+			map[string]string{},
+			map[string]string{},
+			map[string]string{},
+			map[string]int{},
+			2,
+			"foo=bar",
+		},
+		Requires: []string{"addCharm-4"},
+	}, {
+		Id:     "addRelation-6",
+		Method: "addRelation",
+		Params: bundlechanges.AddRelationParams{
+			Endpoint1: "$deploy-1:db",
+			Endpoint2: "$deploy-5:db",
+		},
+		GUIArgs:  []interface{}{"$deploy-1:db", "$deploy-5:db"},
+		Requires: []string{"deploy-1", "deploy-5"},
+	}}
+
+	s.assertParseDataWithDevices(c, content, expected)
+}
+
 func (s *changesSuite) TestSameCharmReused(c *gc.C) {
 	content := `
-        services:
+        applications:
             mediawiki:
                 charm: precise/mediawiki-10
                 num_units: 1
@@ -496,6 +637,8 @@ func (s *changesSuite) TestSameCharmReused(c *gc.C) {
 			map[string]string{},
 			map[string]string{},
 			map[string]int{},
+			0,
+			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -515,6 +658,8 @@ func (s *changesSuite) TestSameCharmReused(c *gc.C) {
 			map[string]string{},
 			map[string]string{},
 			map[string]int{},
+			0,
+			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -530,9 +675,9 @@ func (s *changesSuite) TestSameCharmReused(c *gc.C) {
 	s.assertParseData(c, content, expected)
 }
 
-func (s *changesSuite) TestMachinesAndUnitsPlacementWithbindings(c *gc.C) {
+func (s *changesSuite) TestMachinesAndUnitsPlacementWithBindings(c *gc.C) {
 	content := `
-        services:
+        applications:
             django:
                 charm: cs:trusty/django-42
                 num_units: 2
@@ -585,6 +730,8 @@ func (s *changesSuite) TestMachinesAndUnitsPlacementWithbindings(c *gc.C) {
 			map[string]string{},
 			map[string]string{"": "foo", "http": "bar"},
 			map[string]int{},
+			0,
+			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -613,6 +760,8 @@ func (s *changesSuite) TestMachinesAndUnitsPlacementWithbindings(c *gc.C) {
 			map[string]string{},
 			map[string]string{},
 			map[string]int{},
+			0,
+			"",
 		},
 		Requires: []string{"addCharm-2"},
 	}, {
@@ -727,7 +876,7 @@ func (s *changesSuite) TestMachinesAndUnitsPlacementWithbindings(c *gc.C) {
 
 func (s *changesSuite) TestMachinesWithConstraintsAndAnnotations(c *gc.C) {
 	content := `
-        services:
+        applications:
             django:
                 charm: cs:trusty/django-42
                 num_units: 2
@@ -765,6 +914,8 @@ func (s *changesSuite) TestMachinesWithConstraintsAndAnnotations(c *gc.C) {
 			map[string]string{},
 			map[string]string{},
 			map[string]int{},
+			0,
+			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -828,7 +979,7 @@ func (s *changesSuite) TestMachinesWithConstraintsAndAnnotations(c *gc.C) {
 
 func (s *changesSuite) TestEndpointWithoutRelationName(c *gc.C) {
 	content := `
-        services:
+        applications:
             mediawiki:
                 charm: cs:precise/mediawiki-10
             mysql:
@@ -863,6 +1014,8 @@ func (s *changesSuite) TestEndpointWithoutRelationName(c *gc.C) {
 			map[string]string{},
 			map[string]string{},
 			map[string]int{},
+			0,
+			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -891,6 +1044,8 @@ func (s *changesSuite) TestEndpointWithoutRelationName(c *gc.C) {
 			map[string]string{},
 			map[string]string{},
 			map[string]int{},
+			0,
+			"",
 		},
 		Requires: []string{"addCharm-2"},
 	}, {
@@ -909,7 +1064,7 @@ func (s *changesSuite) TestEndpointWithoutRelationName(c *gc.C) {
 
 func (s *changesSuite) TestUnitPlacedInApplication(c *gc.C) {
 	content := `
-        services:
+        applications:
             wordpress:
                 charm: wordpress
                 num_units: 3
@@ -943,6 +1098,8 @@ func (s *changesSuite) TestUnitPlacedInApplication(c *gc.C) {
 			map[string]string{},
 			map[string]string{},
 			map[string]int{},
+			0,
+			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -968,6 +1125,8 @@ func (s *changesSuite) TestUnitPlacedInApplication(c *gc.C) {
 			map[string]string{},
 			map[string]string{},
 			map[string]int{},
+			0,
+			"",
 		},
 		Requires: []string{"addCharm-2"},
 	}, {
@@ -1019,7 +1178,7 @@ func (s *changesSuite) TestUnitPlacedInApplication(c *gc.C) {
 
 func (s *changesSuite) TestUnitPlacedInApplicationWithDevices(c *gc.C) {
 	content := `
-        services:
+        applications:
             wordpress:
                 charm: wordpress
                 num_units: 3
@@ -1054,6 +1213,8 @@ func (s *changesSuite) TestUnitPlacedInApplicationWithDevices(c *gc.C) {
 			map[string]string{},
 			map[string]string{},
 			map[string]int{},
+			0,
+			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -1080,6 +1241,8 @@ func (s *changesSuite) TestUnitPlacedInApplicationWithDevices(c *gc.C) {
 			map[string]string{},
 			map[string]string{},
 			map[string]int{},
+			0,
+			"",
 		},
 		Requires: []string{"addCharm-2"},
 	}, {
@@ -1131,7 +1294,7 @@ func (s *changesSuite) TestUnitPlacedInApplicationWithDevices(c *gc.C) {
 
 func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 	content := `
-        services:
+        applications:
             memcached:
                 charm: cs:trusty/mem-47
                 num_units: 3
@@ -1179,6 +1342,8 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			map[string]string{},
 			map[string]string{},
 			map[string]int{},
+			0,
+			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -1206,6 +1371,8 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			map[string]string{},
 			map[string]string{},
 			map[string]int{},
+			0,
+			"",
 		},
 		Requires: []string{"addCharm-2"},
 	}, {
@@ -1233,6 +1400,8 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			map[string]string{},
 			map[string]string{},
 			map[string]int{},
+			0,
+			"",
 		},
 		Requires: []string{"addCharm-4"},
 	}, {
@@ -1441,7 +1610,7 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 
 func (s *changesSuite) TestUnitPlacedTomachines(c *gc.C) {
 	content := `
-        services:
+        applications:
             django:
                 charm: cs:trusty/django-42
                 num_units: 5
@@ -1481,6 +1650,8 @@ func (s *changesSuite) TestUnitPlacedTomachines(c *gc.C) {
 			map[string]string{},
 			map[string]string{},
 			map[string]int{},
+			0,
+			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -1610,7 +1781,7 @@ func (s *changesSuite) TestUnitPlacedTomachines(c *gc.C) {
 
 func (s *changesSuite) TestUnitPlacedToNewMachineWithConstraints(c *gc.C) {
 	content := `
-        services:
+        applications:
             django:
                 charm: cs:trusty/django-42
                 num_units: 1
@@ -1644,6 +1815,8 @@ func (s *changesSuite) TestUnitPlacedToNewMachineWithConstraints(c *gc.C) {
 			map[string]string{},
 			map[string]string{},
 			map[string]int{},
+			0,
+			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -1675,7 +1848,7 @@ func (s *changesSuite) TestUnitPlacedToNewMachineWithConstraints(c *gc.C) {
 
 func (s *changesSuite) TestApplicationWithStorage(c *gc.C) {
 	content := `
-        services:
+        applications:
             django:
                 charm: cs:trusty/django-42
                 num_units: 2
@@ -1715,6 +1888,8 @@ func (s *changesSuite) TestApplicationWithStorage(c *gc.C) {
 			},
 			map[string]string{},
 			map[string]int{},
+			0,
+			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -1740,7 +1915,7 @@ func (s *changesSuite) TestApplicationWithStorage(c *gc.C) {
 
 func (s *changesSuite) TestApplicationWithDevices(c *gc.C) {
 	content := `
-        services:
+        applications:
             django:
                 charm: cs:trusty/django-42
                 num_units: 2
@@ -1787,6 +1962,8 @@ func (s *changesSuite) TestApplicationWithDevices(c *gc.C) {
 			},
 			map[string]string{},
 			map[string]int{},
+			0,
+			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -1812,7 +1989,7 @@ func (s *changesSuite) TestApplicationWithDevices(c *gc.C) {
 
 func (s *changesSuite) TestApplicationWithEndpointBindings(c *gc.C) {
 	content := `
-        services:
+        applications:
             django:
                 charm: django
                 bindings:
@@ -1842,6 +2019,8 @@ func (s *changesSuite) TestApplicationWithEndpointBindings(c *gc.C) {
 			map[string]string{},
 			map[string]string{"foo": "bar"},
 			map[string]int{},
+			0,
+			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}}
@@ -1852,7 +2031,7 @@ func (s *changesSuite) TestApplicationWithEndpointBindings(c *gc.C) {
 func (s *changesSuite) TestApplicationWithNonDefaultSeriesAndPlacements(c *gc.C) {
 	content := `
 series: trusty
-services:
+applications:
     gui3:
         charm: cs:precise/juju-gui
         num_units: 2
@@ -1887,6 +2066,8 @@ machines:
 			map[string]string{},
 			map[string]string{},
 			map[string]int{},
+			0,
+			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -2073,6 +2254,8 @@ func (s *changesSuite) assertLocalBundleChanges(c *gc.C, charmDir, bundleContent
 			map[string]string{},      // storage.
 			map[string]string{},      // endpoint bindings.
 			map[string]int{},         // resources.
+			0,                        // num_units.
+			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}}
@@ -2106,6 +2289,8 @@ func (s *changesSuite) assertLocalBundleChangesWithDevices(c *gc.C, charmDir, bu
 			map[string]string{},      // devices.
 			map[string]string{},      // endpoint bindings.
 			map[string]int{},         // resources.
+			0,                        // num_units.
+			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}}
@@ -2115,7 +2300,7 @@ func (s *changesSuite) assertLocalBundleChangesWithDevices(c *gc.C, charmDir, bu
 func (s *changesSuite) TestLocalCharmWithExplicitSeries(c *gc.C) {
 	charmDir := c.MkDir()
 	bundleContent := fmt.Sprintf(`
-        services:
+        applications:
             django:
                 charm: %s
                 series: xenial
@@ -2127,7 +2312,7 @@ func (s *changesSuite) TestLocalCharmWithExplicitSeries(c *gc.C) {
 func (s *changesSuite) TestLocalCharmWithSeriesFromCharm(c *gc.C) {
 	charmDir := c.MkDir()
 	bundleContent := fmt.Sprintf(`
-        services:
+        applications:
             django:
                 charm: %s
     `, charmDir)
@@ -2167,6 +2352,35 @@ func (s *changesSuite) TestSimpleBundleEmptyModel(c *gc.C) {
 		"expose django",
 		"set annotations for django",
 		"add unit django/0 to new machine 0",
+	}
+	s.checkBundle(c, bundleContent, expectedChanges)
+}
+
+func (s *changesSuite) TestKubernetesBundleEmptyModel(c *gc.C) {
+	bundleContent := `
+                bundle: kubernetes
+                applications:
+                    django:
+                        charm: cs:django-4
+                        expose: yes
+                        num_units: 1
+                        options:
+                            key-1: value-1
+                            key-2: value-2
+                        annotations:
+                            gui-x: "10"
+                            gui-y: "50"
+                    mariadb:
+                        charm: cs:mariadb-5
+                        num_units: 2
+            `
+	expectedChanges := []string{
+		"upload charm cs:django-4 for series kubernetes",
+		"deploy application django with 1 unit on kubernetes using cs:django-4",
+		"expose django",
+		"set annotations for django",
+		"upload charm cs:mariadb-5 for series kubernetes",
+		"deploy application mariadb with 2 units on kubernetes using cs:mariadb-5",
 	}
 	s.checkBundle(c, bundleContent, expectedChanges)
 }
@@ -2242,6 +2456,28 @@ func (s *changesSuite) TestAppExistsWithLessUnits(c *gc.C) {
 	}
 	expectedChanges := []string{
 		"add unit django/1 to new machine 1",
+	}
+	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
+
+func (s *changesSuite) TestAppExistsWithDifferentScale(c *gc.C) {
+	bundleContent := `
+                bundle: kubernetes
+                applications:
+                    django:
+                        charm: cs:django-4
+                        num_units: 2
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"django": {
+				Charm: "cs:django-4",
+				Scale: 3,
+			},
+		},
+	}
+	expectedChanges := []string{
+		"scale django to 2 units",
 	}
 	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
 }

@@ -287,6 +287,39 @@ func (s *diffSuite) TestApplicationNumUnits(c *gc.C) {
 	s.checkDiff(c, bundleContent, model, expectedDiff)
 }
 
+func (s *diffSuite) TestApplicationScale(c *gc.C) {
+	bundleContent := `
+        bundle: kubernetes
+        applications:
+            prometheus:
+                charm: cs:prometheus-7
+                scale: 2
+                placement: foo=bar
+            `
+	model := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"prometheus": {
+				Name:      "prometheus",
+				Series:    "kubernetes",
+				Charm:     "cs:prometheus-7",
+				Scale:     1,
+				Placement: "foo=bar",
+			},
+		},
+	}
+	expectedDiff := &bundlechanges.BundleDiff{
+		Applications: map[string]*bundlechanges.ApplicationDiff{
+			"prometheus": {
+				Scale: &bundlechanges.IntDiff{
+					Bundle: 2,
+					Model:  1,
+				},
+			},
+		},
+	}
+	s.checkDiff(c, bundleContent, model, expectedDiff)
+}
+
 func (s *diffSuite) TestApplicationSubordinateNumUnits(c *gc.C) {
 	bundleContent := `
         applications:
@@ -545,6 +578,39 @@ func (s *diffSuite) TestApplicationExpose(c *gc.C) {
 				Expose: &bundlechanges.BoolDiff{
 					Bundle: false,
 					Model:  true,
+				},
+			},
+		},
+	}
+	s.checkDiff(c, bundleContent, model, expectedDiff)
+}
+
+func (s *diffSuite) TestApplicationPlacement(c *gc.C) {
+	bundleContent := `
+        bundle: kubernetes
+        applications:
+            prometheus:
+                charm: cs:prometheus-7
+                scale: 2
+                placement: foo=bar
+            `
+	model := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"prometheus": {
+				Name:      "prometheus",
+				Series:    "kubernetes",
+				Charm:     "cs:prometheus-7",
+				Scale:     2,
+				Placement: "foo=baz",
+			},
+		},
+	}
+	expectedDiff := &bundlechanges.BundleDiff{
+		Applications: map[string]*bundlechanges.ApplicationDiff{
+			"prometheus": {
+				Placement: &bundlechanges.StringDiff{
+					Bundle: "foo=bar",
+					Model:  "foo=baz",
 				},
 			},
 		},

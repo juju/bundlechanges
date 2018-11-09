@@ -957,20 +957,23 @@ func placeholder(changeID string) string {
 	return "$" + changeID
 }
 
-func isNewMachine(id string) bool {
-	return len(id) > 0 && id[0] == '$'
-}
-
 // getSeries retrieves the series of a application from the ApplicationSpec or from the
 // charm path or URL if provided, otherwise falling back on a default series.
+// TODO - consider returning an error if the requested series is not compatible with the charm
 func getSeries(application *charm.ApplicationSpec, defaultSeries string) string {
 	if application.Series != "" {
 		return application.Series
 	}
 	// We may have a local charm path.
-	_, curl, err := charmrepo.NewCharmAtPath(application.Charm, "")
+	_, curl, err := charmrepo.NewCharmAtPath(application.Charm, defaultSeries)
 	if charm.IsMissingSeriesError(err) {
 		// local charm path is valid but the charm doesn't declare a default series.
+		return defaultSeries
+	}
+	if charm.IsUnsupportedSeriesError(err) {
+		// The bundle's default series is not supported by the charm, but we'll
+		// use it anyway. This is no different to the case above where application.Series
+		// is used without checking for potential charm incompatibility.
 		return defaultSeries
 	}
 	if err == nil {

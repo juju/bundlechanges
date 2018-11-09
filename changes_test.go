@@ -33,7 +33,8 @@ func TestPackage(t *testing.T) {
 
 func (s *changesSuite) SetUpTest(c *gc.C) {
 	s.IsolationSuite.SetUpTest(c)
-	loggo.ConfigureLoggers("bundlechanges=trace")
+	err := loggo.ConfigureLoggers("bundlechanges=trace")
+	c.Assert(err, jc.ErrorIsNil)
 }
 
 // record holds expected information about the contents of a change value.
@@ -1608,7 +1609,7 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 	s.assertParseData(c, content, expected)
 }
 
-func (s *changesSuite) TestUnitPlacedTomachines(c *gc.C) {
+func (s *changesSuite) TestUnitPlacedToMachines(c *gc.C) {
 	content := `
         applications:
             django:
@@ -2318,10 +2319,8 @@ func (s *changesSuite) TestLocalCharmWithSeriesFromCharm(c *gc.C) {
     `, charmDir)
 	charmMeta := `
 name: multi-series
-summary: "That's a dummy charm with multi-series."
-description: |
-    This is a longer description which
-    potentially contains multiple lines.
+summary: That's a dummy charm with multi-series.
+description: A dummy charm.
 series:
     - precise
     - trusty
@@ -2330,6 +2329,28 @@ series:
 	c.Assert(err, jc.ErrorIsNil)
 	s.assertLocalBundleChanges(c, charmDir, bundleContent, "precise")
 	s.assertLocalBundleChangesWithDevices(c, charmDir, bundleContent, "precise")
+}
+
+func (s *changesSuite) TestLocalCharmWithSeriesFromBundle(c *gc.C) {
+	charmDir := c.MkDir()
+	bundleContent := fmt.Sprintf(`
+        series: bionic
+        applications:
+            django:
+                charm: %s
+    `, charmDir)
+	charmMeta := `
+name: multi-series
+summary: That's a dummy charm with multi-series.
+description: A dummy charm.
+series:
+    - precise
+    - trusty
+`[1:]
+	err := ioutil.WriteFile(filepath.Join(charmDir, "metadata.yaml"), []byte(charmMeta), 0644)
+	c.Assert(err, jc.ErrorIsNil)
+	s.assertLocalBundleChanges(c, charmDir, bundleContent, "bionic")
+	s.assertLocalBundleChangesWithDevices(c, charmDir, bundleContent, "bionic")
 }
 
 func (s *changesSuite) TestSimpleBundleEmptyModel(c *gc.C) {

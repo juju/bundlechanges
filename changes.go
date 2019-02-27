@@ -396,7 +396,6 @@ func (ch *AddApplicationChange) buildArgs(includeDevices bool) []interface{} {
 		endpointBindings,
 		resources,
 		ch.Params.NumUnits,
-		ch.Params.Placement,
 	}
 	if !includeDevices {
 		// delete devices after storage
@@ -440,9 +439,6 @@ type AddApplicationParams struct {
 	// For IAAS models, this will be 0 and separate AddUnitChanges will be used.
 	// For Kubernetes models, this will be used to scale the application.
 	NumUnits int
-	// Placement holds the placement directive for units of this application.
-	// Only applicable for Kubernetes models.
-	Placement string
 	// Options holds application options.
 	Options map[string]interface{}
 	// Constraints holds the optional application constraints.

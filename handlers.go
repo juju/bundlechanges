@@ -83,14 +83,10 @@ func (r *resolver) handleApplications() map[string]string {
 				charmOrChange = placeholder(charmChange)
 			}
 
-			// For Kubernetes bundles, we include the scale (num units) and placement.
+			// For Kubernetes bundles, we include the scale (num units).
 			numUnits := 0
-			placement := ""
 			if r.bundle.Type == kubernetes {
 				numUnits = application.NumUnits
-				if len(application.To) > 0 {
-					placement = application.To[0]
-				}
 			}
 			// Add the addApplication record for this application.
 			change = newAddApplicationChange(AddApplicationParams{
@@ -98,7 +94,6 @@ func (r *resolver) handleApplications() map[string]string {
 				Series:           series,
 				Application:      name,
 				NumUnits:         numUnits,
-				Placement:        placement,
 				Options:          application.Options,
 				Constraints:      application.Constraints,
 				Storage:          application.Storage,

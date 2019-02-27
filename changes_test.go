@@ -76,7 +76,6 @@ func (s *changesSuite) TestMinimalBundle(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
-			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}}
@@ -114,7 +113,6 @@ func (s *changesSuite) TestBundleURLAnnotationSet(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
-			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -193,7 +191,6 @@ func (s *changesSuite) TestMinimalBundleWithDevices(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
-			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}}
@@ -253,7 +250,6 @@ func (s *changesSuite) TestSimpleBundle(c *gc.C) {
 			map[string]string{},
 			map[string]int{"data": 3},
 			0,
-			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -305,7 +301,6 @@ func (s *changesSuite) TestSimpleBundle(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
-			"",
 		},
 		Requires: []string{"addCharm-4"},
 	}, {
@@ -391,7 +386,6 @@ func (s *changesSuite) TestSimpleBundleWithDevices(c *gc.C) {
 			map[string]string{},
 			map[string]int{"data": 3},
 			0,
-			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -444,7 +438,6 @@ func (s *changesSuite) TestSimpleBundleWithDevices(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
-			"",
 		},
 		Requires: []string{"addCharm-4"},
 	}, {
@@ -495,7 +488,6 @@ func (s *changesSuite) TestKubernetesBundle(c *gc.C) {
             mysql:
                 charm: cs:mysql-k8s-28
                 num_units: 2
-                placement: foo=bar
                 resources:
                   data: "./resources/data.tar"
         relations:
@@ -532,7 +524,6 @@ func (s *changesSuite) TestKubernetesBundle(c *gc.C) {
 			map[string]string{},
 			map[string]int{"data": 3},
 			1,
-			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -573,7 +564,6 @@ func (s *changesSuite) TestKubernetesBundle(c *gc.C) {
 			Application:    "mysql",
 			Series:         "kubernetes",
 			NumUnits:       2,
-			Placement:      "foo=bar",
 			LocalResources: map[string]string{"data": "./resources/data.tar"},
 		},
 		GUIArgs: []interface{}{
@@ -587,7 +577,6 @@ func (s *changesSuite) TestKubernetesBundle(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			2,
-			"foo=bar",
 		},
 		Requires: []string{"addCharm-4"},
 	}, {
@@ -639,7 +628,6 @@ func (s *changesSuite) TestSameCharmReused(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
-			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -660,7 +648,6 @@ func (s *changesSuite) TestSameCharmReused(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
-			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -732,7 +719,6 @@ func (s *changesSuite) TestMachinesAndUnitsPlacementWithBindings(c *gc.C) {
 			map[string]string{"": "foo", "http": "bar"},
 			map[string]int{},
 			0,
-			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -762,7 +748,6 @@ func (s *changesSuite) TestMachinesAndUnitsPlacementWithBindings(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
-			"",
 		},
 		Requires: []string{"addCharm-2"},
 	}, {
@@ -916,7 +901,6 @@ func (s *changesSuite) TestMachinesWithConstraintsAndAnnotations(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
-			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -1016,7 +1000,6 @@ func (s *changesSuite) TestEndpointWithoutRelationName(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
-			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -1046,7 +1029,6 @@ func (s *changesSuite) TestEndpointWithoutRelationName(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
-			"",
 		},
 		Requires: []string{"addCharm-2"},
 	}, {
@@ -1100,7 +1082,6 @@ func (s *changesSuite) TestUnitPlacedInApplication(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
-			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -1127,7 +1108,6 @@ func (s *changesSuite) TestUnitPlacedInApplication(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
-			"",
 		},
 		Requires: []string{"addCharm-2"},
 	}, {
@@ -1215,7 +1195,6 @@ func (s *changesSuite) TestUnitPlacedInApplicationWithDevices(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
-			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -1243,7 +1222,6 @@ func (s *changesSuite) TestUnitPlacedInApplicationWithDevices(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
-			"",
 		},
 		Requires: []string{"addCharm-2"},
 	}, {
@@ -1344,7 +1322,6 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
-			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -1373,7 +1350,6 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
-			"",
 		},
 		Requires: []string{"addCharm-2"},
 	}, {
@@ -1402,7 +1378,6 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
-			"",
 		},
 		Requires: []string{"addCharm-4"},
 	}, {
@@ -1652,7 +1627,6 @@ func (s *changesSuite) TestUnitPlacedToMachines(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
-			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -1817,7 +1791,6 @@ func (s *changesSuite) TestUnitPlacedToNewMachineWithConstraints(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
-			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -1890,7 +1863,6 @@ func (s *changesSuite) TestApplicationWithStorage(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
-			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -1964,7 +1936,6 @@ func (s *changesSuite) TestApplicationWithDevices(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
-			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -2021,7 +1992,6 @@ func (s *changesSuite) TestApplicationWithEndpointBindings(c *gc.C) {
 			map[string]string{"foo": "bar"},
 			map[string]int{},
 			0,
-			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}}
@@ -2068,7 +2038,6 @@ machines:
 			map[string]string{},
 			map[string]int{},
 			0,
-			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -2256,7 +2225,6 @@ func (s *changesSuite) assertLocalBundleChanges(c *gc.C, charmDir, bundleContent
 			map[string]string{},      // endpoint bindings.
 			map[string]int{},         // resources.
 			0,                        // num_units.
-			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}}
@@ -2291,7 +2259,6 @@ func (s *changesSuite) assertLocalBundleChangesWithDevices(c *gc.C, charmDir, bu
 			map[string]string{},      // endpoint bindings.
 			map[string]int{},         // resources.
 			0,                        // num_units.
-			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}}

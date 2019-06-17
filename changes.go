@@ -716,6 +716,44 @@ type SetConstraintsParams struct {
 	Constraints string
 }
 
+// CreateOfferChange holds a change for creating a new application endpoint offer.
+type CreateOfferChange struct {
+	changeInfo
+	// Params holds parameters for creating an offer.
+	Params CreateOfferParams
+}
+
+// newCreateOfferChange creates a new change for creating an offer.
+func newCreateOfferChange(params CreateOfferParams, requires ...string) *CreateOfferChange {
+	return &CreateOfferChange{
+		changeInfo: changeInfo{
+			requires: requires,
+			method:   "createOffer",
+		},
+		Params: params,
+	}
+}
+
+// GUIArgs implements Change.GUIArgs.
+func (ch *CreateOfferChange) GUIArgs() []interface{} {
+	return []interface{}{ch.Params.Application, ch.Params.Endpoint, ch.Params.OfferName}
+}
+
+// Description implements Change.
+func (ch *CreateOfferChange) Description() string {
+	return fmt.Sprintf("create an offer with name %q for %s:%s", ch.Params.OfferName, ch.Params.Application, ch.Params.Endpoint)
+}
+
+// CreateOfferParams holds parameters for creating an application offer.
+type CreateOfferParams struct {
+	// Application is the name of the application to create an offer for.
+	Application string
+	// Endpoint is the application endpoint to expose as part of an offer.
+	Endpoint string
+	// OfferName describes the offer name.
+	OfferName string
+}
+
 // changeset holds the list of changes returned by FromData.
 type changeset struct {
 	changes []Change

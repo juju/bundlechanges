@@ -198,6 +198,60 @@ func (s *changesSuite) TestMinimalBundleWithDevices(c *gc.C) {
 	s.assertParseDataWithDevices(c, content, expected)
 }
 
+func (s *changesSuite) TestMinimalBundleWithOffer(c *gc.C) {
+	content := `
+applications:
+  apache2:
+    charm: "cs:apache2-26"
+    offers:
+      offer1:
+        endpoint: "apache-website"
+   `
+	expected := []record{
+		{
+			Id:     "addCharm-0",
+			Method: "addCharm",
+			Params: bundlechanges.AddCharmParams{
+				Charm: "cs:apache2-26",
+			},
+			GUIArgs: []interface{}{"cs:apache2-26", ""},
+		},
+		{
+			Id:     "deploy-1",
+			Method: "deploy",
+			Params: bundlechanges.AddApplicationParams{
+				Charm:       "$addCharm-0",
+				Application: "apache2",
+			},
+			GUIArgs: []interface{}{
+				"$addCharm-0",
+				"",
+				"apache2",
+				map[string]interface{}{},
+				"",
+				map[string]string{},
+				map[string]string{},
+				map[string]int{},
+				0,
+			},
+			Requires: []string{"addCharm-0"},
+		},
+		{
+			Id:     "createOffer-2",
+			Method: "createOffer",
+			Params: bundlechanges.CreateOfferParams{
+				Application: "apache2",
+				Endpoint:    "apache-website",
+				OfferName:   "offer1",
+			},
+			GUIArgs:  []interface{}{"apache2", "apache-website", "offer1"},
+			Requires: []string{"deploy-1"},
+		},
+	}
+
+	s.assertParseData(c, content, expected)
+}
+
 func (s *changesSuite) TestSimpleBundle(c *gc.C) {
 	content := `
         applications:

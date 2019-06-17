@@ -71,6 +71,7 @@ func FromData(config ChangesConfig) ([]Change, error) {
 			return nil, errors.Trace(err)
 		}
 	}
+	resolver.handleOffers(addedApplications)
 	return changes.sorted(), nil
 }
 

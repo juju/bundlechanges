@@ -309,6 +309,19 @@ func (r *resolver) handleRelations(addedApplications map[string]string) {
 	}
 }
 
+// handleOffers populates the change set with "CreateOffer" records.
+func (r *resolver) handleOffers(addedApplications map[string]string) {
+	for appName, appSpec := range r.bundle.Applications {
+		for offerName, offerSpec := range appSpec.Offers {
+			r.changes.add(newCreateOfferChange(CreateOfferParams{
+				Application: appName,
+				Endpoint:    offerSpec.Endpoint,
+				OfferName:   offerName,
+			}, addedApplications[appName]))
+		}
+	}
+}
+
 type unitProcessor struct {
 	add           func(Change)
 	existing      *Model

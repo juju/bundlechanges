@@ -205,7 +205,9 @@ applications:
     charm: "cs:apache2-26"
     offers:
       offer1:
-        endpoint: "apache-website"
+        endpoints:
+          - "apache-website"
+          - "apache-proxy"
    `
 	expected := []record{
 		{
@@ -241,10 +243,13 @@ applications:
 			Method: "createOffer",
 			Params: bundlechanges.CreateOfferParams{
 				Application: "apache2",
-				Endpoint:    "apache-website",
-				OfferName:   "offer1",
+				Endpoints: []string{
+					"apache-website",
+					"apache-proxy",
+				},
+				OfferName: "offer1",
 			},
-			GUIArgs:  []interface{}{"apache2", "apache-website", "offer1"},
+			GUIArgs:  []interface{}{"apache2", []string{"apache-website", "apache-proxy"}, "offer1"},
 			Requires: []string{"deploy-1"},
 		},
 	}

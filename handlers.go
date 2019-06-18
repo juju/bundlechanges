@@ -315,7 +315,7 @@ func (r *resolver) handleOffers(addedApplications map[string]string) {
 		for offerName, offerSpec := range appSpec.Offers {
 			r.changes.add(newCreateOfferChange(CreateOfferParams{
 				Application: appName,
-				Endpoint:    offerSpec.Endpoint,
+				Endpoints:   offerSpec.Endpoints,
 				OfferName:   offerName,
 			}, addedApplications[appName]))
 		}

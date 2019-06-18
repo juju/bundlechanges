@@ -737,20 +737,20 @@ func newCreateOfferChange(params CreateOfferParams, requires ...string) *CreateO
 
 // GUIArgs implements Change.GUIArgs.
 func (ch *CreateOfferChange) GUIArgs() []interface{} {
-	return []interface{}{ch.Params.Application, ch.Params.Endpoint, ch.Params.OfferName}
+	return []interface{}{ch.Params.Application, ch.Params.Endpoints, ch.Params.OfferName}
 }
 
 // Description implements Change.
 func (ch *CreateOfferChange) Description() string {
-	return fmt.Sprintf("create an offer with name %q for %s:%s", ch.Params.OfferName, ch.Params.Application, ch.Params.Endpoint)
+	return fmt.Sprintf("create an offer with name %q for %s:%v", ch.Params.OfferName, ch.Params.Application, ch.Params.Endpoints)
 }
 
 // CreateOfferParams holds parameters for creating an application offer.
 type CreateOfferParams struct {
 	// Application is the name of the application to create an offer for.
 	Application string
-	// Endpoint is the application endpoint to expose as part of an offer.
-	Endpoint string
+	// Endpoint is a list of application endpoint to expose as part of an offer.
+	Endpoints []string
 	// OfferName describes the offer name.
 	OfferName string
 }

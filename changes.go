@@ -5,6 +5,7 @@ package bundlechanges
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/juju/collections/set"
 	"github.com/juju/errors"
@@ -742,7 +743,7 @@ func (ch *CreateOfferChange) GUIArgs() []interface{} {
 
 // Description implements Change.
 func (ch *CreateOfferChange) Description() string {
-	return fmt.Sprintf("create an offer with name %q for %s:%v", ch.Params.OfferName, ch.Params.Application, ch.Params.Endpoints)
+	return fmt.Sprintf("create offer %s using %s:%s", ch.Params.OfferName, ch.Params.Application, strings.Join(ch.Params.Endpoints, ","))
 }
 
 // CreateOfferParams holds parameters for creating an application offer.

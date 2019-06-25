@@ -311,6 +311,13 @@ func (r *resolver) handleRelations(addedApplications map[string]string) {
 
 // handleOffers populates the change set with "CreateOffer" records.
 func (r *resolver) handleOffers(addedApplications map[string]string) {
+	for name, saasSpec := range r.bundle.Saas {
+		r.changes.add(newConsumeOfferChange(ConsumeOfferParams{
+			URL:             saasSpec.URL,
+			ApplicationName: name,
+		}))
+	}
+
 	for appName, appSpec := range r.bundle.Applications {
 		for offerName, offerSpec := range appSpec.Offers {
 			r.changes.add(newCreateOfferChange(CreateOfferParams{

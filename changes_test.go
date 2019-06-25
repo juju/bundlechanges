@@ -200,6 +200,9 @@ func (s *changesSuite) TestMinimalBundleWithDevices(c *gc.C) {
 
 func (s *changesSuite) TestMinimalBundleWithOffer(c *gc.C) {
 	content := `
+saas:
+  apache2:
+    url: production:admin/info.apache2
 applications:
   apache2:
     charm: "cs:apache2-26"
@@ -239,7 +242,17 @@ applications:
 			Requires: []string{"addCharm-0"},
 		},
 		{
-			Id:     "createOffer-2",
+			Id:     "consumeOffer-2",
+			Method: "consumeOffer",
+			Params: bundlechanges.ConsumeOfferParams{
+				URL:             "production:admin/info.apache2",
+				ApplicationName: "apache2",
+			},
+			GUIArgs:  []interface{}{"production:admin/info.apache2", "apache2"},
+			Requires: []string{},
+		},
+		{
+			Id:     "createOffer-3",
 			Method: "createOffer",
 			Params: bundlechanges.CreateOfferParams{
 				Application: "apache2",

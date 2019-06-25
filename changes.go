@@ -756,6 +756,41 @@ type CreateOfferParams struct {
 	OfferName string
 }
 
+// ConsumeOfferChange holds a change for consuming a offer.
+type ConsumeOfferChange struct {
+	changeInfo
+	// Params holds the parameters for consuming an offer.
+	Params ConsumeOfferParams
+}
+
+func newConsumeOfferChange(params ConsumeOfferParams, requires ...string) *ConsumeOfferChange {
+	return &ConsumeOfferChange{
+		changeInfo: changeInfo{
+			requires: requires,
+			method:   "consumeOffer",
+		},
+		Params: params,
+	}
+}
+
+// GUIArgs implements Change.GUIArgs.
+func (ch *ConsumeOfferChange) GUIArgs() []interface{} {
+	return []interface{}{ch.Params.URL, ch.Params.ApplicationName}
+}
+
+// Description implements Change.
+func (ch *ConsumeOfferChange) Description() string {
+	return fmt.Sprintf("consume offer %s at %s", ch.Params.ApplicationName, ch.Params.URL)
+}
+
+// ConsumeOfferParams holds the parameters for consuming an offer.
+type ConsumeOfferParams struct {
+	// URL contains the location of the offer
+	URL string
+	// ApplicationName describes the application name on offer.
+	ApplicationName string
+}
+
 // changeset holds the list of changes returned by FromData.
 type changeset struct {
 	changes []Change

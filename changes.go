@@ -65,6 +65,7 @@ func FromData(config ChangesConfig) ([]Change, error) {
 	if resolver.bundle.Type != kubernetes {
 		addedMachines = resolver.handleMachines()
 	}
+	addedApplications = resolver.handleOffers(addedApplications)
 	resolver.handleRelations(addedApplications)
 	if resolver.bundle.Type != kubernetes {
 		err := resolver.handleUnits(addedApplications, addedMachines)
@@ -72,7 +73,6 @@ func FromData(config ChangesConfig) ([]Change, error) {
 			return nil, errors.Trace(err)
 		}
 	}
-	resolver.handleOffers(addedApplications)
 	return changes.sorted(), nil
 }
 

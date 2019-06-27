@@ -791,6 +791,43 @@ type ConsumeOfferParams struct {
 	ApplicationName string
 }
 
+// GrantOfferAccessChange holds a change for granting a user access to an offer.
+type GrantOfferAccessChange struct {
+	changeInfo
+	// Params holds the parameters for the grant.
+	Params GrantOfferAccessParams
+}
+
+func newGrantOfferAccessChange(params GrantOfferAccessParams, requires ...string) *GrantOfferAccessChange {
+	return &GrantOfferAccessChange{
+		changeInfo: changeInfo{
+			requires: requires,
+			method:   "grantOfferAccess",
+		},
+		Params: params,
+	}
+}
+
+// GUIArgs implements Change.GUIArgs.
+func (ch *GrantOfferAccessChange) GUIArgs() []interface{} {
+	return []interface{}{ch.Params.User, ch.Params.Access, ch.Params.Offer}
+}
+
+// Description implements Change.
+func (ch *GrantOfferAccessChange) Description() string {
+	return fmt.Sprintf("grant user %s %s access to offer %s", ch.Params.User, ch.Params.Access, ch.Params.Offer)
+}
+
+// GrantOfferAccessParams holds the parameters for granting access to a user.
+type GrantOfferAccessParams struct {
+	// User holds the user name to grant access to.
+	User string
+	// The type of access to grant.
+	Access string
+	// The offer name to be granted access to.
+	Offer string
+}
+
 // changeset holds the list of changes returned by FromData.
 type changeset struct {
 	changes []Change

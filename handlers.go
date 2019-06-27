@@ -310,12 +310,19 @@ func (r *resolver) handleRelations(addedApplications map[string]string) {
 }
 
 // handleOffers populates the change set with "CreateOffer" records.
-func (r *resolver) handleOffers(addedApplications map[string]string) {
+// ensure we pass back handle offers so that if the map resizes we don't lose
+// applications
+func (r *resolver) handleOffers(addedApplications map[string]string) map[string]string {
+	// the bundle should have been verified before calling handling of types
+	// as saas applications will stamp on existing applications with the same
+	// name.
 	for name, saasSpec := range r.bundle.Saas {
-		r.changes.add(newConsumeOfferChange(ConsumeOfferParams{
+		change := newConsumeOfferChange(ConsumeOfferParams{
 			URL:             saasSpec.URL,
 			ApplicationName: name,
-		}))
+		})
+		r.changes.add(change)
+		addedApplications[name] = change.Id()
 	}
 
 	for appName, appSpec := range r.bundle.Applications {
@@ -327,6 +334,7 @@ func (r *resolver) handleOffers(addedApplications map[string]string) {
 			}, addedApplications[appName]))
 		}
 	}
+	return addedApplications
 }
 
 type unitProcessor struct {

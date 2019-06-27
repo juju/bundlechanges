@@ -263,7 +263,92 @@ applications:
 				OfferName: "offer1",
 			},
 			GUIArgs:  []interface{}{"apache2", []string{"apache-website", "apache-proxy"}, "offer1"},
+			Requires: []string{"consumeOffer-2"},
+		},
+	}
+
+	s.assertParseData(c, content, expected)
+}
+
+func (s *changesSuite) TestMinimalBundleWithOfferAndRelations(c *gc.C) {
+	content := `
+saas:
+  mysql:
+    url: production:admin/info.mysql
+applications:
+  apache2:
+    charm: "cs:apache2-26"
+    offers:
+      offer1:
+        endpoints:
+          - "apache-website"
+          - "apache-proxy"
+relations:
+- - apache2:db
+  - mysql:db
+   `
+	expected := []record{
+		{
+			Id:     "addCharm-0",
+			Method: "addCharm",
+			Params: bundlechanges.AddCharmParams{
+				Charm: "cs:apache2-26",
+			},
+			GUIArgs: []interface{}{"cs:apache2-26", ""},
+		},
+		{
+			Id:     "deploy-1",
+			Method: "deploy",
+			Params: bundlechanges.AddApplicationParams{
+				Charm:       "$addCharm-0",
+				Application: "apache2",
+			},
+			GUIArgs: []interface{}{
+				"$addCharm-0",
+				"",
+				"apache2",
+				map[string]interface{}{},
+				"",
+				map[string]string{},
+				map[string]string{},
+				map[string]int{},
+				0,
+			},
+			Requires: []string{"addCharm-0"},
+		},
+		{
+			Id:     "consumeOffer-2",
+			Method: "consumeOffer",
+			Params: bundlechanges.ConsumeOfferParams{
+				URL:             "production:admin/info.mysql",
+				ApplicationName: "mysql",
+			},
+			GUIArgs:  []interface{}{"production:admin/info.mysql", "mysql"},
+			Requires: []string{},
+		},
+		{
+			Id:     "createOffer-3",
+			Method: "createOffer",
+			Params: bundlechanges.CreateOfferParams{
+				Application: "apache2",
+				Endpoints: []string{
+					"apache-website",
+					"apache-proxy",
+				},
+				OfferName: "offer1",
+			},
+			GUIArgs:  []interface{}{"apache2", []string{"apache-website", "apache-proxy"}, "offer1"},
 			Requires: []string{"deploy-1"},
+		},
+		record{
+			Id:     "addRelation-4",
+			Method: "addRelation",
+			Params: bundlechanges.AddRelationParams{
+				Endpoint1: "$deploy-1:db",
+				Endpoint2: "$consumeOffer-2:db",
+			},
+			GUIArgs:  []interface{}{"$deploy-1:db", "$consumeOffer-2:db"},
+			Requires: []string{"deploy-1", "consumeOffer-2"},
 		},
 	}
 

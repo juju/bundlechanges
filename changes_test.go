@@ -201,8 +201,8 @@ func (s *changesSuite) TestMinimalBundleWithDevices(c *gc.C) {
 func (s *changesSuite) TestMinimalBundleWithOffer(c *gc.C) {
 	content := `
 saas:
-  apache2:
-    url: production:admin/info.apache2
+  keystone:
+    url: production:admin/info.keystone
 applications:
   apache2:
     charm: "cs:apache2-26"
@@ -245,10 +245,10 @@ applications:
 			Id:     "consumeOffer-2",
 			Method: "consumeOffer",
 			Params: bundlechanges.ConsumeOfferParams{
-				URL:             "production:admin/info.apache2",
-				ApplicationName: "apache2",
+				URL:             "production:admin/info.keystone",
+				ApplicationName: "keystone",
 			},
-			GUIArgs:  []interface{}{"production:admin/info.apache2", "apache2"},
+			GUIArgs:  []interface{}{"production:admin/info.keystone", "keystone"},
 			Requires: []string{},
 		},
 		{
@@ -263,7 +263,79 @@ applications:
 				OfferName: "offer1",
 			},
 			GUIArgs:  []interface{}{"apache2", []string{"apache-website", "apache-proxy"}, "offer1"},
-			Requires: []string{"consumeOffer-2"},
+			Requires: []string{"deploy-1"},
+		},
+	}
+
+	s.assertParseData(c, content, expected)
+}
+
+func (s *changesSuite) TestMinimalBundleWithOfferACL(c *gc.C) {
+	content := `
+applications:
+  apache2:
+    charm: "cs:apache2-26"
+    offers:
+      offer1:
+        endpoints:
+          - "apache-website"
+          - "apache-proxy"
+        acl:
+          foo: consume
+   `
+	expected := []record{
+		{
+			Id:     "addCharm-0",
+			Method: "addCharm",
+			Params: bundlechanges.AddCharmParams{
+				Charm: "cs:apache2-26",
+			},
+			GUIArgs: []interface{}{"cs:apache2-26", ""},
+		},
+		{
+			Id:     "deploy-1",
+			Method: "deploy",
+			Params: bundlechanges.AddApplicationParams{
+				Charm:       "$addCharm-0",
+				Application: "apache2",
+			},
+			GUIArgs: []interface{}{
+				"$addCharm-0",
+				"",
+				"apache2",
+				map[string]interface{}{},
+				"",
+				map[string]string{},
+				map[string]string{},
+				map[string]int{},
+				0,
+			},
+			Requires: []string{"addCharm-0"},
+		},
+		{
+			Id:     "createOffer-2",
+			Method: "createOffer",
+			Params: bundlechanges.CreateOfferParams{
+				Application: "apache2",
+				Endpoints: []string{
+					"apache-website",
+					"apache-proxy",
+				},
+				OfferName: "offer1",
+			},
+			GUIArgs:  []interface{}{"apache2", []string{"apache-website", "apache-proxy"}, "offer1"},
+			Requires: []string{"deploy-1"},
+		},
+		{
+			Id:     "grantOfferAccess-3",
+			Method: "grantOfferAccess",
+			Params: bundlechanges.GrantOfferAccessParams{
+				User:   "foo",
+				Access: "consume",
+				Offer:  "offer1",
+			},
+			GUIArgs:  []interface{}{"foo", "consume", "offer1"},
+			Requires: []string{"createOffer-2"},
 		},
 	}
 
@@ -278,11 +350,6 @@ saas:
 applications:
   apache2:
     charm: "cs:apache2-26"
-    offers:
-      offer1:
-        endpoints:
-          - "apache-website"
-          - "apache-proxy"
 relations:
 - - apache2:db
   - mysql:db
@@ -327,21 +394,7 @@ relations:
 			Requires: []string{},
 		},
 		{
-			Id:     "createOffer-3",
-			Method: "createOffer",
-			Params: bundlechanges.CreateOfferParams{
-				Application: "apache2",
-				Endpoints: []string{
-					"apache-website",
-					"apache-proxy",
-				},
-				OfferName: "offer1",
-			},
-			GUIArgs:  []interface{}{"apache2", []string{"apache-website", "apache-proxy"}, "offer1"},
-			Requires: []string{"deploy-1"},
-		},
-		record{
-			Id:     "addRelation-4",
+			Id:     "addRelation-3",
 			Method: "addRelation",
 			Params: bundlechanges.AddRelationParams{
 				Endpoint1: "$deploy-1:db",

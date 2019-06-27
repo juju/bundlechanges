@@ -327,11 +327,20 @@ func (r *resolver) handleOffers(addedApplications map[string]string) map[string]
 
 	for appName, appSpec := range r.bundle.Applications {
 		for offerName, offerSpec := range appSpec.Offers {
-			r.changes.add(newCreateOfferChange(CreateOfferParams{
+			change := newCreateOfferChange(CreateOfferParams{
 				Application: appName,
 				Endpoints:   offerSpec.Endpoints,
 				OfferName:   offerName,
-			}, addedApplications[appName]))
+			}, addedApplications[appName])
+			r.changes.add(change)
+
+			for user, access := range offerSpec.ACL {
+				r.changes.add(newGrantOfferAccessChange(GrantOfferAccessParams{
+					User:   user,
+					Access: access,
+					Offer:  offerName,
+				}, change.Id()))
+			}
 		}
 	}
 	return addedApplications

@@ -270,6 +270,78 @@ applications:
 	s.assertParseData(c, content, expected)
 }
 
+func (s *changesSuite) TestMinimalBundleWithOfferACL(c *gc.C) {
+	content := `
+applications:
+  apache2:
+    charm: "cs:apache2-26"
+    offers:
+      offer1:
+        endpoints:
+          - "apache-website"
+          - "apache-proxy"
+        acl:
+          foo: consume
+   `
+	expected := []record{
+		{
+			Id:     "addCharm-0",
+			Method: "addCharm",
+			Params: bundlechanges.AddCharmParams{
+				Charm: "cs:apache2-26",
+			},
+			GUIArgs: []interface{}{"cs:apache2-26", ""},
+		},
+		{
+			Id:     "deploy-1",
+			Method: "deploy",
+			Params: bundlechanges.AddApplicationParams{
+				Charm:       "$addCharm-0",
+				Application: "apache2",
+			},
+			GUIArgs: []interface{}{
+				"$addCharm-0",
+				"",
+				"apache2",
+				map[string]interface{}{},
+				"",
+				map[string]string{},
+				map[string]string{},
+				map[string]int{},
+				0,
+			},
+			Requires: []string{"addCharm-0"},
+		},
+		{
+			Id:     "createOffer-2",
+			Method: "createOffer",
+			Params: bundlechanges.CreateOfferParams{
+				Application: "apache2",
+				Endpoints: []string{
+					"apache-website",
+					"apache-proxy",
+				},
+				OfferName: "offer1",
+			},
+			GUIArgs:  []interface{}{"apache2", []string{"apache-website", "apache-proxy"}, "offer1"},
+			Requires: []string{"deploy-1"},
+		},
+		{
+			Id:     "grantOfferAccess-3",
+			Method: "grantOfferAccess",
+			Params: bundlechanges.GrantOfferAccessParams{
+				User:   "foo",
+				Access: "consume",
+				Offer:  "offer1",
+			},
+			GUIArgs:  []interface{}{"foo", "consume", "offer1"},
+			Requires: []string{"createOffer-2"},
+		},
+	}
+
+	s.assertParseData(c, content, expected)
+}
+
 func (s *changesSuite) TestMinimalBundleWithOfferAndRelations(c *gc.C) {
 	content := `
 saas:

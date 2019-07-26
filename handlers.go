@@ -50,8 +50,9 @@ func (r *resolver) handleApplications() map[string]string {
 		// Add the addCharm record if one hasn't been added yet.
 		if charms[application.Charm] == "" && !existing.hasCharm(application.Charm) {
 			change = newAddCharmChange(AddCharmParams{
-				Charm:  application.Charm,
-				Series: series,
+				Charm:   application.Charm,
+				Series:  series,
+				Channel: application.Channel,
 			})
 			add(change)
 			charms[application.Charm] = change.Id()

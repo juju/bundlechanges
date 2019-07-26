@@ -148,16 +148,20 @@ type AddCharmChange struct {
 
 // GUIArgs implements Change.GUIArgs.
 func (ch *AddCharmChange) GUIArgs() []interface{} {
-	return []interface{}{ch.Params.Charm, ch.Params.Series}
+	return []interface{}{ch.Params.Charm, ch.Params.Series, ch.Params.Channel}
 }
 
 // Description implements Change.
 func (ch *AddCharmChange) Description() string {
-	series := ""
+	var series, channel string
 	if ch.Params.Series != "" {
 		series = " for series " + ch.Params.Series
 	}
-	return fmt.Sprintf("upload charm %s%s", ch.Params.Charm, series)
+	if ch.Params.Channel != "" {
+		channel = " from channel " + ch.Params.Channel
+	}
+
+	return fmt.Sprintf("upload charm %s%s%s", ch.Params.Charm, series, channel)
 }
 
 // AddCharmParams holds parameters for adding a charm to the environment.
@@ -167,6 +171,8 @@ type AddCharmParams struct {
 	// Series holds the series of the charm to be added
 	// if the charm default is not sufficient.
 	Series string
+	// Channel holds the preferred channel for obtaining the charm.
+	Channel string
 }
 
 // newUpgradeCharm upgrades an existing charm to a new version.

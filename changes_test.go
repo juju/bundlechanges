@@ -58,7 +58,7 @@ func (s *changesSuite) TestMinimalBundle(c *gc.C) {
 		Params: bundlechanges.AddCharmParams{
 			Charm: "django",
 		},
-		GUIArgs: []interface{}{"django", ""},
+		GUIArgs: []interface{}{"django", "", ""},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -83,6 +83,44 @@ func (s *changesSuite) TestMinimalBundle(c *gc.C) {
 	s.assertParseData(c, content, expected)
 }
 
+func (s *changesSuite) TestMinimalBundleWithChannels(c *gc.C) {
+	content := `
+        applications:
+            django:
+                charm: django
+                channel: edge
+   `
+	expected := []record{{
+		Id:     "addCharm-0",
+		Method: "addCharm",
+		Params: bundlechanges.AddCharmParams{
+			Charm:   "django",
+			Channel: "edge",
+		},
+		GUIArgs: []interface{}{"django", "", "edge"},
+	}, {
+		Id:     "deploy-1",
+		Method: "deploy",
+		Params: bundlechanges.AddApplicationParams{
+			Charm:       "$addCharm-0",
+			Application: "django",
+		},
+		GUIArgs: []interface{}{
+			"$addCharm-0",
+			"",
+			"django",
+			map[string]interface{}{},
+			"",
+			map[string]string{},
+			map[string]string{},
+			map[string]int{},
+			0,
+		},
+		Requires: []string{"addCharm-0"},
+	}}
+
+	s.assertParseData(c, content, expected)
+}
 func (s *changesSuite) TestBundleURLAnnotationSet(c *gc.C) {
 	content := `
         services:
@@ -95,7 +133,7 @@ func (s *changesSuite) TestBundleURLAnnotationSet(c *gc.C) {
 		Params: bundlechanges.AddCharmParams{
 			Charm: "django",
 		},
-		GUIArgs: []interface{}{"django", ""},
+		GUIArgs: []interface{}{"django", "", ""},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -172,7 +210,7 @@ func (s *changesSuite) TestMinimalBundleWithDevices(c *gc.C) {
 		Params: bundlechanges.AddCharmParams{
 			Charm: "django",
 		},
-		GUIArgs: []interface{}{"django", ""},
+		GUIArgs: []interface{}{"django", "", ""},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -219,7 +257,7 @@ applications:
 			Params: bundlechanges.AddCharmParams{
 				Charm: "cs:apache2-26",
 			},
-			GUIArgs: []interface{}{"cs:apache2-26", ""},
+			GUIArgs: []interface{}{"cs:apache2-26", "", ""},
 		},
 		{
 			Id:     "deploy-1",
@@ -290,7 +328,7 @@ applications:
 			Params: bundlechanges.AddCharmParams{
 				Charm: "cs:apache2-26",
 			},
-			GUIArgs: []interface{}{"cs:apache2-26", ""},
+			GUIArgs: []interface{}{"cs:apache2-26", "", ""},
 		},
 		{
 			Id:     "deploy-1",
@@ -361,7 +399,7 @@ relations:
 			Params: bundlechanges.AddCharmParams{
 				Charm: "cs:apache2-26",
 			},
-			GUIArgs: []interface{}{"cs:apache2-26", ""},
+			GUIArgs: []interface{}{"cs:apache2-26", "", ""},
 		},
 		{
 			Id:     "deploy-1",
@@ -439,7 +477,7 @@ func (s *changesSuite) TestSimpleBundle(c *gc.C) {
 			Charm:  "cs:precise/mediawiki-10",
 			Series: "precise",
 		},
-		GUIArgs: []interface{}{"cs:precise/mediawiki-10", "precise"},
+		GUIArgs: []interface{}{"cs:precise/mediawiki-10", "precise", ""},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -491,7 +529,7 @@ func (s *changesSuite) TestSimpleBundle(c *gc.C) {
 			Charm:  "cs:precise/mysql-28",
 			Series: "precise",
 		},
-		GUIArgs: []interface{}{"cs:precise/mysql-28", "precise"},
+		GUIArgs: []interface{}{"cs:precise/mysql-28", "precise", ""},
 	}, {
 		Id:     "deploy-5",
 		Method: "deploy",
@@ -574,7 +612,7 @@ func (s *changesSuite) TestSimpleBundleWithDevices(c *gc.C) {
 			Charm:  "cs:precise/mediawiki-10",
 			Series: "precise",
 		},
-		GUIArgs: []interface{}{"cs:precise/mediawiki-10", "precise"},
+		GUIArgs: []interface{}{"cs:precise/mediawiki-10", "precise", ""},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -627,7 +665,7 @@ func (s *changesSuite) TestSimpleBundleWithDevices(c *gc.C) {
 			Charm:  "cs:precise/mysql-28",
 			Series: "precise",
 		},
-		GUIArgs: []interface{}{"cs:precise/mysql-28", "precise"},
+		GUIArgs: []interface{}{"cs:precise/mysql-28", "precise", ""},
 	}, {
 		Id:     "deploy-5",
 		Method: "deploy",
@@ -711,7 +749,7 @@ func (s *changesSuite) TestKubernetesBundle(c *gc.C) {
 			Charm:  "cs:mediawiki-k8s-10",
 			Series: "kubernetes",
 		},
-		GUIArgs: []interface{}{"cs:mediawiki-k8s-10", "kubernetes"},
+		GUIArgs: []interface{}{"cs:mediawiki-k8s-10", "kubernetes", ""},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -765,7 +803,7 @@ func (s *changesSuite) TestKubernetesBundle(c *gc.C) {
 			Charm:  "cs:mysql-k8s-28",
 			Series: "kubernetes",
 		},
-		GUIArgs: []interface{}{"cs:mysql-k8s-28", "kubernetes"},
+		GUIArgs: []interface{}{"cs:mysql-k8s-28", "kubernetes", ""},
 	}, {
 		Id:     "deploy-5",
 		Method: "deploy",
@@ -819,7 +857,7 @@ func (s *changesSuite) TestSameCharmReused(c *gc.C) {
 			Charm:  "precise/mediawiki-10",
 			Series: "precise",
 		},
-		GUIArgs: []interface{}{"precise/mediawiki-10", "precise"},
+		GUIArgs: []interface{}{"precise/mediawiki-10", "precise", ""},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -908,7 +946,7 @@ func (s *changesSuite) TestMachinesAndUnitsPlacementWithBindings(c *gc.C) {
 			Charm:  "cs:trusty/django-42",
 			Series: "trusty",
 		},
-		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty"},
+		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty", ""},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -938,7 +976,7 @@ func (s *changesSuite) TestMachinesAndUnitsPlacementWithBindings(c *gc.C) {
 			Charm:  "cs:trusty/haproxy-47",
 			Series: "trusty",
 		},
-		GUIArgs: []interface{}{"cs:trusty/haproxy-47", "trusty"},
+		GUIArgs: []interface{}{"cs:trusty/haproxy-47", "trusty", ""},
 	}, {
 		Id:     "deploy-3",
 		Method: "deploy",
@@ -1092,7 +1130,7 @@ func (s *changesSuite) TestMachinesWithConstraintsAndAnnotations(c *gc.C) {
 			Charm:  "cs:trusty/django-42",
 			Series: "trusty",
 		},
-		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty"},
+		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty", ""},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -1191,7 +1229,7 @@ func (s *changesSuite) TestEndpointWithoutRelationName(c *gc.C) {
 			Charm:  "cs:precise/mediawiki-10",
 			Series: "precise",
 		},
-		GUIArgs: []interface{}{"cs:precise/mediawiki-10", "precise"},
+		GUIArgs: []interface{}{"cs:precise/mediawiki-10", "precise", ""},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -1219,7 +1257,7 @@ func (s *changesSuite) TestEndpointWithoutRelationName(c *gc.C) {
 			Charm:  "cs:precise/mysql-28",
 			Series: "precise",
 		},
-		GUIArgs: []interface{}{"cs:precise/mysql-28", "precise"},
+		GUIArgs: []interface{}{"cs:precise/mysql-28", "precise", ""},
 	}, {
 		Id:     "deploy-3",
 		Method: "deploy",
@@ -1273,7 +1311,7 @@ func (s *changesSuite) TestUnitPlacedInApplication(c *gc.C) {
 			Charm:  "cs:trusty/django-42",
 			Series: "trusty",
 		},
-		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty"},
+		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty", ""},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -1300,7 +1338,7 @@ func (s *changesSuite) TestUnitPlacedInApplication(c *gc.C) {
 		Params: bundlechanges.AddCharmParams{
 			Charm: "wordpress",
 		},
-		GUIArgs: []interface{}{"wordpress", ""},
+		GUIArgs: []interface{}{"wordpress", "", ""},
 	}, {
 		Id:     "deploy-3",
 		Method: "deploy",
@@ -1385,7 +1423,7 @@ func (s *changesSuite) TestUnitPlacedInApplicationWithDevices(c *gc.C) {
 			Charm:  "cs:trusty/django-42",
 			Series: "trusty",
 		},
-		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty"},
+		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty", ""},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -1413,7 +1451,7 @@ func (s *changesSuite) TestUnitPlacedInApplicationWithDevices(c *gc.C) {
 		Params: bundlechanges.AddCharmParams{
 			Charm: "wordpress",
 		},
-		GUIArgs: []interface{}{"wordpress", ""},
+		GUIArgs: []interface{}{"wordpress", "", ""},
 	}, {
 		Id:     "deploy-3",
 		Method: "deploy",
@@ -1513,7 +1551,7 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			Charm:  "cs:trusty/django-42",
 			Series: "trusty",
 		},
-		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty"},
+		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty", ""},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -1541,7 +1579,7 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			Charm:  "cs:trusty/mem-47",
 			Series: "trusty",
 		},
-		GUIArgs: []interface{}{"cs:trusty/mem-47", "trusty"},
+		GUIArgs: []interface{}{"cs:trusty/mem-47", "trusty", ""},
 	}, {
 		Id:     "deploy-3",
 		Method: "deploy",
@@ -1569,7 +1607,7 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			Charm:  "vivid/rails",
 			Series: "vivid",
 		},
-		GUIArgs: []interface{}{"vivid/rails", "vivid"},
+		GUIArgs: []interface{}{"vivid/rails", "vivid", ""},
 	}, {
 		Id:     "deploy-5",
 		Method: "deploy",
@@ -1818,7 +1856,7 @@ func (s *changesSuite) TestUnitPlacedToMachines(c *gc.C) {
 			Charm:  "cs:trusty/django-42",
 			Series: "trusty",
 		},
-		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty"},
+		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty", ""},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -1981,7 +2019,7 @@ func (s *changesSuite) TestUnitPlacedToNewMachineWithConstraints(c *gc.C) {
 			Charm:  "cs:trusty/django-42",
 			Series: "trusty",
 		},
-		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty"},
+		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty", ""},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -2047,7 +2085,7 @@ func (s *changesSuite) TestApplicationWithStorage(c *gc.C) {
 			Charm:  "cs:trusty/django-42",
 			Series: "trusty",
 		},
-		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty"},
+		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty", ""},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -2115,7 +2153,7 @@ func (s *changesSuite) TestApplicationWithDevices(c *gc.C) {
 			Charm:  "cs:trusty/django-42",
 			Series: "trusty",
 		},
-		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty"},
+		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty", ""},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -2183,7 +2221,7 @@ func (s *changesSuite) TestApplicationWithEndpointBindings(c *gc.C) {
 		Params: bundlechanges.AddCharmParams{
 			Charm: "django",
 		},
-		GUIArgs: []interface{}{"django", ""},
+		GUIArgs: []interface{}{"django", "", ""},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -2229,7 +2267,7 @@ machines:
 			Charm:  "cs:precise/juju-gui",
 			Series: "precise",
 		},
-		GUIArgs: []interface{}{"cs:precise/juju-gui", "precise"},
+		GUIArgs: []interface{}{"cs:precise/juju-gui", "precise", ""},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -2416,7 +2454,7 @@ func (s *changesSuite) assertLocalBundleChanges(c *gc.C, charmDir, bundleContent
 			Charm:  charmDir,
 			Series: series,
 		},
-		GUIArgs: []interface{}{charmDir, series},
+		GUIArgs: []interface{}{charmDir, series, ""},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -2449,7 +2487,7 @@ func (s *changesSuite) assertLocalBundleChangesWithDevices(c *gc.C, charmDir, bu
 			Charm:  charmDir,
 			Series: series,
 		},
-		GUIArgs: []interface{}{charmDir, series},
+		GUIArgs: []interface{}{charmDir, series, ""},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",

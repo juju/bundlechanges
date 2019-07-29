@@ -18,6 +18,7 @@ github.com/juju/webbrowser	git	54b8c57083b4afb7dc75da7f13e2967b2606a507	2016-03-
 github.com/julienschmidt/httprouter	git	77a895ad01ebc98a4dc95d8355bc825ce80a56f6	2015-10-13T22:55:20Z
 github.com/kr/pretty	git	cfb55aafdaf3ec08f0db22699ab822c50091b1c4	2016-08-23T17:07:15Z
 github.com/kr/text	git	7cafcd837844e784b526369c9bce262804aebc60	2016-05-04T23:40:17Z
+github.com/mohae/deepcopy	git	c48cc78d482608239f6c4c92a4abd87eb8761c90	2017-09-29T03:49:55Z
 github.com/rogpeppe/fastuuid	git	6724a57986aff9bff1a1770e9347036def7c89f6	2015-01-06T09:32:20Z
 golang.org/x/crypto	git	650f4a345ab4e5b245a3034b110ebc7299e68186	2018-02-14T00:00:28Z
 golang.org/x/net	git	61147c48b25b599e5b561d2e9c4f3e1ef489ca41	2018-04-06T21:48:16Z
@@ -26,10 +27,10 @@ gopkg.in/check.v1	git	4f90aeace3a26ad7021961c297b22c42160c7b25	2016-01-05T16:49:
 gopkg.in/errgo.v1	git	442357a80af5c6bf9b6d51ae791a39c3421004f3	2016-12-22T12:58:16Z
 gopkg.in/gobwas/glob.v0	git	5ccd90ef52e1e632236f7326478d4faa74f99438	2018-02-08T21:06:56Z
 gopkg.in/httprequest.v1	git	1a21782420ea13c3c6fb1d03578f446b3248edb1	2018-03-08T16:26:44Z
-gopkg.in/juju/charm.v6	git	52b617a34c5a360391bb84d0e7fe40912141ff17	2019-06-27T11:32:48Z
-gopkg.in/juju/charmrepo.v2	git	653bbd81990d2d7d48e0fb931a3b0f52c694572f	2017-11-14T18:40:45Z
+gopkg.in/juju/charm.v6	git	40ffcf7d10e526b8cc5c02dba9758a6c73544d4c	2019-07-29T11:31:11Z
+gopkg.in/juju/charmrepo.v3	git	5d556784448743d47989aaf473d3ef2382e254b1	2018-10-19T14:38:50Z
 gopkg.in/juju/names.v2	git	c43e8bdf2f4915a7019a2f8ad561af1498731a21	2018-05-16T01:04:14Z
-gopkg.in/macaroon-bakery.v1	git	469b44e6f1f9479e115c8ae879ef80695be624d5	2016-06-22T12:14:21Z
-gopkg.in/macaroon.v1	git	ab3940c6c16510a850e1c2dd628b919f0f3f1464	2015-01-21T11:42:31Z
+gopkg.in/macaroon-bakery.v2-unstable	git	5a131df02b2333d5d75c501743cbc2948ee9bbf0	2016-06-23T14:27:47Z
+gopkg.in/macaroon.v2-unstable	git	7d806ab8652997999d67d41b894beb0ffd549793	2016-06-14T11:13:15Z
 gopkg.in/mgo.v2	git	f2b6f6c918c452ad107eec89615f074e3bd80e33	2016-08-18T01:52:18Z
-gopkg.in/yaml.v2	git	1be3d31502d6eabc0dd7ce5b0daab022e14a5538	2017-07-12T05:45:46Z
+gopkg.in/yaml.v2	git	51d6538a90f86fe93ac480b35f37b2be17fef232	2018-11-15T11:05:04Z

@@ -172,7 +172,9 @@ type AddCharmParams struct {
 	// if the charm default is not sufficient.
 	Series string
 	// Channel holds the preferred channel for obtaining the charm.
-	Channel string
+	// Channel was added to 2.7 release, use omitempty so we're backwards
+	// compatible with older clients.
+	Channel string `json:",omitempty"`
 }
 
 // newUpgradeCharm upgrades an existing charm to a new version.

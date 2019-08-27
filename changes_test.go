@@ -121,6 +121,79 @@ func (s *changesSuite) TestMinimalBundleWithChannels(c *gc.C) {
 
 	s.assertParseData(c, content, expected)
 }
+
+func (s *changesSuite) TestMinimalBundleWithoutChannels(c *gc.C) {
+	content := `
+        applications:
+            django:
+                charm: django
+                channel: edge
+            mysql:
+                charm: mysql
+   `
+	expected := []record{
+		{
+			Id:     "addCharm-0",
+			Method: "addCharm",
+			Params: bundlechanges.AddCharmParams{
+				Charm:   "django",
+				Channel: "edge",
+			},
+			GUIArgs: []interface{}{"django", "", "edge"},
+		},
+		{
+			Id:     "deploy-1",
+			Method: "deploy",
+			Params: bundlechanges.AddApplicationParams{
+				Charm:       "$addCharm-0",
+				Application: "django",
+			},
+			GUIArgs: []interface{}{
+				"$addCharm-0",
+				"",
+				"django",
+				map[string]interface{}{},
+				"",
+				map[string]string{},
+				map[string]string{},
+				map[string]int{},
+				0,
+			},
+			Requires: []string{"addCharm-0"},
+		},
+		{
+			Id:     "addCharm-2",
+			Method: "addCharm",
+			Params: bundlechanges.AddCharmParams{
+				Charm: "mysql",
+			},
+			GUIArgs: []interface{}{"mysql", "", ""},
+		},
+		{
+			Id:     "deploy-3",
+			Method: "deploy",
+			Params: bundlechanges.AddApplicationParams{
+				Charm:       "$addCharm-2",
+				Application: "mysql",
+			},
+			GUIArgs: []interface{}{
+				"$addCharm-2",
+				"",
+				"mysql",
+				map[string]interface{}{},
+				"",
+				map[string]string{},
+				map[string]string{},
+				map[string]int{},
+				0,
+			},
+			Requires: []string{"addCharm-2"},
+		},
+	}
+
+	s.assertParseData(c, content, expected)
+}
+
 func (s *changesSuite) TestBundleURLAnnotationSet(c *gc.C) {
 	content := `
         services:

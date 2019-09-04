@@ -4,6 +4,7 @@
 package bundlechanges
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -88,11 +89,12 @@ type Change interface {
 	// GUIArgs returns positional arguments to pass to the method, suitable for
 	// being JSON-serialized and sent to the Juju GUI.
 	GUIArgs() []interface{}
-	// setId is used to set the identifier for the change.
-	setId(string)
-
 	// Description returns a human readable summary of the change.
 	Description() string
+	// Args returns a map of arguments that are named.
+	Args() (map[string]interface{}, error)
+	// setId is used to set the identifier for the change.
+	setId(string)
 }
 
 // changeInfo holds information on a change, suitable for embedding into a more
@@ -151,6 +153,11 @@ func (ch *AddCharmChange) GUIArgs() []interface{} {
 	return []interface{}{ch.Params.Charm, ch.Params.Series, ch.Params.Channel}
 }
 
+// Args implements Change.Args.
+func (ch *AddCharmChange) Args() (map[string]interface{}, error) {
+	return paramsToArgs(ch.Params)
+}
+
 // Description implements Change.
 func (ch *AddCharmChange) Description() string {
 	var series, channel string
@@ -167,12 +174,14 @@ func (ch *AddCharmChange) Description() string {
 // AddCharmParams holds parameters for adding a charm to the environment.
 type AddCharmParams struct {
 	// Charm holds the URL of the charm to be added.
-	Charm string
+	Charm string `json:"charm"`
 	// Series holds the series of the charm to be added
 	// if the charm default is not sufficient.
-	Series string
+	Series string `json:"series,omitempty"`
 	// Channel holds the preferred channel for obtaining the charm.
-	Channel string
+	// Channel was added to 2.7 release, use omitempty so we're backwards
+	// compatible with older clients.
+	Channel string `json:"channel,omitempty"`
 }
 
 // newUpgradeCharm upgrades an existing charm to a new version.
@@ -198,6 +207,11 @@ func (ch *UpgradeCharmChange) GUIArgs() []interface{} {
 	return []interface{}{ch.Params.Charm, ch.Params.Application, ch.Params.Series}
 }
 
+// Args implements Change.Args.
+func (ch *UpgradeCharmChange) Args() (map[string]interface{}, error) {
+	return paramsToArgs(ch.Params)
+}
+
 // Description implements Change.
 func (ch *UpgradeCharmChange) Description() string {
 	series := ""
@@ -210,19 +224,19 @@ func (ch *UpgradeCharmChange) Description() string {
 // UpgradeCharmParams holds parameters for adding a charm to the environment.
 type UpgradeCharmParams struct {
 	// Charm holds the placeholder or URL of the charm to be added.
-	Charm string
+	Charm string `json:"charm"`
 	// Application refers to the application that is being upgraded.
-	Application string
+	Application string `json:"application"`
 	// Series holds the series of the charm to be added
 	// if the charm default is not sufficient.
-	Series string
+	Series string `json:"series"`
 
 	// Resources identifies the revision to use for each resource
 	// of the application's charm.
-	Resources map[string]int
+	Resources map[string]int `json:"resources,omitempty"`
 	// LocalResources identifies the path to the local resource
 	// of the application's charm.
-	LocalResources map[string]string
+	LocalResources map[string]string `json:"local-resources,omitempty"`
 
 	charmURL string
 }
@@ -254,6 +268,11 @@ func (ch *AddMachineChange) GUIArgs() []interface{} {
 		ParentId:      ch.Params.ParentId,
 	}
 	return []interface{}{options}
+}
+
+// Args implements Change.Args.
+func (ch *AddMachineChange) Args() (map[string]interface{}, error) {
+	return paramsToArgs(ch.Params)
 }
 
 // Description implements Change.
@@ -288,16 +307,16 @@ type AddMachineOptions struct {
 // AddMachineParams holds parameters for adding a machine or container.
 type AddMachineParams struct {
 	// Series holds the optional machine OS series.
-	Series string
+	Series string `json:"series,omitempty"`
 	// Constraints holds the optional machine constraints.
-	Constraints string
+	Constraints string `json:"constraints,omitempty"`
 	// ContainerType optionally holds the type of the container (for instance
 	// ""lxc" or kvm"). It is not specified for top level machines.
-	ContainerType string
+	ContainerType string `json:"container-type,omitempty"`
 	// ParentId optionally holds a placeholder pointing to another machine
 	// change or to a unit change. This value is only specified in the case
 	// this machine is a container, in which case also ContainerType is set.
-	ParentId string
+	ParentId string `json:"parent-id,omitempty"`
 
 	existing           bool
 	bundleMachineID    string
@@ -328,6 +347,11 @@ func (ch *AddRelationChange) GUIArgs() []interface{} {
 	return []interface{}{ch.Params.Endpoint1, ch.Params.Endpoint2}
 }
 
+// Args implements Change.Args.
+func (ch *AddRelationChange) Args() (map[string]interface{}, error) {
+	return paramsToArgs(ch.Params)
+}
+
 // Description implements Change.
 func (ch *AddRelationChange) Description() string {
 	return fmt.Sprintf("add relation %s - %s", ch.Params.applicationEndpoint1, ch.Params.applicationEndpoint2)
@@ -341,8 +365,8 @@ type AddRelationParams struct {
 	// that already has this application deployed, the name of the
 	// application, and the interface is optional. Examples are
 	// "$deploy-42:web", "$deploy-42", "mysql:db".
-	Endpoint1 string
-	Endpoint2 string
+	Endpoint1 string `json:"endpoint1"`
+	Endpoint2 string `json:"endpoint2"`
 
 	// These values are always refering to application names.
 	applicationEndpoint1 string
@@ -370,6 +394,11 @@ type AddApplicationChange struct {
 // GUIArgsWithDevices implements Change.GUIArgs and adds devices support
 func (ch *AddApplicationChange) GUIArgsWithDevices() []interface{} {
 	return ch.buildArgs(true)
+}
+
+// Args implements Change.Args.
+func (ch *AddApplicationChange) Args() (map[string]interface{}, error) {
+	return paramsToArgs(ch.Params)
 }
 
 func (ch *AddApplicationChange) buildArgs(includeDevices bool) []interface{} {
@@ -437,32 +466,32 @@ func (ch *AddApplicationChange) Description() string {
 // AddApplicationParams holds parameters for deploying a Juju application.
 type AddApplicationParams struct {
 	// Charm holds the URL of the charm to be used to deploy this application.
-	Charm string
+	Charm string `json:"charm"`
 	// Series holds the series of the application to be deployed
 	// if the charm default is not sufficient.
-	Series string
+	Series string `json:"series,omitempty"`
 	// Application holds the application name.
-	Application string
+	Application string `json:"application,omitempty"`
 	// NumUnits holds the number of units required.
 	// For IAAS models, this will be 0 and separate AddUnitChanges will be used.
 	// For Kubernetes models, this will be used to scale the application.
-	NumUnits int
+	NumUnits int `json:"num-units,omitempty"`
 	// Options holds application options.
-	Options map[string]interface{}
+	Options map[string]interface{} `json:"options,omitempty"`
 	// Constraints holds the optional application constraints.
-	Constraints string
+	Constraints string `json:"constraints,omitempty"`
 	// Storage holds the optional storage constraints.
-	Storage map[string]string
+	Storage map[string]string `json:"storage,omitempty"`
 	// Devices holds the optional devices constraints.
-	Devices map[string]string
+	Devices map[string]string `json:"devices,omitempty"`
 	// EndpointBindings holds the optional endpoint bindings
-	EndpointBindings map[string]string
+	EndpointBindings map[string]string `json:"endpoint-bindings,omitempty"`
 	// Resources identifies the revision to use for each resource
 	// of the application's charm.
-	Resources map[string]int
+	Resources map[string]int `json:"resources,omitempty"`
 	// LocalResources identifies the path to the local resource
 	// of the application's charm.
-	LocalResources map[string]string
+	LocalResources map[string]string `json:"local-resources,omitempty"`
 
 	// The public Charm holds either the charmURL of a placeholder for the
 	// add charm change.
@@ -496,6 +525,11 @@ func (ch *AddUnitChange) GUIArgs() []interface{} {
 	return args
 }
 
+// Args implements Change.Args.
+func (ch *AddUnitChange) Args() (map[string]interface{}, error) {
+	return paramsToArgs(ch.Params)
+}
+
 // Description implements Change.
 func (ch *AddUnitChange) Description() string {
 	placement := "new machine"
@@ -515,10 +549,10 @@ func (ch *AddUnitChange) Description() string {
 // AddUnitParams holds parameters for adding an application unit.
 type AddUnitParams struct {
 	// Application holds the application placeholder name for which a unit is added.
-	Application string
+	Application string `json:"application"`
 	// To holds the optional location where to add the unit, as a placeholder
 	// pointing to another unit change or to a machine change.
-	To string
+	To string `json:"to,omitempty"`
 
 	unitName             string
 	placementDescription string
@@ -551,6 +585,11 @@ func (ch *ExposeChange) GUIArgs() []interface{} {
 	return []interface{}{ch.Params.Application}
 }
 
+// Args implements Change.Args.
+func (ch *ExposeChange) Args() (map[string]interface{}, error) {
+	return paramsToArgs(ch.Params)
+}
+
 // Description implements Change.
 func (ch *ExposeChange) Description() string {
 	return fmt.Sprintf("expose %s", ch.Params.appName)
@@ -559,7 +598,7 @@ func (ch *ExposeChange) Description() string {
 // ExposeParams holds parameters for exposing an application.
 type ExposeParams struct {
 	// Application holds the placeholder name of the application that must be exposed.
-	Application string
+	Application string `json:"application"`
 
 	appName string
 }
@@ -587,6 +626,11 @@ func (ch *ScaleChange) GUIArgs() []interface{} {
 	return []interface{}{ch.Params.Application, ch.Params.Scale}
 }
 
+// Args implements Change.Args.
+func (ch *ScaleChange) Args() (map[string]interface{}, error) {
+	return paramsToArgs(ch.Params)
+}
+
 // Description implements Change.
 func (ch *ScaleChange) Description() string {
 	return fmt.Sprintf("scale %s to %d units", ch.Params.appName, ch.Params.Scale)
@@ -595,10 +639,10 @@ func (ch *ScaleChange) Description() string {
 // ScaleParams holds parameters for scaling an application.
 type ScaleParams struct {
 	// Application holds the placeholder name of the application to be scaled.
-	Application string
+	Application string `json:"application"`
 
 	// Scale is the new scale value to use.
-	Scale int
+	Scale int `json:"scale"`
 
 	appName string
 }
@@ -627,6 +671,11 @@ func (ch *SetAnnotationsChange) GUIArgs() []interface{} {
 	return []interface{}{ch.Params.Id, string(ch.Params.EntityType), ch.Params.Annotations}
 }
 
+// Args implements Change.Args.
+func (ch *SetAnnotationsChange) Args() (map[string]interface{}, error) {
+	return paramsToArgs(ch.Params)
+}
+
 // Description implements Change.
 func (ch *SetAnnotationsChange) Description() string {
 	return fmt.Sprintf("set annotations for %s", ch.Params.target)
@@ -644,11 +693,11 @@ const (
 type SetAnnotationsParams struct {
 	// Id is the placeholder for the application or machine change corresponding to
 	// the entity to be annotated.
-	Id string
+	Id string `json:"id"`
 	// EntityType holds the type of the entity, "application" or "machine".
-	EntityType EntityType
+	EntityType EntityType `json:"entity-type"`
 	// Annotations holds the annotations as key/value pairs.
-	Annotations map[string]string
+	Annotations map[string]string `json:"annotations"`
 
 	target string
 }
@@ -676,6 +725,11 @@ func (ch *SetOptionsChange) GUIArgs() []interface{} {
 	return []interface{}{ch.Params.Application, ch.Params.Options}
 }
 
+// Args implements Change.Args.
+func (ch *SetOptionsChange) Args() (map[string]interface{}, error) {
+	return paramsToArgs(ch.Params)
+}
+
 // Description implements Change.
 func (ch *SetOptionsChange) Description() string {
 	return fmt.Sprintf("set application options for %s", ch.Params.Application)
@@ -684,9 +738,9 @@ func (ch *SetOptionsChange) Description() string {
 // SetOptionsParams holds parameters for setting options.
 type SetOptionsParams struct {
 	// Application is the name of the application.
-	Application string
+	Application string `json:"application"`
 	// Options holds the changed options for the application.
-	Options map[string]interface{}
+	Options map[string]interface{} `json:"options,omitempty"`
 }
 
 // newSetConstraintsChange creates a new change for setting application constraints.
@@ -711,6 +765,11 @@ func (ch *SetConstraintsChange) GUIArgs() []interface{} {
 	return []interface{}{ch.Params.Application, ch.Params.Constraints}
 }
 
+// Args implements Change.Args.
+func (ch *SetConstraintsChange) Args() (map[string]interface{}, error) {
+	return paramsToArgs(ch.Params)
+}
+
 // Description implements Change.
 func (ch *SetConstraintsChange) Description() string {
 	return fmt.Sprintf("set constraints for %s to %q", ch.Params.Application, ch.Params.Constraints)
@@ -719,9 +778,9 @@ func (ch *SetConstraintsChange) Description() string {
 // SetConstraintsParams holds parameters for setting constraints.
 type SetConstraintsParams struct {
 	// Application is the name of the application.
-	Application string
+	Application string `json:"application"`
 	// Constraints holds the new constraints.
-	Constraints string
+	Constraints string `json:"constraints,omitempty"`
 }
 
 // CreateOfferChange holds a change for creating a new application endpoint offer.
@@ -747,6 +806,11 @@ func (ch *CreateOfferChange) GUIArgs() []interface{} {
 	return []interface{}{ch.Params.Application, ch.Params.Endpoints, ch.Params.OfferName}
 }
 
+// Args implements Change.Args.
+func (ch *CreateOfferChange) Args() (map[string]interface{}, error) {
+	return paramsToArgs(ch.Params)
+}
+
 // Description implements Change.
 func (ch *CreateOfferChange) Description() string {
 	return fmt.Sprintf("create offer %s using %s:%s", ch.Params.OfferName, ch.Params.Application, strings.Join(ch.Params.Endpoints, ","))
@@ -755,11 +819,11 @@ func (ch *CreateOfferChange) Description() string {
 // CreateOfferParams holds parameters for creating an application offer.
 type CreateOfferParams struct {
 	// Application is the name of the application to create an offer for.
-	Application string
+	Application string `json:"application"`
 	// Endpoint is a list of application endpoint to expose as part of an offer.
-	Endpoints []string
+	Endpoints []string `json:"endpoints"`
 	// OfferName describes the offer name.
-	OfferName string
+	OfferName string `json:"offer-name,omitempty"`
 }
 
 // ConsumeOfferChange holds a change for consuming a offer.
@@ -784,6 +848,11 @@ func (ch *ConsumeOfferChange) GUIArgs() []interface{} {
 	return []interface{}{ch.Params.URL, ch.Params.ApplicationName}
 }
 
+// Args implements Change.Args.
+func (ch *ConsumeOfferChange) Args() (map[string]interface{}, error) {
+	return paramsToArgs(ch.Params)
+}
+
 // Description implements Change.
 func (ch *ConsumeOfferChange) Description() string {
 	return fmt.Sprintf("consume offer %s at %s", ch.Params.ApplicationName, ch.Params.URL)
@@ -792,9 +861,9 @@ func (ch *ConsumeOfferChange) Description() string {
 // ConsumeOfferParams holds the parameters for consuming an offer.
 type ConsumeOfferParams struct {
 	// URL contains the location of the offer
-	URL string
+	URL string `json:"url"`
 	// ApplicationName describes the application name on offer.
-	ApplicationName string
+	ApplicationName string `json:"application-name,omitempty"`
 }
 
 // GrantOfferAccessChange holds a change for granting a user access to an offer.
@@ -819,19 +888,39 @@ func (ch *GrantOfferAccessChange) GUIArgs() []interface{} {
 	return []interface{}{ch.Params.User, ch.Params.Access, ch.Params.Offer}
 }
 
+// Args implements Change.Args.
+func (ch *GrantOfferAccessChange) Args() (map[string]interface{}, error) {
+	return paramsToArgs(ch.Params)
+}
+
 // Description implements Change.
 func (ch *GrantOfferAccessChange) Description() string {
 	return fmt.Sprintf("grant user %s %s access to offer %s", ch.Params.User, ch.Params.Access, ch.Params.Offer)
 }
 
+func paramsToArgs(params interface{}) (map[string]interface{}, error) {
+	if params == nil {
+		return nil, nil
+	}
+	bytes, err := json.Marshal(params)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+	var result map[string]interface{}
+	if err := json.Unmarshal(bytes, &result); err != nil {
+		return nil, errors.Trace(err)
+	}
+	return result, nil
+}
+
 // GrantOfferAccessParams holds the parameters for granting access to a user.
 type GrantOfferAccessParams struct {
 	// User holds the user name to grant access to.
-	User string
+	User string `json:"user"`
 	// The type of access to grant.
-	Access string
+	Access string `json:"access"`
 	// The offer name to be granted access to.
-	Offer string
+	Offer string `json:"offer"`
 }
 
 // changeset holds the list of changes returned by FromData.

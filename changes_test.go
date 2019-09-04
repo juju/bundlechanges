@@ -44,6 +44,7 @@ type record struct {
 	Method   string
 	Params   interface{}
 	GUIArgs  []interface{}
+	Args     map[string]interface{}
 }
 
 func (s *changesSuite) TestMinimalBundle(c *gc.C) {
@@ -59,6 +60,9 @@ func (s *changesSuite) TestMinimalBundle(c *gc.C) {
 			Charm: "django",
 		},
 		GUIArgs: []interface{}{"django", "", ""},
+		Args: map[string]interface{}{
+			"charm": "django",
+		},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -76,6 +80,10 @@ func (s *changesSuite) TestMinimalBundle(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+		},
+		Args: map[string]interface{}{
+			"application": "django",
+			"charm":       "$addCharm-0",
 		},
 		Requires: []string{"addCharm-0"},
 	}}
@@ -98,6 +106,10 @@ func (s *changesSuite) TestMinimalBundleWithChannels(c *gc.C) {
 			Channel: "edge",
 		},
 		GUIArgs: []interface{}{"django", "", "edge"},
+		Args: map[string]interface{}{
+			"channel": "edge",
+			"charm":   "django",
+		},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -115,6 +127,10 @@ func (s *changesSuite) TestMinimalBundleWithChannels(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+		},
+		Args: map[string]interface{}{
+			"application": "django",
+			"charm":       "$addCharm-0",
 		},
 		Requires: []string{"addCharm-0"},
 	}}
@@ -211,6 +227,9 @@ func (s *changesSuite) TestMinimalBundleWithDevices(c *gc.C) {
 			Charm: "django",
 		},
 		GUIArgs: []interface{}{"django", "", ""},
+		Args: map[string]interface{}{
+			"charm": "django",
+		},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -229,6 +248,10 @@ func (s *changesSuite) TestMinimalBundleWithDevices(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+		},
+		Args: map[string]interface{}{
+			"application": "django",
+			"charm":       "$addCharm-0",
 		},
 		Requires: []string{"addCharm-0"},
 	}}
@@ -258,6 +281,9 @@ applications:
 				Charm: "cs:apache2-26",
 			},
 			GUIArgs: []interface{}{"cs:apache2-26", "", ""},
+			Args: map[string]interface{}{
+				"charm": "cs:apache2-26",
+			},
 		},
 		{
 			Id:     "deploy-1",
@@ -277,6 +303,10 @@ applications:
 				map[string]int{},
 				0,
 			},
+			Args: map[string]interface{}{
+				"application": "apache2",
+				"charm":       "$addCharm-0",
+			},
 			Requires: []string{"addCharm-0"},
 		},
 		{
@@ -286,7 +316,11 @@ applications:
 				URL:             "production:admin/info.keystone",
 				ApplicationName: "keystone",
 			},
-			GUIArgs:  []interface{}{"production:admin/info.keystone", "keystone"},
+			GUIArgs: []interface{}{"production:admin/info.keystone", "keystone"},
+			Args: map[string]interface{}{
+				"application-name": "keystone",
+				"url":              "production:admin/info.keystone",
+			},
 			Requires: []string{},
 		},
 		{
@@ -300,7 +334,15 @@ applications:
 				},
 				OfferName: "offer1",
 			},
-			GUIArgs:  []interface{}{"apache2", []string{"apache-website", "apache-proxy"}, "offer1"},
+			GUIArgs: []interface{}{"apache2", []string{"apache-website", "apache-proxy"}, "offer1"},
+			Args: map[string]interface{}{
+				"application": "apache2",
+				"endpoints": []interface{}{
+					"apache-website",
+					"apache-proxy",
+				},
+				"offer-name": "offer1",
+			},
 			Requires: []string{"deploy-1"},
 		},
 	}
@@ -329,6 +371,9 @@ applications:
 				Charm: "cs:apache2-26",
 			},
 			GUIArgs: []interface{}{"cs:apache2-26", "", ""},
+			Args: map[string]interface{}{
+				"charm": "cs:apache2-26",
+			},
 		},
 		{
 			Id:     "deploy-1",
@@ -348,6 +393,10 @@ applications:
 				map[string]int{},
 				0,
 			},
+			Args: map[string]interface{}{
+				"application": "apache2",
+				"charm":       "$addCharm-0",
+			},
 			Requires: []string{"addCharm-0"},
 		},
 		{
@@ -361,7 +410,15 @@ applications:
 				},
 				OfferName: "offer1",
 			},
-			GUIArgs:  []interface{}{"apache2", []string{"apache-website", "apache-proxy"}, "offer1"},
+			GUIArgs: []interface{}{"apache2", []string{"apache-website", "apache-proxy"}, "offer1"},
+			Args: map[string]interface{}{
+				"application": "apache2",
+				"endpoints": []interface{}{
+					"apache-website",
+					"apache-proxy",
+				},
+				"offer-name": "offer1",
+			},
 			Requires: []string{"deploy-1"},
 		},
 		{
@@ -372,7 +429,12 @@ applications:
 				Access: "consume",
 				Offer:  "offer1",
 			},
-			GUIArgs:  []interface{}{"foo", "consume", "offer1"},
+			GUIArgs: []interface{}{"foo", "consume", "offer1"},
+			Args: map[string]interface{}{
+				"access": "consume",
+				"offer":  "offer1",
+				"user":   "foo",
+			},
 			Requires: []string{"createOffer-2"},
 		},
 	}
@@ -400,6 +462,9 @@ relations:
 				Charm: "cs:apache2-26",
 			},
 			GUIArgs: []interface{}{"cs:apache2-26", "", ""},
+			Args: map[string]interface{}{
+				"charm": "cs:apache2-26",
+			},
 		},
 		{
 			Id:     "deploy-1",
@@ -419,6 +484,10 @@ relations:
 				map[string]int{},
 				0,
 			},
+			Args: map[string]interface{}{
+				"application": "apache2",
+				"charm":       "$addCharm-0",
+			},
 			Requires: []string{"addCharm-0"},
 		},
 		{
@@ -428,7 +497,11 @@ relations:
 				URL:             "production:admin/info.mysql",
 				ApplicationName: "mysql",
 			},
-			GUIArgs:  []interface{}{"production:admin/info.mysql", "mysql"},
+			GUIArgs: []interface{}{"production:admin/info.mysql", "mysql"},
+			Args: map[string]interface{}{
+				"application-name": "mysql",
+				"url":              "production:admin/info.mysql",
+			},
 			Requires: []string{},
 		},
 		{
@@ -438,7 +511,11 @@ relations:
 				Endpoint1: "$deploy-1:db",
 				Endpoint2: "$consumeOffer-2:db",
 			},
-			GUIArgs:  []interface{}{"$deploy-1:db", "$consumeOffer-2:db"},
+			GUIArgs: []interface{}{"$deploy-1:db", "$consumeOffer-2:db"},
+			Args: map[string]interface{}{
+				"endpoint1": "$deploy-1:db",
+				"endpoint2": "$consumeOffer-2:db",
+			},
 			Requires: []string{"deploy-1", "consumeOffer-2"},
 		},
 	}
@@ -478,6 +555,10 @@ func (s *changesSuite) TestSimpleBundle(c *gc.C) {
 			Series: "precise",
 		},
 		GUIArgs: []interface{}{"cs:precise/mediawiki-10", "precise", ""},
+		Args: map[string]interface{}{
+			"charm":  "cs:precise/mediawiki-10",
+			"series": "precise",
+		},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -499,6 +580,17 @@ func (s *changesSuite) TestSimpleBundle(c *gc.C) {
 			map[string]int{"data": 3},
 			0,
 		},
+		Args: map[string]interface{}{
+			"application": "mediawiki",
+			"charm":       "$addCharm-0",
+			"options": map[string]interface{}{
+				"debug": false,
+			},
+			"resources": map[string]interface{}{
+				"data": float64(3),
+			},
+			"series": "precise",
+		},
 		Requires: []string{"addCharm-0"},
 	}, {
 		Id:     "expose-2",
@@ -506,7 +598,10 @@ func (s *changesSuite) TestSimpleBundle(c *gc.C) {
 		Params: bundlechanges.ExposeParams{
 			Application: "$deploy-1",
 		},
-		GUIArgs:  []interface{}{"$deploy-1"},
+		GUIArgs: []interface{}{"$deploy-1"},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+		},
 		Requires: []string{"deploy-1"},
 	}, {
 		Id:     "setAnnotations-3",
@@ -521,6 +616,14 @@ func (s *changesSuite) TestSimpleBundle(c *gc.C) {
 			"application",
 			map[string]string{"gui-x": "609", "gui-y": "-15"},
 		},
+		Args: map[string]interface{}{
+			"annotations": map[string]interface{}{
+				"gui-x": "609",
+				"gui-y": "-15",
+			},
+			"entity-type": "application",
+			"id":          "$deploy-1",
+		},
 		Requires: []string{"deploy-1"},
 	}, {
 		Id:     "addCharm-4",
@@ -530,6 +633,10 @@ func (s *changesSuite) TestSimpleBundle(c *gc.C) {
 			Series: "precise",
 		},
 		GUIArgs: []interface{}{"cs:precise/mysql-28", "precise", ""},
+		Args: map[string]interface{}{
+			"charm":  "cs:precise/mysql-28",
+			"series": "precise",
+		},
 	}, {
 		Id:     "deploy-5",
 		Method: "deploy",
@@ -550,6 +657,14 @@ func (s *changesSuite) TestSimpleBundle(c *gc.C) {
 			map[string]int{},
 			0,
 		},
+		Args: map[string]interface{}{
+			"application": "mysql",
+			"charm":       "$addCharm-4",
+			"local-resources": map[string]interface{}{
+				"data": "./resources/data.tar",
+			},
+			"series": "precise",
+		},
 		Requires: []string{"addCharm-4"},
 	}, {
 		Id:     "addRelation-6",
@@ -558,7 +673,11 @@ func (s *changesSuite) TestSimpleBundle(c *gc.C) {
 			Endpoint1: "$deploy-1:db",
 			Endpoint2: "$deploy-5:db",
 		},
-		GUIArgs:  []interface{}{"$deploy-1:db", "$deploy-5:db"},
+		GUIArgs: []interface{}{"$deploy-1:db", "$deploy-5:db"},
+		Args: map[string]interface{}{
+			"endpoint1": "$deploy-1:db",
+			"endpoint2": "$deploy-5:db",
+		},
 		Requires: []string{"deploy-1", "deploy-5"},
 	}, {
 		Id:     "addUnit-7",
@@ -566,7 +685,10 @@ func (s *changesSuite) TestSimpleBundle(c *gc.C) {
 		Params: bundlechanges.AddUnitParams{
 			Application: "$deploy-1",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", nil},
+		GUIArgs: []interface{}{"$deploy-1", nil},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+		},
 		Requires: []string{"deploy-1"},
 	}, {
 		Id:     "addUnit-8",
@@ -574,7 +696,10 @@ func (s *changesSuite) TestSimpleBundle(c *gc.C) {
 		Params: bundlechanges.AddUnitParams{
 			Application: "$deploy-5",
 		},
-		GUIArgs:  []interface{}{"$deploy-5", nil},
+		GUIArgs: []interface{}{"$deploy-5", nil},
+		Args: map[string]interface{}{
+			"application": "$deploy-5",
+		},
 		Requires: []string{"deploy-5"},
 	}}
 
@@ -613,6 +738,10 @@ func (s *changesSuite) TestSimpleBundleWithDevices(c *gc.C) {
 			Series: "precise",
 		},
 		GUIArgs: []interface{}{"cs:precise/mediawiki-10", "precise", ""},
+		Args: map[string]interface{}{
+			"charm":  "cs:precise/mediawiki-10",
+			"series": "precise",
+		},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -635,6 +764,17 @@ func (s *changesSuite) TestSimpleBundleWithDevices(c *gc.C) {
 			map[string]int{"data": 3},
 			0,
 		},
+		Args: map[string]interface{}{
+			"application": "mediawiki",
+			"charm":       "$addCharm-0",
+			"options": map[string]interface{}{
+				"debug": false,
+			},
+			"resources": map[string]interface{}{
+				"data": float64(3),
+			},
+			"series": "precise",
+		},
 		Requires: []string{"addCharm-0"},
 	}, {
 		Id:     "expose-2",
@@ -642,7 +782,10 @@ func (s *changesSuite) TestSimpleBundleWithDevices(c *gc.C) {
 		Params: bundlechanges.ExposeParams{
 			Application: "$deploy-1",
 		},
-		GUIArgs:  []interface{}{"$deploy-1"},
+		GUIArgs: []interface{}{"$deploy-1"},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+		},
 		Requires: []string{"deploy-1"},
 	}, {
 		Id:     "setAnnotations-3",
@@ -657,6 +800,14 @@ func (s *changesSuite) TestSimpleBundleWithDevices(c *gc.C) {
 			"application",
 			map[string]string{"gui-x": "609", "gui-y": "-15"},
 		},
+		Args: map[string]interface{}{
+			"annotations": map[string]interface{}{
+				"gui-x": "609",
+				"gui-y": "-15",
+			},
+			"entity-type": "application",
+			"id":          "$deploy-1",
+		},
 		Requires: []string{"deploy-1"},
 	}, {
 		Id:     "addCharm-4",
@@ -666,6 +817,10 @@ func (s *changesSuite) TestSimpleBundleWithDevices(c *gc.C) {
 			Series: "precise",
 		},
 		GUIArgs: []interface{}{"cs:precise/mysql-28", "precise", ""},
+		Args: map[string]interface{}{
+			"charm":  "cs:precise/mysql-28",
+			"series": "precise",
+		},
 	}, {
 		Id:     "deploy-5",
 		Method: "deploy",
@@ -687,6 +842,14 @@ func (s *changesSuite) TestSimpleBundleWithDevices(c *gc.C) {
 			map[string]int{},
 			0,
 		},
+		Args: map[string]interface{}{
+			"application": "mysql",
+			"charm":       "$addCharm-4",
+			"local-resources": map[string]interface{}{
+				"data": "./resources/data.tar",
+			},
+			"series": "precise",
+		},
 		Requires: []string{"addCharm-4"},
 	}, {
 		Id:     "addRelation-6",
@@ -695,7 +858,11 @@ func (s *changesSuite) TestSimpleBundleWithDevices(c *gc.C) {
 			Endpoint1: "$deploy-1:db",
 			Endpoint2: "$deploy-5:db",
 		},
-		GUIArgs:  []interface{}{"$deploy-1:db", "$deploy-5:db"},
+		GUIArgs: []interface{}{"$deploy-1:db", "$deploy-5:db"},
+		Args: map[string]interface{}{
+			"endpoint1": "$deploy-1:db",
+			"endpoint2": "$deploy-5:db",
+		},
 		Requires: []string{"deploy-1", "deploy-5"},
 	}, {
 		Id:     "addUnit-7",
@@ -703,7 +870,10 @@ func (s *changesSuite) TestSimpleBundleWithDevices(c *gc.C) {
 		Params: bundlechanges.AddUnitParams{
 			Application: "$deploy-1",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", nil},
+		GUIArgs: []interface{}{"$deploy-1", nil},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+		},
 		Requires: []string{"deploy-1"},
 	}, {
 		Id:     "addUnit-8",
@@ -711,7 +881,10 @@ func (s *changesSuite) TestSimpleBundleWithDevices(c *gc.C) {
 		Params: bundlechanges.AddUnitParams{
 			Application: "$deploy-5",
 		},
-		GUIArgs:  []interface{}{"$deploy-5", nil},
+		GUIArgs: []interface{}{"$deploy-5", nil},
+		Args: map[string]interface{}{
+			"application": "$deploy-5",
+		},
 		Requires: []string{"deploy-5"},
 	}}
 
@@ -742,6 +915,8 @@ func (s *changesSuite) TestKubernetesBundle(c *gc.C) {
             - - mediawiki:db
               - mysql:db
         `
+	// float64 is used here because that's what the JSON specification falls
+	// back to, there is no int!
 	expected := []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
@@ -750,6 +925,10 @@ func (s *changesSuite) TestKubernetesBundle(c *gc.C) {
 			Series: "kubernetes",
 		},
 		GUIArgs: []interface{}{"cs:mediawiki-k8s-10", "kubernetes", ""},
+		Args: map[string]interface{}{
+			"charm":  "cs:mediawiki-k8s-10",
+			"series": "kubernetes",
+		},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -773,6 +952,18 @@ func (s *changesSuite) TestKubernetesBundle(c *gc.C) {
 			map[string]int{"data": 3},
 			1,
 		},
+		Args: map[string]interface{}{
+			"application": "mediawiki",
+			"charm":       "$addCharm-0",
+			"num-units":   float64(1),
+			"options": map[string]interface{}{
+				"debug": false,
+			},
+			"resources": map[string]interface{}{
+				"data": float64(3),
+			},
+			"series": "kubernetes",
+		},
 		Requires: []string{"addCharm-0"},
 	}, {
 		Id:     "expose-2",
@@ -780,7 +971,10 @@ func (s *changesSuite) TestKubernetesBundle(c *gc.C) {
 		Params: bundlechanges.ExposeParams{
 			Application: "$deploy-1",
 		},
-		GUIArgs:  []interface{}{"$deploy-1"},
+		GUIArgs: []interface{}{"$deploy-1"},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+		},
 		Requires: []string{"deploy-1"},
 	}, {
 		Id:     "setAnnotations-3",
@@ -795,6 +989,14 @@ func (s *changesSuite) TestKubernetesBundle(c *gc.C) {
 			"application",
 			map[string]string{"gui-x": "609", "gui-y": "-15"},
 		},
+		Args: map[string]interface{}{
+			"annotations": map[string]interface{}{
+				"gui-x": "609",
+				"gui-y": "-15",
+			},
+			"entity-type": "application",
+			"id":          "$deploy-1",
+		},
 		Requires: []string{"deploy-1"},
 	}, {
 		Id:     "addCharm-4",
@@ -804,6 +1006,10 @@ func (s *changesSuite) TestKubernetesBundle(c *gc.C) {
 			Series: "kubernetes",
 		},
 		GUIArgs: []interface{}{"cs:mysql-k8s-28", "kubernetes", ""},
+		Args: map[string]interface{}{
+			"charm":  "cs:mysql-k8s-28",
+			"series": "kubernetes",
+		},
 	}, {
 		Id:     "deploy-5",
 		Method: "deploy",
@@ -826,6 +1032,15 @@ func (s *changesSuite) TestKubernetesBundle(c *gc.C) {
 			map[string]int{},
 			2,
 		},
+		Args: map[string]interface{}{
+			"application": "mysql",
+			"charm":       "$addCharm-4",
+			"local-resources": map[string]interface{}{
+				"data": "./resources/data.tar",
+			},
+			"num-units": float64(2),
+			"series":    "kubernetes",
+		},
 		Requires: []string{"addCharm-4"},
 	}, {
 		Id:     "addRelation-6",
@@ -834,7 +1049,11 @@ func (s *changesSuite) TestKubernetesBundle(c *gc.C) {
 			Endpoint1: "$deploy-1:db",
 			Endpoint2: "$deploy-5:db",
 		},
-		GUIArgs:  []interface{}{"$deploy-1:db", "$deploy-5:db"},
+		GUIArgs: []interface{}{"$deploy-1:db", "$deploy-5:db"},
+		Args: map[string]interface{}{
+			"endpoint1": "$deploy-1:db",
+			"endpoint2": "$deploy-5:db",
+		},
 		Requires: []string{"deploy-1", "deploy-5"},
 	}}
 
@@ -858,6 +1077,10 @@ func (s *changesSuite) TestSameCharmReused(c *gc.C) {
 			Series: "precise",
 		},
 		GUIArgs: []interface{}{"precise/mediawiki-10", "precise", ""},
+		Args: map[string]interface{}{
+			"charm":  "precise/mediawiki-10",
+			"series": "precise",
+		},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -876,6 +1099,11 @@ func (s *changesSuite) TestSameCharmReused(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+		},
+		Args: map[string]interface{}{
+			"application": "mediawiki",
+			"charm":       "$addCharm-0",
+			"series":      "precise",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -897,6 +1125,11 @@ func (s *changesSuite) TestSameCharmReused(c *gc.C) {
 			map[string]int{},
 			0,
 		},
+		Args: map[string]interface{}{
+			"application": "otherwiki",
+			"charm":       "$addCharm-0",
+			"series":      "precise",
+		},
 		Requires: []string{"addCharm-0"},
 	}, {
 		Id:     "addUnit-3",
@@ -904,7 +1137,10 @@ func (s *changesSuite) TestSameCharmReused(c *gc.C) {
 		Params: bundlechanges.AddUnitParams{
 			Application: "$deploy-1",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", nil},
+		GUIArgs: []interface{}{"$deploy-1", nil},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+		},
 		Requires: []string{"deploy-1"},
 	}}
 
@@ -947,6 +1183,10 @@ func (s *changesSuite) TestMachinesAndUnitsPlacementWithBindings(c *gc.C) {
 			Series: "trusty",
 		},
 		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty", ""},
+		Args: map[string]interface{}{
+			"charm":  "cs:trusty/django-42",
+			"series": "trusty",
+		},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -968,6 +1208,16 @@ func (s *changesSuite) TestMachinesAndUnitsPlacementWithBindings(c *gc.C) {
 			map[string]int{},
 			0,
 		},
+		Args: map[string]interface{}{
+			"application": "django",
+			"charm":       "$addCharm-0",
+			"constraints": "spaces=baz cpu-cores=4 cpu-power=42",
+			"endpoint-bindings": map[string]interface{}{
+				"":     "foo",
+				"http": "bar",
+			},
+			"series": "trusty",
+		},
 		Requires: []string{"addCharm-0"},
 	}, {
 		Id:     "addCharm-2",
@@ -977,6 +1227,10 @@ func (s *changesSuite) TestMachinesAndUnitsPlacementWithBindings(c *gc.C) {
 			Series: "trusty",
 		},
 		GUIArgs: []interface{}{"cs:trusty/haproxy-47", "trusty", ""},
+		Args: map[string]interface{}{
+			"charm":  "cs:trusty/haproxy-47",
+			"series": "trusty",
+		},
 	}, {
 		Id:     "deploy-3",
 		Method: "deploy",
@@ -997,6 +1251,15 @@ func (s *changesSuite) TestMachinesAndUnitsPlacementWithBindings(c *gc.C) {
 			map[string]int{},
 			0,
 		},
+		Args: map[string]interface{}{
+			"application": "haproxy",
+			"charm":       "$addCharm-2",
+			"options": map[string]interface{}{
+				"bad":    "wolf",
+				"number": 42.47,
+			},
+			"series": "trusty",
+		},
 		Requires: []string{"addCharm-2"},
 	}, {
 		Id:     "expose-4",
@@ -1004,7 +1267,10 @@ func (s *changesSuite) TestMachinesAndUnitsPlacementWithBindings(c *gc.C) {
 		Params: bundlechanges.ExposeParams{
 			Application: "$deploy-3",
 		},
-		GUIArgs:  []interface{}{"$deploy-3"},
+		GUIArgs: []interface{}{"$deploy-3"},
+		Args: map[string]interface{}{
+			"application": "$deploy-3",
+		},
 		Requires: []string{"deploy-3"},
 	}, {
 		Id:     "addMachines-5",
@@ -1015,6 +1281,9 @@ func (s *changesSuite) TestMachinesAndUnitsPlacementWithBindings(c *gc.C) {
 		GUIArgs: []interface{}{
 			bundlechanges.AddMachineOptions{Series: "trusty"},
 		},
+		Args: map[string]interface{}{
+			"series": "trusty",
+		},
 	}, {
 		Id:     "addMachines-6",
 		Method: "addMachines",
@@ -1022,6 +1291,7 @@ func (s *changesSuite) TestMachinesAndUnitsPlacementWithBindings(c *gc.C) {
 		GUIArgs: []interface{}{
 			bundlechanges.AddMachineOptions{},
 		},
+		Args: map[string]interface{}{},
 	}, {
 		Id:     "addUnit-7",
 		Method: "addUnit",
@@ -1029,7 +1299,11 @@ func (s *changesSuite) TestMachinesAndUnitsPlacementWithBindings(c *gc.C) {
 			Application: "$deploy-1",
 			To:          "$addMachines-5",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-5"},
+		GUIArgs: []interface{}{"$deploy-1", "$addMachines-5"},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+			"to":          "$addMachines-5",
+		},
 		Requires: []string{"deploy-1", "addMachines-5"},
 	}, {
 		Id:     "addMachines-11",
@@ -1048,6 +1322,12 @@ func (s *changesSuite) TestMachinesAndUnitsPlacementWithBindings(c *gc.C) {
 				Constraints:   "spaces=bar,baz,foo cpu-cores=4 cpu-power=42",
 			},
 		},
+		Args: map[string]interface{}{
+			"constraints":    "spaces=bar,baz,foo cpu-cores=4 cpu-power=42",
+			"container-type": "lxc",
+			"parent-id":      "$addMachines-6",
+			"series":         "trusty",
+		},
 		Requires: []string{"addMachines-6"},
 	}, {
 		Id:     "addMachines-12",
@@ -1064,6 +1344,11 @@ func (s *changesSuite) TestMachinesAndUnitsPlacementWithBindings(c *gc.C) {
 				ParentId:      "$addUnit-7",
 			},
 		},
+		Args: map[string]interface{}{
+			"container-type": "lxc",
+			"parent-id":      "$addUnit-7",
+			"series":         "trusty",
+		},
 		Requires: []string{"addUnit-7"},
 	}, {
 		Id:     "addMachines-13",
@@ -1076,6 +1361,9 @@ func (s *changesSuite) TestMachinesAndUnitsPlacementWithBindings(c *gc.C) {
 				Series: "trusty",
 			},
 		},
+		Args: map[string]interface{}{
+			"series": "trusty",
+		},
 	}, {
 		Id:     "addUnit-8",
 		Method: "addUnit",
@@ -1083,7 +1371,11 @@ func (s *changesSuite) TestMachinesAndUnitsPlacementWithBindings(c *gc.C) {
 			Application: "$deploy-1",
 			To:          "$addMachines-11",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-11"},
+		GUIArgs: []interface{}{"$deploy-1", "$addMachines-11"},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+			"to":          "$addMachines-11",
+		},
 		Requires: []string{"deploy-1", "addMachines-11", "addUnit-7"},
 	}, {
 		Id:     "addUnit-9",
@@ -1092,7 +1384,11 @@ func (s *changesSuite) TestMachinesAndUnitsPlacementWithBindings(c *gc.C) {
 			Application: "$deploy-3",
 			To:          "$addMachines-12",
 		},
-		GUIArgs:  []interface{}{"$deploy-3", "$addMachines-12"},
+		GUIArgs: []interface{}{"$deploy-3", "$addMachines-12"},
+		Args: map[string]interface{}{
+			"application": "$deploy-3",
+			"to":          "$addMachines-12",
+		},
 		Requires: []string{"deploy-3", "addMachines-12"},
 	}, {
 		Id:     "addUnit-10",
@@ -1101,7 +1397,11 @@ func (s *changesSuite) TestMachinesAndUnitsPlacementWithBindings(c *gc.C) {
 			Application: "$deploy-3",
 			To:          "$addMachines-13",
 		},
-		GUIArgs:  []interface{}{"$deploy-3", "$addMachines-13"},
+		GUIArgs: []interface{}{"$deploy-3", "$addMachines-13"},
+		Args: map[string]interface{}{
+			"application": "$deploy-3",
+			"to":          "$addMachines-13",
+		},
 		Requires: []string{"deploy-3", "addMachines-13", "addUnit-9"},
 	}}
 
@@ -1131,6 +1431,10 @@ func (s *changesSuite) TestMachinesWithConstraintsAndAnnotations(c *gc.C) {
 			Series: "trusty",
 		},
 		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty", ""},
+		Args: map[string]interface{}{
+			"charm":  "cs:trusty/django-42",
+			"series": "trusty",
+		},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -1150,6 +1454,11 @@ func (s *changesSuite) TestMachinesWithConstraintsAndAnnotations(c *gc.C) {
 			map[string]int{},
 			0,
 		},
+		Args: map[string]interface{}{
+			"application": "django",
+			"charm":       "$addCharm-0",
+			"series":      "trusty",
+		},
 		Requires: []string{"addCharm-0"},
 	}, {
 		Id:     "addMachines-2",
@@ -1161,6 +1470,9 @@ func (s *changesSuite) TestMachinesWithConstraintsAndAnnotations(c *gc.C) {
 			bundlechanges.AddMachineOptions{
 				Constraints: "cpu-cores=4",
 			},
+		},
+		Args: map[string]interface{}{
+			"constraints": "cpu-cores=4",
 		},
 	}, {
 		Id:     "setAnnotations-3",
@@ -1175,6 +1487,13 @@ func (s *changesSuite) TestMachinesWithConstraintsAndAnnotations(c *gc.C) {
 			"machine",
 			map[string]string{"foo": "bar"},
 		},
+		Args: map[string]interface{}{
+			"annotations": map[string]interface{}{
+				"foo": "bar",
+			},
+			"entity-type": "machine",
+			"id":          "$addMachines-2",
+		},
 		Requires: []string{"addMachines-2"},
 	}, {
 		Id:     "addUnit-4",
@@ -1183,7 +1502,11 @@ func (s *changesSuite) TestMachinesWithConstraintsAndAnnotations(c *gc.C) {
 			Application: "$deploy-1",
 			To:          "$addMachines-2",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-2"},
+		GUIArgs: []interface{}{"$deploy-1", "$addMachines-2"},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+			"to":          "$addMachines-2",
+		},
 		Requires: []string{"deploy-1", "addMachines-2"},
 	}, {
 		Id:     "addMachines-6",
@@ -1196,6 +1519,9 @@ func (s *changesSuite) TestMachinesWithConstraintsAndAnnotations(c *gc.C) {
 				Series: "trusty",
 			},
 		},
+		Args: map[string]interface{}{
+			"series": "trusty",
+		},
 	}, {
 		Id:     "addUnit-5",
 		Method: "addUnit",
@@ -1203,7 +1529,11 @@ func (s *changesSuite) TestMachinesWithConstraintsAndAnnotations(c *gc.C) {
 			Application: "$deploy-1",
 			To:          "$addMachines-6",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-6"},
+		GUIArgs: []interface{}{"$deploy-1", "$addMachines-6"},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+			"to":          "$addMachines-6",
+		},
 		Requires: []string{"deploy-1", "addMachines-6", "addUnit-4"},
 	}}
 
@@ -1230,6 +1560,10 @@ func (s *changesSuite) TestEndpointWithoutRelationName(c *gc.C) {
 			Series: "precise",
 		},
 		GUIArgs: []interface{}{"cs:precise/mediawiki-10", "precise", ""},
+		Args: map[string]interface{}{
+			"charm":  "cs:precise/mediawiki-10",
+			"series": "precise",
+		},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -1249,6 +1583,11 @@ func (s *changesSuite) TestEndpointWithoutRelationName(c *gc.C) {
 			map[string]int{},
 			0,
 		},
+		Args: map[string]interface{}{
+			"application": "mediawiki",
+			"charm":       "$addCharm-0",
+			"series":      "precise",
+		},
 		Requires: []string{"addCharm-0"},
 	}, {
 		Id:     "addCharm-2",
@@ -1258,6 +1597,10 @@ func (s *changesSuite) TestEndpointWithoutRelationName(c *gc.C) {
 			Series: "precise",
 		},
 		GUIArgs: []interface{}{"cs:precise/mysql-28", "precise", ""},
+		Args: map[string]interface{}{
+			"charm":  "cs:precise/mysql-28",
+			"series": "precise",
+		},
 	}, {
 		Id:     "deploy-3",
 		Method: "deploy",
@@ -1278,6 +1621,12 @@ func (s *changesSuite) TestEndpointWithoutRelationName(c *gc.C) {
 			map[string]int{},
 			0,
 		},
+		Args: map[string]interface{}{
+			"application": "mysql",
+			"charm":       "$addCharm-2",
+			"constraints": "mem=42G",
+			"series":      "precise",
+		},
 		Requires: []string{"addCharm-2"},
 	}, {
 		Id:     "addRelation-4",
@@ -1286,7 +1635,11 @@ func (s *changesSuite) TestEndpointWithoutRelationName(c *gc.C) {
 			Endpoint1: "$deploy-1:db",
 			Endpoint2: "$deploy-3",
 		},
-		GUIArgs:  []interface{}{"$deploy-1:db", "$deploy-3"},
+		GUIArgs: []interface{}{"$deploy-1:db", "$deploy-3"},
+		Args: map[string]interface{}{
+			"endpoint1": "$deploy-1:db",
+			"endpoint2": "$deploy-3",
+		},
 		Requires: []string{"deploy-1", "deploy-3"},
 	}}
 
@@ -1312,6 +1665,10 @@ func (s *changesSuite) TestUnitPlacedInApplication(c *gc.C) {
 			Series: "trusty",
 		},
 		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty", ""},
+		Args: map[string]interface{}{
+			"charm":  "cs:trusty/django-42",
+			"series": "trusty",
+		},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -1331,6 +1688,11 @@ func (s *changesSuite) TestUnitPlacedInApplication(c *gc.C) {
 			map[string]int{},
 			0,
 		},
+		Args: map[string]interface{}{
+			"application": "django",
+			"charm":       "$addCharm-0",
+			"series":      "trusty",
+		},
 		Requires: []string{"addCharm-0"},
 	}, {
 		Id:     "addCharm-2",
@@ -1339,6 +1701,9 @@ func (s *changesSuite) TestUnitPlacedInApplication(c *gc.C) {
 			Charm: "wordpress",
 		},
 		GUIArgs: []interface{}{"wordpress", "", ""},
+		Args: map[string]interface{}{
+			"charm": "wordpress",
+		},
 	}, {
 		Id:     "deploy-3",
 		Method: "deploy",
@@ -1357,6 +1722,10 @@ func (s *changesSuite) TestUnitPlacedInApplication(c *gc.C) {
 			map[string]int{},
 			0,
 		},
+		Args: map[string]interface{}{
+			"application": "wordpress",
+			"charm":       "$addCharm-2",
+		},
 		Requires: []string{"addCharm-2"},
 	}, {
 		Id:     "addUnit-6",
@@ -1364,7 +1733,10 @@ func (s *changesSuite) TestUnitPlacedInApplication(c *gc.C) {
 		Params: bundlechanges.AddUnitParams{
 			Application: "$deploy-3",
 		},
-		GUIArgs:  []interface{}{"$deploy-3", nil},
+		GUIArgs: []interface{}{"$deploy-3", nil},
+		Args: map[string]interface{}{
+			"application": "$deploy-3",
+		},
 		Requires: []string{"deploy-3"},
 	}, {
 		Id:     "addUnit-7",
@@ -1372,7 +1744,10 @@ func (s *changesSuite) TestUnitPlacedInApplication(c *gc.C) {
 		Params: bundlechanges.AddUnitParams{
 			Application: "$deploy-3",
 		},
-		GUIArgs:  []interface{}{"$deploy-3", nil},
+		GUIArgs: []interface{}{"$deploy-3", nil},
+		Args: map[string]interface{}{
+			"application": "$deploy-3",
+		},
 		Requires: []string{"deploy-3", "addUnit-6"},
 	}, {
 		Id:     "addUnit-8",
@@ -1380,7 +1755,10 @@ func (s *changesSuite) TestUnitPlacedInApplication(c *gc.C) {
 		Params: bundlechanges.AddUnitParams{
 			Application: "$deploy-3",
 		},
-		GUIArgs:  []interface{}{"$deploy-3", nil},
+		GUIArgs: []interface{}{"$deploy-3", nil},
+		Args: map[string]interface{}{
+			"application": "$deploy-3",
+		},
 		Requires: []string{"deploy-3", "addUnit-7"},
 	}, {
 		Id:     "addUnit-4",
@@ -1389,7 +1767,11 @@ func (s *changesSuite) TestUnitPlacedInApplication(c *gc.C) {
 			Application: "$deploy-1",
 			To:          "$addUnit-6",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", "$addUnit-6"},
+		GUIArgs: []interface{}{"$deploy-1", "$addUnit-6"},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+			"to":          "$addUnit-6",
+		},
 		Requires: []string{"deploy-1", "addUnit-6"},
 	}, {
 		Id:     "addUnit-5",
@@ -1398,7 +1780,11 @@ func (s *changesSuite) TestUnitPlacedInApplication(c *gc.C) {
 			Application: "$deploy-1",
 			To:          "$addUnit-7",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", "$addUnit-7"},
+		GUIArgs: []interface{}{"$deploy-1", "$addUnit-7"},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+			"to":          "$addUnit-7",
+		},
 		Requires: []string{"deploy-1", "addUnit-7", "addUnit-4"},
 	}}
 
@@ -1424,6 +1810,10 @@ func (s *changesSuite) TestUnitPlacedInApplicationWithDevices(c *gc.C) {
 			Series: "trusty",
 		},
 		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty", ""},
+		Args: map[string]interface{}{
+			"charm":  "cs:trusty/django-42",
+			"series": "trusty",
+		},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -1444,6 +1834,11 @@ func (s *changesSuite) TestUnitPlacedInApplicationWithDevices(c *gc.C) {
 			map[string]int{},
 			0,
 		},
+		Args: map[string]interface{}{
+			"application": "django",
+			"charm":       "$addCharm-0",
+			"series":      "trusty",
+		},
 		Requires: []string{"addCharm-0"},
 	}, {
 		Id:     "addCharm-2",
@@ -1452,6 +1847,9 @@ func (s *changesSuite) TestUnitPlacedInApplicationWithDevices(c *gc.C) {
 			Charm: "wordpress",
 		},
 		GUIArgs: []interface{}{"wordpress", "", ""},
+		Args: map[string]interface{}{
+			"charm": "wordpress",
+		},
 	}, {
 		Id:     "deploy-3",
 		Method: "deploy",
@@ -1471,6 +1869,10 @@ func (s *changesSuite) TestUnitPlacedInApplicationWithDevices(c *gc.C) {
 			map[string]int{},
 			0,
 		},
+		Args: map[string]interface{}{
+			"application": "wordpress",
+			"charm":       "$addCharm-2",
+		},
 		Requires: []string{"addCharm-2"},
 	}, {
 		Id:     "addUnit-6",
@@ -1478,7 +1880,10 @@ func (s *changesSuite) TestUnitPlacedInApplicationWithDevices(c *gc.C) {
 		Params: bundlechanges.AddUnitParams{
 			Application: "$deploy-3",
 		},
-		GUIArgs:  []interface{}{"$deploy-3", nil},
+		GUIArgs: []interface{}{"$deploy-3", nil},
+		Args: map[string]interface{}{
+			"application": "$deploy-3",
+		},
 		Requires: []string{"deploy-3"},
 	}, {
 		Id:     "addUnit-7",
@@ -1486,7 +1891,10 @@ func (s *changesSuite) TestUnitPlacedInApplicationWithDevices(c *gc.C) {
 		Params: bundlechanges.AddUnitParams{
 			Application: "$deploy-3",
 		},
-		GUIArgs:  []interface{}{"$deploy-3", nil},
+		GUIArgs: []interface{}{"$deploy-3", nil},
+		Args: map[string]interface{}{
+			"application": "$deploy-3",
+		},
 		Requires: []string{"deploy-3", "addUnit-6"},
 	}, {
 		Id:     "addUnit-8",
@@ -1494,7 +1902,10 @@ func (s *changesSuite) TestUnitPlacedInApplicationWithDevices(c *gc.C) {
 		Params: bundlechanges.AddUnitParams{
 			Application: "$deploy-3",
 		},
-		GUIArgs:  []interface{}{"$deploy-3", nil},
+		GUIArgs: []interface{}{"$deploy-3", nil},
+		Args: map[string]interface{}{
+			"application": "$deploy-3",
+		},
 		Requires: []string{"deploy-3", "addUnit-7"},
 	}, {
 		Id:     "addUnit-4",
@@ -1503,7 +1914,11 @@ func (s *changesSuite) TestUnitPlacedInApplicationWithDevices(c *gc.C) {
 			Application: "$deploy-1",
 			To:          "$addUnit-6",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", "$addUnit-6"},
+		GUIArgs: []interface{}{"$deploy-1", "$addUnit-6"},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+			"to":          "$addUnit-6",
+		},
 		Requires: []string{"deploy-1", "addUnit-6"},
 	}, {
 		Id:     "addUnit-5",
@@ -1512,7 +1927,11 @@ func (s *changesSuite) TestUnitPlacedInApplicationWithDevices(c *gc.C) {
 			Application: "$deploy-1",
 			To:          "$addUnit-7",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", "$addUnit-7"},
+		GUIArgs: []interface{}{"$deploy-1", "$addUnit-7"},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+			"to":          "$addUnit-7",
+		},
 		Requires: []string{"deploy-1", "addUnit-7", "addUnit-4"},
 	}}
 
@@ -1552,6 +1971,10 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			Series: "trusty",
 		},
 		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty", ""},
+		Args: map[string]interface{}{
+			"charm":  "cs:trusty/django-42",
+			"series": "trusty",
+		},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -1571,6 +1994,11 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			map[string]int{},
 			0,
 		},
+		Args: map[string]interface{}{
+			"application": "django",
+			"charm":       "$addCharm-0",
+			"series":      "trusty",
+		},
 		Requires: []string{"addCharm-0"},
 	}, {
 		Id:     "addCharm-2",
@@ -1580,6 +2008,10 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			Series: "trusty",
 		},
 		GUIArgs: []interface{}{"cs:trusty/mem-47", "trusty", ""},
+		Args: map[string]interface{}{
+			"charm":  "cs:trusty/mem-47",
+			"series": "trusty",
+		},
 	}, {
 		Id:     "deploy-3",
 		Method: "deploy",
@@ -1599,6 +2031,11 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			map[string]int{},
 			0,
 		},
+		Args: map[string]interface{}{
+			"application": "memcached",
+			"charm":       "$addCharm-2",
+			"series":      "trusty",
+		},
 		Requires: []string{"addCharm-2"},
 	}, {
 		Id:     "addCharm-4",
@@ -1608,6 +2045,10 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			Series: "vivid",
 		},
 		GUIArgs: []interface{}{"vivid/rails", "vivid", ""},
+		Args: map[string]interface{}{
+			"charm":  "vivid/rails",
+			"series": "vivid",
+		},
 	}, {
 		Id:     "deploy-5",
 		Method: "deploy",
@@ -1627,6 +2068,11 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			map[string]int{},
 			0,
 		},
+		Args: map[string]interface{}{
+			"application": "ror",
+			"charm":       "$addCharm-4",
+			"series":      "vivid",
+		},
 		Requires: []string{"addCharm-4"},
 	}, {
 		Id:     "addMachines-6",
@@ -1640,6 +2086,9 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 				Constraints: "",
 			},
 		},
+		Args: map[string]interface{}{
+			"series": "trusty",
+		},
 	}, {
 		Id:     "addUnit-12",
 		Method: "addUnit",
@@ -1647,7 +2096,11 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			Application: "$deploy-3",
 			To:          "$addMachines-6",
 		},
-		GUIArgs:  []interface{}{"$deploy-3", "$addMachines-6"},
+		GUIArgs: []interface{}{"$deploy-3", "$addMachines-6"},
+		Args: map[string]interface{}{
+			"application": "$deploy-3",
+			"to":          "$addMachines-6",
+		},
 		Requires: []string{"deploy-3", "addMachines-6"},
 	}, {
 		Id:     "addMachines-17",
@@ -1660,6 +2113,9 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 				Series: "trusty",
 			},
 		},
+		Args: map[string]interface{}{
+			"series": "trusty",
+		},
 	}, {
 		Id:     "addMachines-18",
 		Method: "addMachines",
@@ -1670,6 +2126,9 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			bundlechanges.AddMachineOptions{
 				Series: "trusty",
 			},
+		},
+		Args: map[string]interface{}{
+			"series": "trusty",
 		},
 	}, {
 		Id:     "addMachines-19",
@@ -1682,6 +2141,9 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 				Series: "vivid",
 			},
 		},
+		Args: map[string]interface{}{
+			"series": "vivid",
+		},
 	}, {
 		Id:     "addUnit-7",
 		Method: "addUnit",
@@ -1689,7 +2151,11 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			Application: "$deploy-1",
 			To:          "$addUnit-12",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", "$addUnit-12"},
+		GUIArgs: []interface{}{"$deploy-1", "$addUnit-12"},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+			"to":          "$addUnit-12",
+		},
 		Requires: []string{"deploy-1", "addUnit-12"},
 	}, {
 		Id:     "addUnit-13",
@@ -1698,7 +2164,11 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			Application: "$deploy-3",
 			To:          "$addMachines-17",
 		},
-		GUIArgs:  []interface{}{"$deploy-3", "$addMachines-17"},
+		GUIArgs: []interface{}{"$deploy-3", "$addMachines-17"},
+		Args: map[string]interface{}{
+			"application": "$deploy-3",
+			"to":          "$addMachines-17",
+		},
 		Requires: []string{"deploy-3", "addMachines-17", "addUnit-12"},
 	}, {
 		Id:     "addUnit-14",
@@ -1707,7 +2177,11 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			Application: "$deploy-3",
 			To:          "$addMachines-18",
 		},
-		GUIArgs:  []interface{}{"$deploy-3", "$addMachines-18"},
+		GUIArgs: []interface{}{"$deploy-3", "$addMachines-18"},
+		Args: map[string]interface{}{
+			"application": "$deploy-3",
+			"to":          "$addMachines-18",
+		},
 		Requires: []string{"deploy-3", "addMachines-18", "addUnit-13"},
 	}, {
 		Id:     "addUnit-15",
@@ -1716,7 +2190,11 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			Application: "$deploy-5",
 			To:          "$addMachines-19",
 		},
-		GUIArgs:  []interface{}{"$deploy-5", "$addMachines-19"},
+		GUIArgs: []interface{}{"$deploy-5", "$addMachines-19"},
+		Args: map[string]interface{}{
+			"application": "$deploy-5",
+			"to":          "$addMachines-19",
+		},
 		Requires: []string{"deploy-5", "addMachines-19"},
 	}, {
 		Id:     "addUnit-16",
@@ -1725,7 +2203,11 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			Application: "$deploy-5",
 			To:          "$addMachines-6",
 		},
-		GUIArgs:  []interface{}{"$deploy-5", "$addMachines-6"},
+		GUIArgs: []interface{}{"$deploy-5", "$addMachines-6"},
+		Args: map[string]interface{}{
+			"application": "$deploy-5",
+			"to":          "$addMachines-6",
+		},
 		Requires: []string{"deploy-5", "addMachines-6", "addUnit-15"},
 	}, {
 		Id:     "addMachines-20",
@@ -1741,6 +2223,11 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 				Series:        "trusty",
 				ParentId:      "$addUnit-13",
 			},
+		},
+		Args: map[string]interface{}{
+			"container-type": "lxc",
+			"parent-id":      "$addUnit-13",
+			"series":         "trusty",
 		},
 		Requires: []string{"addUnit-13"},
 	}, {
@@ -1758,6 +2245,11 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 				ParentId:      "$addUnit-14",
 			},
 		},
+		Args: map[string]interface{}{
+			"container-type": "lxc",
+			"parent-id":      "$addUnit-14",
+			"series":         "trusty",
+		},
 		Requires: []string{"addUnit-14"},
 	}, {
 		Id:     "addMachines-22",
@@ -1773,6 +2265,11 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 				Series:        "trusty",
 				ParentId:      "$addUnit-15",
 			},
+		},
+		Args: map[string]interface{}{
+			"container-type": "kvm",
+			"parent-id":      "$addUnit-15",
+			"series":         "trusty",
 		},
 		Requires: []string{"addUnit-15"},
 	}, {
@@ -1790,6 +2287,11 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 				ParentId:      "$addUnit-16",
 			},
 		},
+		Args: map[string]interface{}{
+			"container-type": "kvm",
+			"parent-id":      "$addUnit-16",
+			"series":         "trusty",
+		},
 		Requires: []string{"addUnit-16"},
 	}, {
 		Id:     "addUnit-8",
@@ -1798,7 +2300,11 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			Application: "$deploy-1",
 			To:          "$addMachines-20",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-20"},
+		GUIArgs: []interface{}{"$deploy-1", "$addMachines-20"},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+			"to":          "$addMachines-20",
+		},
 		Requires: []string{"deploy-1", "addMachines-20", "addUnit-7"},
 	}, {
 		Id:     "addUnit-9",
@@ -1807,7 +2313,11 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			Application: "$deploy-1",
 			To:          "$addMachines-21",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-21"},
+		GUIArgs: []interface{}{"$deploy-1", "$addMachines-21"},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+			"to":          "$addMachines-21",
+		},
 		Requires: []string{"deploy-1", "addMachines-21", "addUnit-8"},
 	}, {
 		Id:     "addUnit-10",
@@ -1816,7 +2326,11 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			Application: "$deploy-1",
 			To:          "$addMachines-22",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-22"},
+		GUIArgs: []interface{}{"$deploy-1", "$addMachines-22"},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+			"to":          "$addMachines-22",
+		},
 		Requires: []string{"deploy-1", "addMachines-22", "addUnit-9"},
 	}, {
 		Id:     "addUnit-11",
@@ -1825,7 +2339,11 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			Application: "$deploy-1",
 			To:          "$addMachines-23",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-23"},
+		GUIArgs: []interface{}{"$deploy-1", "$addMachines-23"},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+			"to":          "$addMachines-23",
+		},
 		Requires: []string{"deploy-1", "addMachines-23", "addUnit-10"},
 	}}
 
@@ -1857,6 +2375,10 @@ func (s *changesSuite) TestUnitPlacedToMachines(c *gc.C) {
 			Series: "trusty",
 		},
 		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty", ""},
+		Args: map[string]interface{}{
+			"charm":  "cs:trusty/django-42",
+			"series": "trusty",
+		},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -1876,6 +2398,11 @@ func (s *changesSuite) TestUnitPlacedToMachines(c *gc.C) {
 			map[string]int{},
 			0,
 		},
+		Args: map[string]interface{}{
+			"application": "django",
+			"charm":       "$addCharm-0",
+			"series":      "trusty",
+		},
 		Requires: []string{"addCharm-0"},
 	}, {
 		Id:     "addMachines-2",
@@ -1888,6 +2415,9 @@ func (s *changesSuite) TestUnitPlacedToMachines(c *gc.C) {
 				Constraints: "cpu-cores=4",
 			},
 		},
+		Args: map[string]interface{}{
+			"constraints": "cpu-cores=4",
+		},
 	}, {
 		Id:     "addMachines-3",
 		Method: "addMachines",
@@ -1899,6 +2429,9 @@ func (s *changesSuite) TestUnitPlacedToMachines(c *gc.C) {
 				Constraints: "cpu-cores=8",
 			},
 		},
+		Args: map[string]interface{}{
+			"constraints": "cpu-cores=8",
+		},
 	}, {
 		Id:     "addMachines-9",
 		Method: "addMachines",
@@ -1909,6 +2442,9 @@ func (s *changesSuite) TestUnitPlacedToMachines(c *gc.C) {
 			bundlechanges.AddMachineOptions{
 				Series: "trusty",
 			},
+		},
+		Args: map[string]interface{}{
+			"series": "trusty",
 		},
 	}, {
 		Id:     "addMachines-10",
@@ -1925,6 +2461,11 @@ func (s *changesSuite) TestUnitPlacedToMachines(c *gc.C) {
 				ParentId:      "$addMachines-3",
 			},
 		},
+		Args: map[string]interface{}{
+			"container-type": "kvm",
+			"parent-id":      "$addMachines-3",
+			"series":         "trusty",
+		},
 		Requires: []string{"addMachines-3"},
 	}, {
 		Id:     "addMachines-11",
@@ -1939,6 +2480,10 @@ func (s *changesSuite) TestUnitPlacedToMachines(c *gc.C) {
 				Series:        "trusty",
 			},
 		},
+		Args: map[string]interface{}{
+			"container-type": "lxc",
+			"series":         "trusty",
+		},
 	}, {
 		Id:     "addMachines-12",
 		Method: "addMachines",
@@ -1952,6 +2497,10 @@ func (s *changesSuite) TestUnitPlacedToMachines(c *gc.C) {
 				Series:        "trusty",
 			},
 		},
+		Args: map[string]interface{}{
+			"container-type": "lxc",
+			"series":         "trusty",
+		},
 	}, {
 		Id:     "addUnit-4",
 		Method: "addUnit",
@@ -1959,7 +2508,11 @@ func (s *changesSuite) TestUnitPlacedToMachines(c *gc.C) {
 			Application: "$deploy-1",
 			To:          "$addMachines-9",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-9"},
+		GUIArgs: []interface{}{"$deploy-1", "$addMachines-9"},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+			"to":          "$addMachines-9",
+		},
 		Requires: []string{"deploy-1", "addMachines-9"},
 	}, {
 		Id:     "addUnit-5",
@@ -1968,7 +2521,11 @@ func (s *changesSuite) TestUnitPlacedToMachines(c *gc.C) {
 			Application: "$deploy-1",
 			To:          "$addMachines-2",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-2"},
+		GUIArgs: []interface{}{"$deploy-1", "$addMachines-2"},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+			"to":          "$addMachines-2",
+		},
 		Requires: []string{"deploy-1", "addMachines-2", "addUnit-4"},
 	}, {
 		Id:     "addUnit-6",
@@ -1977,7 +2534,11 @@ func (s *changesSuite) TestUnitPlacedToMachines(c *gc.C) {
 			Application: "$deploy-1",
 			To:          "$addMachines-10",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-10"},
+		GUIArgs: []interface{}{"$deploy-1", "$addMachines-10"},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+			"to":          "$addMachines-10",
+		},
 		Requires: []string{"deploy-1", "addMachines-10", "addUnit-5"},
 	}, {
 		Id:     "addUnit-7",
@@ -1986,7 +2547,11 @@ func (s *changesSuite) TestUnitPlacedToMachines(c *gc.C) {
 			Application: "$deploy-1",
 			To:          "$addMachines-11",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-11"},
+		GUIArgs: []interface{}{"$deploy-1", "$addMachines-11"},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+			"to":          "$addMachines-11",
+		},
 		Requires: []string{"deploy-1", "addMachines-11", "addUnit-6"},
 	}, {
 		Id:     "addUnit-8",
@@ -1995,7 +2560,11 @@ func (s *changesSuite) TestUnitPlacedToMachines(c *gc.C) {
 			Application: "$deploy-1",
 			To:          "$addMachines-12",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-12"},
+		GUIArgs: []interface{}{"$deploy-1", "$addMachines-12"},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+			"to":          "$addMachines-12",
+		},
 		Requires: []string{"deploy-1", "addMachines-12", "addUnit-7"},
 	}}
 
@@ -2020,6 +2589,10 @@ func (s *changesSuite) TestUnitPlacedToNewMachineWithConstraints(c *gc.C) {
 			Series: "trusty",
 		},
 		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty", ""},
+		Args: map[string]interface{}{
+			"charm":  "cs:trusty/django-42",
+			"series": "trusty",
+		},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -2040,6 +2613,12 @@ func (s *changesSuite) TestUnitPlacedToNewMachineWithConstraints(c *gc.C) {
 			map[string]int{},
 			0,
 		},
+		Args: map[string]interface{}{
+			"application": "django",
+			"charm":       "$addCharm-0",
+			"constraints": "cpu-cores=4",
+			"series":      "trusty",
+		},
 		Requires: []string{"addCharm-0"},
 	}, {
 		Id:     "addMachines-3",
@@ -2054,6 +2633,10 @@ func (s *changesSuite) TestUnitPlacedToNewMachineWithConstraints(c *gc.C) {
 				Constraints: "cpu-cores=4",
 			},
 		},
+		Args: map[string]interface{}{
+			"constraints": "cpu-cores=4",
+			"series":      "trusty",
+		},
 	}, {
 		Id:     "addUnit-2",
 		Method: "addUnit",
@@ -2061,7 +2644,11 @@ func (s *changesSuite) TestUnitPlacedToNewMachineWithConstraints(c *gc.C) {
 			Application: "$deploy-1",
 			To:          "$addMachines-3",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", "$addMachines-3"},
+		GUIArgs: []interface{}{"$deploy-1", "$addMachines-3"},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+			"to":          "$addMachines-3",
+		},
 		Requires: []string{"deploy-1", "addMachines-3"},
 	}}
 
@@ -2086,6 +2673,10 @@ func (s *changesSuite) TestApplicationWithStorage(c *gc.C) {
 			Series: "trusty",
 		},
 		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty", ""},
+		Args: map[string]interface{}{
+			"charm":  "cs:trusty/django-42",
+			"series": "trusty",
+		},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -2112,6 +2703,15 @@ func (s *changesSuite) TestApplicationWithStorage(c *gc.C) {
 			map[string]int{},
 			0,
 		},
+		Args: map[string]interface{}{
+			"application": "django",
+			"charm":       "$addCharm-0",
+			"series":      "trusty",
+			"storage": map[string]interface{}{
+				"osd-devices": "3,30G",
+				"tmpfs":       "tmpfs,1G",
+			},
+		},
 		Requires: []string{"addCharm-0"},
 	}, {
 		Id:     "addUnit-2",
@@ -2119,7 +2719,10 @@ func (s *changesSuite) TestApplicationWithStorage(c *gc.C) {
 		Params: bundlechanges.AddUnitParams{
 			Application: "$deploy-1",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", nil},
+		GUIArgs: []interface{}{"$deploy-1", nil},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+		},
 		Requires: []string{"deploy-1"},
 	}, {
 		Id:     "addUnit-3",
@@ -2127,7 +2730,10 @@ func (s *changesSuite) TestApplicationWithStorage(c *gc.C) {
 		Params: bundlechanges.AddUnitParams{
 			Application: "$deploy-1",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", nil},
+		GUIArgs: []interface{}{"$deploy-1", nil},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+		},
 		Requires: []string{"deploy-1", "addUnit-2"},
 	}}
 
@@ -2154,6 +2760,10 @@ func (s *changesSuite) TestApplicationWithDevices(c *gc.C) {
 			Series: "trusty",
 		},
 		GUIArgs: []interface{}{"cs:trusty/django-42", "trusty", ""},
+		Args: map[string]interface{}{
+			"charm":  "cs:trusty/django-42",
+			"series": "trusty",
+		},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -2185,6 +2795,17 @@ func (s *changesSuite) TestApplicationWithDevices(c *gc.C) {
 			map[string]int{},
 			0,
 		},
+		Args: map[string]interface{}{
+			"application": "django",
+			"charm":       "$addCharm-0",
+			"devices": map[string]interface{}{
+				"countmax":    "2",
+				"countmin":    "1",
+				"description": "a nvidia gpu device",
+				"type":        "nvidia.com/gpu",
+			},
+			"series": "trusty",
+		},
 		Requires: []string{"addCharm-0"},
 	}, {
 		Id:     "addUnit-2",
@@ -2192,7 +2813,10 @@ func (s *changesSuite) TestApplicationWithDevices(c *gc.C) {
 		Params: bundlechanges.AddUnitParams{
 			Application: "$deploy-1",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", nil},
+		GUIArgs: []interface{}{"$deploy-1", nil},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+		},
 		Requires: []string{"deploy-1"},
 	}, {
 		Id:     "addUnit-3",
@@ -2200,7 +2824,10 @@ func (s *changesSuite) TestApplicationWithDevices(c *gc.C) {
 		Params: bundlechanges.AddUnitParams{
 			Application: "$deploy-1",
 		},
-		GUIArgs:  []interface{}{"$deploy-1", nil},
+		GUIArgs: []interface{}{"$deploy-1", nil},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+		},
 		Requires: []string{"deploy-1", "addUnit-2"},
 	}}
 
@@ -2222,6 +2849,9 @@ func (s *changesSuite) TestApplicationWithEndpointBindings(c *gc.C) {
 			Charm: "django",
 		},
 		GUIArgs: []interface{}{"django", "", ""},
+		Args: map[string]interface{}{
+			"charm": "django",
+		},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -2240,6 +2870,13 @@ func (s *changesSuite) TestApplicationWithEndpointBindings(c *gc.C) {
 			map[string]string{"foo": "bar"},
 			map[string]int{},
 			0,
+		},
+		Args: map[string]interface{}{
+			"application": "django",
+			"charm":       "$addCharm-0",
+			"endpoint-bindings": map[string]interface{}{
+				"foo": "bar",
+			},
 		},
 		Requires: []string{"addCharm-0"},
 	}}
@@ -2268,6 +2905,10 @@ machines:
 			Series: "precise",
 		},
 		GUIArgs: []interface{}{"cs:precise/juju-gui", "precise", ""},
+		Args: map[string]interface{}{
+			"charm":  "cs:precise/juju-gui",
+			"series": "precise",
+		},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -2287,6 +2928,11 @@ machines:
 			map[string]int{},
 			0,
 		},
+		Args: map[string]interface{}{
+			"application": "gui3",
+			"charm":       "$addCharm-0",
+			"series":      "precise",
+		},
 		Requires: []string{"addCharm-0"},
 	}, {
 		Id:     "addMachines-2",
@@ -2299,6 +2945,9 @@ machines:
 				Series: "trusty",
 			},
 		},
+		Args: map[string]interface{}{
+			"series": "trusty",
+		},
 	}, {
 		Id:     "addMachines-5",
 		Method: "addMachines",
@@ -2309,6 +2958,9 @@ machines:
 			bundlechanges.AddMachineOptions{
 				Series: "precise",
 			},
+		},
+		Args: map[string]interface{}{
+			"series": "precise",
 		},
 	}, {
 		Id:       "addMachines-6",
@@ -2326,6 +2978,11 @@ machines:
 				Series:        "precise",
 			},
 		},
+		Args: map[string]interface{}{
+			"container-type": "lxc",
+			"parent-id":      "$addMachines-2",
+			"series":         "precise",
+		},
 	}, {
 		Id:       "addUnit-3",
 		Method:   "addUnit",
@@ -2338,6 +2995,10 @@ machines:
 			"$deploy-1",
 			"$addMachines-5",
 		},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+			"to":          "$addMachines-5",
+		},
 	}, {
 		Id:       "addUnit-4",
 		Method:   "addUnit",
@@ -2349,6 +3010,10 @@ machines:
 		GUIArgs: []interface{}{
 			"$deploy-1",
 			"$addMachines-6",
+		},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+			"to":          "$addMachines-6",
 		},
 	}}
 
@@ -2384,11 +3049,14 @@ func (s *changesSuite) assertParseData(c *gc.C, content string, expected []recor
 	c.Assert(err, jc.ErrorIsNil)
 	records := make([]record, len(changes))
 	for i, change := range changes {
+		args, err := change.Args()
+		c.Assert(err, jc.ErrorIsNil)
 		r := record{
 			Id:       change.Id(),
 			Requires: change.Requires(),
 			Method:   change.Method(),
 			GUIArgs:  change.GUIArgs(),
+			Args:     args,
 			Params:   copyParams(change),
 		}
 		records[i] = r
@@ -2426,11 +3094,14 @@ func (s *changesSuite) assertParseDataWithDevices(c *gc.C, content string, expec
 		default:
 			guiArgs = change.GUIArgs()
 		}
+		args, err := change.Args()
+		c.Assert(err, jc.ErrorIsNil)
 		r := record{
 			Id:       change.Id(),
 			Requires: change.Requires(),
 			Method:   change.Method(),
 			GUIArgs:  guiArgs,
+			Args:     args,
 			Params:   copyParams(change),
 		}
 		records[i] = r
@@ -2455,6 +3126,10 @@ func (s *changesSuite) assertLocalBundleChanges(c *gc.C, charmDir, bundleContent
 			Series: series,
 		},
 		GUIArgs: []interface{}{charmDir, series, ""},
+		Args: map[string]interface{}{
+			"charm":  charmDir,
+			"series": series,
+		},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -2474,6 +3149,11 @@ func (s *changesSuite) assertLocalBundleChanges(c *gc.C, charmDir, bundleContent
 			map[string]int{},         // resources.
 			0,                        // num_units.
 		},
+		Args: map[string]interface{}{
+			"application": "django",
+			"charm":       "$addCharm-0",
+			"series":      series,
+		},
 		Requires: []string{"addCharm-0"},
 	}}
 	s.assertParseData(c, bundleContent, expected)
@@ -2488,6 +3168,10 @@ func (s *changesSuite) assertLocalBundleChangesWithDevices(c *gc.C, charmDir, bu
 			Series: series,
 		},
 		GUIArgs: []interface{}{charmDir, series, ""},
+		Args: map[string]interface{}{
+			"charm":  charmDir,
+			"series": series,
+		},
 	}, {
 		Id:     "deploy-1",
 		Method: "deploy",
@@ -2507,6 +3191,11 @@ func (s *changesSuite) assertLocalBundleChangesWithDevices(c *gc.C, charmDir, bu
 			map[string]string{},      // endpoint bindings.
 			map[string]int{},         // resources.
 			0,                        // num_units.
+		},
+		Args: map[string]interface{}{
+			"application": "django",
+			"charm":       "$addCharm-0",
+			"series":      series,
 		},
 		Requires: []string{"addCharm-0"},
 	}}

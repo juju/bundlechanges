@@ -11,7 +11,7 @@ import (
 	"github.com/juju/errors"
 	"github.com/juju/naturalsort"
 	"gopkg.in/juju/charm.v6"
-	"gopkg.in/juju/charmrepo.v3"
+	"gopkg.in/juju/charmrepo.v4"
 )
 
 type resolver struct {

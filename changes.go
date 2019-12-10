@@ -60,7 +60,10 @@ func FromData(config ChangesConfig) ([]Change, error) {
 		logger:    config.Logger,
 		changes:   changes,
 	}
-	addedApplications := resolver.handleApplications()
+	addedApplications, err := resolver.handleApplications()
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
 
 	var addedMachines map[string]*AddMachineChange
 	if resolver.bundle.Type != kubernetes {

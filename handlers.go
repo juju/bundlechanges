@@ -24,7 +24,7 @@ type resolver struct {
 
 // handleApplications populates the change set with "addCharm"/"addApplication" records.
 // This function also handles adding application annotations.
-func (r *resolver) handleApplications() map[string]string {
+func (r *resolver) handleApplications() (map[string]string, error) {
 	add := r.changes.add
 	applications := r.bundle.Applications
 	defaultSeries := r.bundle.Series
@@ -46,7 +46,10 @@ func (r *resolver) handleApplications() map[string]string {
 	for _, name := range names {
 		application := applications[name]
 		existingApp := existing.GetApplication(name)
-		series := getSeries(application, defaultSeries)
+		series, err := getSeries(application, defaultSeries)
+		if err != nil {
+			return nil, errors.Trace(err)
+		}
 		// Add the addCharm record if one hasn't been added yet.
 		if charms[application.Charm] == "" && !existing.hasCharm(application.Charm) {
 			change = newAddCharmChange(AddCharmParams{
@@ -194,7 +197,7 @@ func (r *resolver) handleApplications() map[string]string {
 			}, deps...))
 		}
 	}
-	return addedApplications
+	return addedApplications, nil
 }
 
 // handleMachines populates the change set with "addMachines" records.
@@ -765,9 +768,13 @@ func (p *unitProcessor) addNewMachine(application *charm.ApplicationSpec, contai
 	if err != nil {
 		return unitPlacement{}, err
 	}
+	series, err := getSeries(application, p.defaultSeries)
+	if err != nil {
+		return unitPlacement{}, err
+	}
 	change := newAddMachineChange(AddMachineParams{
 		ContainerType:      containerType,
-		Series:             getSeries(application, p.defaultSeries),
+		Series:             series,
 		Constraints:        constraints,
 		machineID:          machineID,
 		containerMachineID: placeholderContainer,
@@ -852,10 +859,14 @@ func (p *unitProcessor) addContainer(up unitPlacement, application *charm.Applic
 	if err != nil {
 		return unitPlacement{}, err
 	}
+	series, err := getSeries(application, p.defaultSeries)
+	if err != nil {
+		return unitPlacement{}, err
+	}
 	params := AddMachineParams{
 		ContainerType:      containerType,
 		ParentId:           up.target,
-		Series:             getSeries(application, p.defaultSeries),
+		Series:             series,
 		Constraints:        constraints,
 		existing:           existing,
 		machineID:          up.baseMachine,
@@ -992,34 +1003,40 @@ func placeholder(changeID string) string {
 
 // getSeries retrieves the series of a application from the ApplicationSpec or from the
 // charm path or URL if provided, otherwise falling back on a default series.
-// TODO - consider returning an error if the requested series is not compatible with the charm
-func getSeries(application *charm.ApplicationSpec, defaultSeries string) string {
+func getSeries(application *charm.ApplicationSpec, defaultSeries string) (string, error) {
 	if application.Series != "" {
-		return application.Series
+		return application.Series, nil
 	}
-	// We may have a local charm path.
-	_, curl, err := charmrepo.NewCharmAtPath(application.Charm, defaultSeries)
-	if charm.IsMissingSeriesError(err) {
-		// local charm path is valid but the charm doesn't declare a default series.
-		return defaultSeries
-	}
-	if charm.IsUnsupportedSeriesError(err) {
-		// The bundle's default series is not supported by the charm, but we'll
-		// use it anyway. This is no different to the case above where application.Series
-		// is used without checking for potential charm incompatibility.
-		return defaultSeries
-	}
-	if err == nil {
+
+	// Handle local charm paths.
+	if charm.IsValidLocalCharmOrBundlePath(application.Charm) {
+		_, charmURL, err := charmrepo.NewCharmAtPath(application.Charm, defaultSeries)
+		if charm.IsMissingSeriesError(err) {
+			// local charm path is valid but the charm doesn't declare a default series.
+			return defaultSeries, nil
+		} else if charm.IsUnsupportedSeriesError(err) {
+			// The bundle's default series is not supported by the charm, but we'll
+			// use it anyway. This is no different to the case above where application.Series
+			// is used without checking for potential charm incompatibility.
+			return defaultSeries, nil
+		} else if err != nil {
+			return "", errors.Trace(err)
+		}
 		// Return the default series from the local charm.
-		return curl.Series
+		return charmURL.Series, nil
 	}
+
 	// The following is safe because the bundle data is assumed to be already
 	// verified, and therefore this must be a valid charm URL.
-	series := charm.MustParseURL(application.Charm).Series
-	if series != "" {
-		return series
+	charmURL, err := charm.ParseURL(application.Charm)
+	if err != nil {
+		return "", errors.Trace(err)
 	}
-	return defaultSeries
+	series := charmURL.Series
+	if series != "" {
+		return series, nil
+	}
+	return defaultSeries, nil
 }
 
 // parseEndpoint creates an endpoint from its string representation.

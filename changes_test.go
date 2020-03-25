@@ -350,6 +350,55 @@ applications:
 	s.assertParseData(c, content, expected)
 }
 
+func (s *changesSuite) TestMinimalBundleWithOfferAndPreDeployedApp(c *gc.C) {
+	content := `
+applications:
+  apache2:
+    charm: "cs:apache2-26"
+    offers:
+      offer1:
+        endpoints:
+          - "apache-website"
+          - "apache-proxy"
+   `
+
+	// We have already deployed apache2 so we only expect the offer to be
+	// added to the model.
+	deployedModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"apache2": &bundlechanges.Application{
+				Name:  "apache-2",
+				Charm: "cs:apache2-26",
+			},
+		},
+	}
+	expected := []record{
+		{
+			Id:     "createOffer-0",
+			Method: "createOffer",
+			Params: bundlechanges.CreateOfferParams{
+				Application: "apache2",
+				Endpoints: []string{
+					"apache-website",
+					"apache-proxy",
+				},
+				OfferName: "offer1",
+			},
+			GUIArgs: []interface{}{"apache2", []string{"apache-website", "apache-proxy"}, "offer1"},
+			Args: map[string]interface{}{
+				"application": "apache2",
+				"endpoints": []interface{}{
+					"apache-website",
+					"apache-proxy",
+				},
+				"offer-name": "offer1",
+			},
+		},
+	}
+
+	s.assertParseDataWithModel(c, deployedModel, content, expected)
+}
+
 func (s *changesSuite) TestMinimalBundleWithOfferACL(c *gc.C) {
 	content := `
 applications:
@@ -3035,6 +3084,10 @@ func copyParams(value interface{}) interface{} {
 }
 
 func (s *changesSuite) assertParseData(c *gc.C, content string, expected []record) {
+	s.assertParseDataWithModel(c, nil, content, expected)
+}
+
+func (s *changesSuite) assertParseDataWithModel(c *gc.C, model *bundlechanges.Model, content string, expected []record) {
 	// Retrieve and validate the bundle data.
 	data, err := charm.ReadBundleData(strings.NewReader(content))
 	c.Assert(err, jc.ErrorIsNil)
@@ -3043,6 +3096,7 @@ func (s *changesSuite) assertParseData(c *gc.C, content string, expected []recor
 
 	// Retrieve the changes, and convert them to a sequence of records.
 	changes, err := bundlechanges.FromData(bundlechanges.ChangesConfig{
+		Model:  model,
 		Bundle: data,
 		Logger: loggo.GetLogger("bundlechanges"),
 	})

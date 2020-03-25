@@ -69,7 +69,11 @@ func FromData(config ChangesConfig) ([]Change, error) {
 	if resolver.bundle.Type != kubernetes {
 		addedMachines = resolver.handleMachines()
 	}
-	addedApplications = resolver.handleOffers(addedApplications)
+
+	deployedBundleApps := alreadyDeployedApplicationsFromBundle(model, config.Bundle.Applications)
+	if addedApplications, err = resolver.handleOffers(addedApplications, deployedBundleApps); err != nil {
+		return nil, err
+	}
 	resolver.handleRelations(addedApplications)
 	if resolver.bundle.Type != kubernetes {
 		err := resolver.handleUnits(addedApplications, addedMachines)
@@ -78,6 +82,26 @@ func FromData(config ChangesConfig) ([]Change, error) {
 		}
 	}
 	return changes.sorted(), nil
+}
+
+// alreadyDeployedApplicationsFromBundle returns a set consisting of the
+// application names that are already known by the remote model and are also
+// present in the provided application map obtained from the bundle that is
+// being deployed.
+func alreadyDeployedApplicationsFromBundle(ctrlModel *Model, bundleApps map[string]*charm.ApplicationSpec) set.Strings {
+	var (
+		deployedSet = set.NewStrings()
+		bundleSet   = set.NewStrings()
+	)
+
+	for appName := range ctrlModel.Applications {
+		deployedSet.Add(appName)
+	}
+	for appName := range bundleApps {
+		bundleSet.Add(appName)
+	}
+
+	return deployedSet.Intersection(bundleSet)
 }
 
 // Change holds a single change required to deploy a bundle.

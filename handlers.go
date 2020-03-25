@@ -316,7 +316,7 @@ func (r *resolver) handleRelations(addedApplications map[string]string) {
 // handleOffers populates the change set with "CreateOffer" records.
 // ensure we pass back handle offers so that if the map resizes we don't lose
 // applications
-func (r *resolver) handleOffers(addedApplications map[string]string) map[string]string {
+func (r *resolver) handleOffers(addedApplications map[string]string, deployedBundleApplications set.Strings) (map[string]string, error) {
 	// the bundle should have been verified before calling handling of types
 	// as saas applications will stamp on existing applications with the same
 	// name.
@@ -331,11 +331,29 @@ func (r *resolver) handleOffers(addedApplications map[string]string) map[string]
 
 	for appName, appSpec := range r.bundle.Applications {
 		for offerName, offerSpec := range appSpec.Offers {
+			// To create an offer, the application must be deployed
+			// as part of this changeset or (if we are abusing
+			// bundle deployments to do upgrades) already deployed
+			// to the controller. In the latter case, we insist
+			// that the application MUST be present both in the
+			// bundle and the controller.
+			//
+			// NOTE: Bundle validation rules prevent you from
+			// creating offers without a fully valid application
+			// block in the bundle but let's be extra paranoid just
+			// in case these rules are relaxed in the future.
+			var reqs []string
+			if changeID := addedApplications[appName]; changeID != "" {
+				reqs = append(reqs, changeID)
+			} else if !deployedBundleApplications.Contains(appName) {
+				return nil, errors.NotFoundf("cannot create offer %s: application %s", offerName, appName)
+			}
+
 			change := newCreateOfferChange(CreateOfferParams{
 				Application: appName,
 				Endpoints:   offerSpec.Endpoints,
 				OfferName:   offerName,
-			}, addedApplications[appName])
+			}, reqs...)
 			r.changes.add(change)
 
 			for user, access := range offerSpec.ACL {
@@ -347,7 +365,7 @@ func (r *resolver) handleOffers(addedApplications map[string]string) map[string]
 			}
 		}
 	}
-	return addedApplications
+	return addedApplications, nil
 }
 
 type unitProcessor struct {

@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/juju/charm/v7"
+	"github.com/juju/charmrepo/v5"
 	"github.com/juju/collections/set"
 	"github.com/juju/errors"
 	"github.com/juju/naturalsort"
-	"gopkg.in/juju/charm.v6"
-	"gopkg.in/juju/charmrepo.v4"
 )
 
 type resolver struct {

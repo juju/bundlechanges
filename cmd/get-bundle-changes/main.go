@@ -10,8 +10,8 @@ import (
 	"io"
 	"os"
 
+	"github.com/juju/charm/v7"
 	"github.com/juju/loggo"
-	"gopkg.in/juju/charm.v6"
 
 	"github.com/juju/bundlechanges"
 )

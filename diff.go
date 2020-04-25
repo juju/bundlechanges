@@ -8,9 +8,9 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/juju/charm/v7"
 	"github.com/juju/collections/set"
 	"github.com/juju/errors"
-	"gopkg.in/juju/charm.v6"
 )
 
 // DiffSide represents one side of a bundle-model diff.

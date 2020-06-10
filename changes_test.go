@@ -12,11 +12,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/juju/charm/v7"
 	"github.com/juju/loggo"
 	jujutesting "github.com/juju/testing"
 	jc "github.com/juju/testing/checkers"
 	gc "gopkg.in/check.v1"
+	"gopkg.in/juju/charm.v6"
 
 	"github.com/juju/bundlechanges"
 )

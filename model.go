@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/juju/charm/v7"
 	"github.com/juju/collections/set"
-	"github.com/juju/names/v4"
 	"github.com/juju/naturalsort"
 	"github.com/kr/pretty"
+	"gopkg.in/juju/charm.v6"
+	"gopkg.in/juju/names.v3"
 )
 
 const kubernetes = "kubernetes"

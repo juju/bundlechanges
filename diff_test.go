@@ -892,6 +892,64 @@ func (s *diffSuite) TestRelations(c *gc.C) {
 	s.checkDiff(c, bundleContent, model, expectedDiff)
 }
 
+func (s *diffSuite) TestRelationsWithMissingEndpoints(c *gc.C) {
+	bundleContent := `
+        applications:
+            memcached:
+                charm: cs:xenial/memcached-7
+                num_units: 1
+                to: [0]
+            prometheus:
+                charm: cs:xenial/prometheus-7
+                num_units: 1
+                to: [1]
+        machines:
+            0:
+            1:
+        relations:
+            - ["memcached", "prometheus:target"]
+            `
+	model := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"prometheus": {
+				Name:  "prometheus",
+				Charm: "cs:xenial/prometheus-7",
+				Units: []bundlechanges.Unit{
+					{Name: "prometheus/0", Machine: "0"},
+				},
+			},
+			"memcached": {
+				Name:  "memcached",
+				Charm: "cs:xenial/memcached-7",
+				Units: []bundlechanges.Unit{
+					{Name: "memcached/1", Machine: "1"},
+				},
+			},
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			"0": {ID: "0"},
+			"1": {ID: "1"},
+		},
+		Relations: []bundlechanges.Relation{{
+			App1:      "prometheus",
+			Endpoint1: "target",
+			App2:      "memcached",
+			Endpoint2: "juju-info",
+		}},
+	}
+	expectedDiff := &bundlechanges.BundleDiff{
+		Relations: &bundlechanges.RelationsDiff{
+			BundleAdditions: [][]string{
+				{"memcached:", "prometheus:target"},
+			},
+			ModelAdditions: [][]string{
+				{"memcached:juju-info", "prometheus:target"},
+			},
+		},
+	}
+	s.checkDiff(c, bundleContent, model, expectedDiff)
+}
+
 func (s *diffSuite) TestValidationMissingBundle(c *gc.C) {
 	config := bundlechanges.DiffConfig{
 		Bundle: nil,

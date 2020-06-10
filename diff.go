@@ -400,6 +400,17 @@ func relationFromEndpoints(relation []string) Relation {
 	sort.Strings(relation)
 	parts1 := strings.SplitN(relation[0], ":", 2)
 	parts2 := strings.SplitN(relation[1], ":", 2)
+
+	// According to our docs, bundles may optionally omit the endpoint from
+	// relations which will cause an index out of bounds panic when trying
+	// to construct the Relation instance below.
+	if len(parts1) == 1 {
+		parts1 = append(parts1, "")
+	}
+	if len(parts2) == 1 {
+		parts2 = append(parts2, "")
+	}
+
 	return Relation{
 		App1:      parts1[0],
 		Endpoint1: parts1[1],

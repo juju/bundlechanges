@@ -5,6 +5,7 @@ package bundlechanges
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 
 	"github.com/juju/charm/v7"
@@ -465,6 +466,7 @@ func (e *inferenceEngine) processInitialPlacements() {
 				unused = unused[:len(unused)-1]
 			}
 		}
+		sort.Strings(unused)
 		e.appPlacements[appName] = unused
 		e.logger.Tracef("unused placements: %#v", unused)
 	}
@@ -490,6 +492,12 @@ func (e *inferenceEngine) processBundleMachines() {
 	}
 	naturalsort.Sort(ids)
 
+	applications := make([]string, 0, len(e.bundle.Applications))
+	for appName := range e.bundle.Applications {
+		applications = append(applications, appName)
+	}
+	sort.Strings(applications)
+
 mainloop:
 	for _, id := range ids {
 		// The simplest case is where the user has specified a mapping
@@ -499,7 +507,7 @@ mainloop:
 		}
 		e.logger.Tracef("machine: %s", id)
 		// Look for a unit placement directive that specifies the machine.
-		for appName := range e.bundle.Applications {
+		for _, appName := range applications {
 			e.logger.Tracef("app: %s", appName)
 			for _, to := range e.appPlacements[appName] {
 				// Here we explicitly ignore the error return of the parse placement

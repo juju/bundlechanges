@@ -7,6 +7,7 @@ import (
 	"bytes"
 
 	"github.com/juju/loggo"
+	"github.com/juju/naturalsort"
 	"github.com/juju/testing"
 	jc "github.com/juju/testing/checkers"
 	gc "gopkg.in/check.v1"
@@ -417,6 +418,110 @@ func (s *inferMachineMapSuite) TestOffest(c *gc.C) {
 	c.Assert(model.MachineMap, jc.DeepEquals, map[string]string{
 		"1": "1", "2": "2", "3": "0",
 	})
+}
+
+// Fixing LP #1883645
+func (s *inferMachineMapSuite) TestBundleMachinesDeterminism(c *gc.C) {
+	data := s.parseBundle(c, `
+        series: bionic
+        machines:
+            "0":
+                series: bionic
+            "1":
+                series: bionic
+            "2":
+                series: bionic
+            "10":
+                series: bionic
+            "11":
+                series: bionic
+            "12":
+                series: bionic
+            "20":
+                series: bionic
+            "21":
+                series: bionic
+            "22":
+                series: bionic
+        applications:
+            ubuntu:
+                num_units: 6
+                charm: ubuntu
+                to:
+                - 0
+                - 1
+                - 2
+                - 10
+                - 11
+                - 12
+            memcached:
+                num_units: 6
+                charm: cs:memcached
+                to:
+                - 10
+                - 12
+                - 13
+                - 20
+                - 21
+                - 22
+`)
+	model := &Model{
+		Applications: map[string]*Application{
+			"ubuntu": &Application{
+				Units: []Unit{
+					{"ubuntu/0", "0"},
+					{"ubuntu/1", "1"},
+					{"ubuntu/2", "2"},
+					{"ubuntu/3", "10"},
+					{"ubuntu/4", "11"},
+					{"ubuntu/5", "12"},
+				},
+			},
+			"memcached": &Application{
+				Units: []Unit{
+					{"memcached/0", "10"},
+					{"memcached/1", "11"},
+					{"memcached/2", "12"},
+				},
+			},
+		},
+		Machines: map[string]*Machine{
+			"0":  &Machine{ID: "0"},
+			"1":  &Machine{ID: "1"},
+			"2":  &Machine{ID: "2"},
+			"10": &Machine{ID: "10"},
+			"11": &Machine{ID: "11"},
+			"12": &Machine{ID: "12"},
+		},
+		logger: loggo.GetLogger("bundlechanges"),
+	}
+
+	// Loop through enough times to trigger a potential map ordering bug.
+	for i := 0; i < 10; i++ {
+		model.initializeSequence()
+		model.InferMachineMap(data)
+		c.Assert(model.MachineMap, jc.DeepEquals, map[string]string{
+			"0": "0", "1": "1", "2": "2", "10": "10", "11": "11", "12": "12",
+		})
+
+		names := make([]string, 0, len(data.Machines))
+		for name := range data.Machines {
+			names = append(names, name)
+		}
+		naturalsort.Sort(names)
+
+		var got [][]string
+		for _, machine := range names {
+			if model.BundleMachine(machine) == nil {
+				got = append(got, []string{machine, model.nextMachine()})
+			}
+		}
+		c.Assert(got, jc.DeepEquals, [][]string{
+			{"20", "13"},
+			{"21", "14"},
+			{"22", "15"},
+		})
+	}
 }
 
 type applicationSuite struct{}

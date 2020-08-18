@@ -5,6 +5,7 @@ go 1.14
 require (
 	github.com/gobwas/glob v0.2.4-0.20181002190808-e7a84e9525fe // indirect
 	github.com/golang/protobuf v1.3.1 // indirect
+	github.com/juju/bundlechanges v1.0.0 // indirect
 	github.com/juju/charm/v8 v8.0.0-20200817113526-2a88e9b46b47
 	github.com/juju/charmrepo/v6 v6.0.0-20200817155725-120bd7a8b1ed
 	github.com/juju/collections v0.0.0-20180717171555-9be91dc79b7c

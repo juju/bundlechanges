@@ -10,10 +10,10 @@ import (
 	"io"
 	"os"
 
-	"github.com/juju/charm/v7"
+	"github.com/juju/charm/v8"
 	"github.com/juju/loggo"
 
-	"github.com/juju/bundlechanges"
+	"github.com/juju/bundlechanges/v2"
 )
 
 func main() {

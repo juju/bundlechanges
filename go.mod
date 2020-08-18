@@ -1,4 +1,4 @@
-module github.com/juju/bundlechanges
+module github.com/juju/bundlechanges/v2
 
 go 1.14
 

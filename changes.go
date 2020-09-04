@@ -4,6 +4,7 @@
 package bundlechanges
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -609,7 +610,7 @@ type ExposeChange struct {
 
 // GUIArgs implements Change.GUIArgs.
 func (ch *ExposeChange) GUIArgs() []interface{} {
-	return []interface{}{ch.Params.Application}
+	return []interface{}{ch.Params.Application, ch.Params.ExposedEndpoints, ch.Params.ExposeToSpaces, ch.Params.ExposeToCIDRs}
 }
 
 // Args implements Change.Args.
@@ -619,13 +620,52 @@ func (ch *ExposeChange) Args() (map[string]interface{}, error) {
 
 // Description implements Change.
 func (ch *ExposeChange) Description() string {
-	return fmt.Sprintf("expose %s", ch.Params.appName)
+	var descr bytes.Buffer
+	fmt.Fprint(&descr, "expose ")
+
+	if len(ch.Params.ExposedEndpoints) != 0 {
+		fmt.Fprintf(&descr, "endpoint(s) %s of ", strings.Join(ch.Params.ExposedEndpoints, ","))
+	}
+
+	fmt.Fprintf(&descr, "%s", ch.Params.appName)
+
+	if spaceCount, cidrCount := len(ch.Params.ExposeToSpaces), len(ch.Params.ExposeToCIDRs); spaceCount+cidrCount != 0 {
+		fmt.Fprintf(&descr, " to ")
+		if spaceCount != 0 {
+			fmt.Fprintf(&descr, "space(s) %s", strings.Join(ch.Params.ExposeToSpaces, ","))
+		}
+
+		if spaceCount != 0 && cidrCount != 0 {
+			fmt.Fprint(&descr, " and ")
+		}
+
+		if cidrCount != 0 {
+			fmt.Fprintf(&descr, "CIDR(s) %s", strings.Join(ch.Params.ExposeToCIDRs, ","))
+		}
+
+	}
+
+	return descr.String()
 }
 
 // ExposeParams holds parameters for exposing an application.
 type ExposeParams struct {
 	// Application holds the placeholder name of the application that must be exposed.
 	Application string `json:"application"`
+
+	// ExposedEndpoints stores a subset of the application endpoints that
+	// are used to select the set of open ports that should be accessible
+	// if the application is exposed. An empty value indicates that all
+	// open ports should be made accessible.
+	ExposedEndpoints []string `json:"exposed-endpoints,omitempty"`
+
+	// ExposeToSpaces contains a list of spaces that should be able to
+	// access the application ports if the application is exposed.
+	ExposeToSpaces []string `json:"expose-to-spaces,omitempty"`
+
+	// ExposeToCIDRs contains a list of CIDRs that should be able to
+	// access the application ports if the application is exposed.
+	ExposeToCIDRs []string `json:"expose-to-cidrs,omitempty"`
 
 	appName string
 }

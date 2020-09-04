@@ -191,16 +191,19 @@ func (m *Model) getUnitMachine(appName string, index int) string {
 
 // Application represents an existing charm deployed in the model.
 type Application struct {
-	Name          string
-	Charm         string // The charm URL.
-	Scale         int
-	Options       map[string]interface{}
-	Annotations   map[string]string
-	Constraints   string // TODO: not updated yet.
-	Exposed       bool
-	SubordinateTo []string
-	Series        string
-	Placement     string
+	Name             string
+	Charm            string // The charm URL.
+	Scale            int
+	Options          map[string]interface{}
+	Annotations      map[string]string
+	Constraints      string // TODO: not updated yet.
+	Exposed          bool
+	ExposedEndpoints []string
+	ExposeToSpaces   []string
+	ExposeToCIDRs    []string
+	SubordinateTo    []string
+	Series           string
+	Placement        string
 	// TODO: handle changes in:
 	//   endpoint bindings -- possible even?
 	//   storage

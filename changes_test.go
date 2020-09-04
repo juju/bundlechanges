@@ -3331,6 +3331,7 @@ func (s *changesSuite) TestSimpleBundleEmptyModel(c *gc.C) {
                         expose: true
                         exposed-endpoints:
                           - www
+                          - admin
                         expose-to-spaces:
                           - dmz
                         expose-to-cidrs:
@@ -3346,7 +3347,7 @@ func (s *changesSuite) TestSimpleBundleEmptyModel(c *gc.C) {
 	expectedChanges := []string{
 		"upload charm cs:django-4",
 		"deploy application django using cs:django-4",
-		"expose endpoint(s) www of django to space(s) dmz and CIDR(s) 13.37.0.0/16",
+		"expose endpoint(s) admin,www of django to space(s) dmz and CIDR(s) 13.37.0.0/16",
 		"set annotations for django",
 		"add unit django/0 to new machine 0",
 	}
@@ -3362,6 +3363,7 @@ func (s *changesSuite) TestKubernetesBundleEmptyModel(c *gc.C) {
                         expose: yes
                         expose-to-spaces:
                           - dmz
+                          - public
                         num_units: 1
                         options:
                             key-1: value-1
@@ -3376,7 +3378,7 @@ func (s *changesSuite) TestKubernetesBundleEmptyModel(c *gc.C) {
 	expectedChanges := []string{
 		"upload charm cs:django-4 for series kubernetes",
 		"deploy application django with 1 unit on kubernetes using cs:django-4",
-		"expose django to space(s) dmz",
+		"expose django to space(s) dmz,public",
 		"set annotations for django",
 		"upload charm cs:mariadb-5 for series kubernetes",
 		"deploy application mariadb with 2 units on kubernetes using cs:mariadb-5",
@@ -3419,6 +3421,7 @@ func (s *changesSuite) TestExposeWithDifferentParameters(c *gc.C) {
                         expose: yes
                         expose-to-cidrs:
                           - 13.37.0.0/16
+                          - 0.0.0.0/0
             `
 	existingModel := &bundlechanges.Model{
 		Applications: map[string]*bundlechanges.Application{
@@ -3431,7 +3434,7 @@ func (s *changesSuite) TestExposeWithDifferentParameters(c *gc.C) {
 		},
 	}
 	expectedChanges := []string{
-		"expose django to CIDR(s) 13.37.0.0/16",
+		"expose django to CIDR(s) 0.0.0.0/0,13.37.0.0/16",
 		"scale django to 2 units",
 	}
 	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)

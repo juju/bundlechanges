@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/juju/charm/v8"
@@ -624,6 +625,7 @@ func (ch *ExposeChange) Description() string {
 	fmt.Fprint(&descr, "expose ")
 
 	if len(ch.Params.ExposedEndpoints) != 0 {
+		sort.Strings(ch.Params.ExposedEndpoints)
 		fmt.Fprintf(&descr, "endpoint(s) %s of ", strings.Join(ch.Params.ExposedEndpoints, ","))
 	}
 
@@ -632,6 +634,7 @@ func (ch *ExposeChange) Description() string {
 	if spaceCount, cidrCount := len(ch.Params.ExposeToSpaces), len(ch.Params.ExposeToCIDRs); spaceCount+cidrCount != 0 {
 		fmt.Fprintf(&descr, " to ")
 		if spaceCount != 0 {
+			sort.Strings(ch.Params.ExposeToSpaces)
 			fmt.Fprintf(&descr, "space(s) %s", strings.Join(ch.Params.ExposeToSpaces, ","))
 		}
 
@@ -640,6 +643,7 @@ func (ch *ExposeChange) Description() string {
 		}
 
 		if cidrCount != 0 {
+			sort.Strings(ch.Params.ExposeToCIDRs)
 			fmt.Fprintf(&descr, "CIDR(s) %s", strings.Join(ch.Params.ExposeToCIDRs, ","))
 		}
 

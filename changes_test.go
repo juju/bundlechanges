@@ -579,6 +579,12 @@ func (s *changesSuite) TestSimpleBundle(c *gc.C) {
                 charm: cs:precise/mediawiki-10
                 num_units: 1
                 expose: true
+                exposed-endpoints:
+                  - www
+                expose-to-spaces:
+                  - dmz
+                expose-to-cidrs:
+                  - 13.37.0.0/16
                 options:
                     debug: false
                 annotations:
@@ -645,11 +651,17 @@ func (s *changesSuite) TestSimpleBundle(c *gc.C) {
 		Id:     "expose-2",
 		Method: "expose",
 		Params: bundlechanges.ExposeParams{
-			Application: "$deploy-1",
+			Application:      "$deploy-1",
+			ExposedEndpoints: []string{"www"},
+			ExposeToSpaces:   []string{"dmz"},
+			ExposeToCIDRs:    []string{"13.37.0.0/16"},
 		},
-		GUIArgs: []interface{}{"$deploy-1"},
+		GUIArgs: []interface{}{"$deploy-1", []string{"www"}, []string{"dmz"}, []string{"13.37.0.0/16"}},
 		Args: map[string]interface{}{
-			"application": "$deploy-1",
+			"application":       "$deploy-1",
+			"exposed-endpoints": []interface{}{"www"},
+			"expose-to-spaces":  []interface{}{"dmz"},
+			"expose-to-cidrs":   []interface{}{"13.37.0.0/16"},
 		},
 		Requires: []string{"deploy-1"},
 	}, {
@@ -831,7 +843,7 @@ func (s *changesSuite) TestSimpleBundleWithDevices(c *gc.C) {
 		Params: bundlechanges.ExposeParams{
 			Application: "$deploy-1",
 		},
-		GUIArgs: []interface{}{"$deploy-1"},
+		GUIArgs: []interface{}{"$deploy-1", []string(nil), []string(nil), []string(nil)},
 		Args: map[string]interface{}{
 			"application": "$deploy-1",
 		},
@@ -1020,7 +1032,7 @@ func (s *changesSuite) TestKubernetesBundle(c *gc.C) {
 		Params: bundlechanges.ExposeParams{
 			Application: "$deploy-1",
 		},
-		GUIArgs: []interface{}{"$deploy-1"},
+		GUIArgs: []interface{}{"$deploy-1", []string(nil), []string(nil), []string(nil)},
 		Args: map[string]interface{}{
 			"application": "$deploy-1",
 		},
@@ -1316,7 +1328,7 @@ func (s *changesSuite) TestMachinesAndUnitsPlacementWithBindings(c *gc.C) {
 		Params: bundlechanges.ExposeParams{
 			Application: "$deploy-3",
 		},
-		GUIArgs: []interface{}{"$deploy-3"},
+		GUIArgs: []interface{}{"$deploy-3", []string(nil), []string(nil), []string(nil)},
 		Args: map[string]interface{}{
 			"application": "$deploy-3",
 		},
@@ -3316,7 +3328,14 @@ func (s *changesSuite) TestSimpleBundleEmptyModel(c *gc.C) {
                 applications:
                     django:
                         charm: cs:django-4
-                        expose: yes
+                        expose: true
+                        exposed-endpoints:
+                          - www
+                          - admin
+                        expose-to-spaces:
+                          - dmz
+                        expose-to-cidrs:
+                          - 13.37.0.0/16
                         num_units: 1
                         options:
                             key-1: value-1
@@ -3328,7 +3347,7 @@ func (s *changesSuite) TestSimpleBundleEmptyModel(c *gc.C) {
 	expectedChanges := []string{
 		"upload charm cs:django-4",
 		"deploy application django using cs:django-4",
-		"expose django",
+		"expose endpoint(s) admin,www of django to space(s) dmz and CIDR(s) 13.37.0.0/16",
 		"set annotations for django",
 		"add unit django/0 to new machine 0",
 	}
@@ -3342,6 +3361,9 @@ func (s *changesSuite) TestKubernetesBundleEmptyModel(c *gc.C) {
                     django:
                         charm: cs:django-4
                         expose: yes
+                        expose-to-spaces:
+                          - dmz
+                          - public
                         num_units: 1
                         options:
                             key-1: value-1
@@ -3356,7 +3378,7 @@ func (s *changesSuite) TestKubernetesBundleEmptyModel(c *gc.C) {
 	expectedChanges := []string{
 		"upload charm cs:django-4 for series kubernetes",
 		"deploy application django with 1 unit on kubernetes using cs:django-4",
-		"expose django",
+		"expose django to space(s) dmz,public",
 		"set annotations for django",
 		"upload charm cs:mariadb-5 for series kubernetes",
 		"deploy application mariadb with 2 units on kubernetes using cs:mariadb-5",
@@ -3371,6 +3393,8 @@ func (s *changesSuite) TestCharmInUseByAnotherApplication(c *gc.C) {
                         charm: cs:django-4
                         num_units: 1
                         expose: yes
+                        expose-to-cidrs:
+                          - 13.37.0.0/16
             `
 	existingModel := &bundlechanges.Model{
 		Applications: map[string]*bundlechanges.Application{
@@ -3381,12 +3405,40 @@ func (s *changesSuite) TestCharmInUseByAnotherApplication(c *gc.C) {
 	}
 	expectedChanges := []string{
 		"deploy application django using cs:django-4",
-		"expose django",
+		"expose django to CIDR(s) 13.37.0.0/16",
 		"add unit django/0 to new machine 0",
 	}
 	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
 }
 
+func (s *changesSuite) TestExposeWithDifferentParameters(c *gc.C) {
+	bundleContent := `
+                bundle: kubernetes
+                applications:
+                    django:
+                        charm: cs:django-4
+                        num_units: 2
+                        expose: yes
+                        expose-to-cidrs:
+                          - 13.37.0.0/16
+                          - 0.0.0.0/0
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"django": {
+				Charm:         "cs:django-4",
+				Scale:         3,
+				Exposed:       true,
+				ExposeToCIDRs: []string{"0.0.0.0/0"},
+			},
+		},
+	}
+	expectedChanges := []string{
+		"expose django to CIDR(s) 0.0.0.0/0,13.37.0.0/16",
+		"scale django to 2 units",
+	}
+	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
 func (s *changesSuite) TestCharmUpgrade(c *gc.C) {
 	bundleContent := `
                 applications:

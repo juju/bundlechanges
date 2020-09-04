@@ -5,6 +5,7 @@ package bundlechanges
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/juju/charm/v8"
@@ -114,8 +115,11 @@ func (r *resolver) handleApplications() (map[string]string, error) {
 			// Expose the application if required.
 			if application.Expose {
 				add(newExposeChange(ExposeParams{
-					Application: placeholder(id),
-					appName:     name,
+					Application:      placeholder(id),
+					ExposedEndpoints: application.ExposedEndpoints,
+					ExposeToSpaces:   application.ExposeToSpaces,
+					ExposeToCIDRs:    application.ExposeToCIDRs,
+					appName:          name,
 				}, id))
 			}
 		} else {
@@ -155,11 +159,20 @@ func (r *resolver) handleApplications() (map[string]string, error) {
 
 			// We never do the negative. We will expose if necessary, but
 			// never unexpose.
-			if !existingApp.Exposed && application.Expose {
-				add(newExposeChange(ExposeParams{
-					Application: name,
-					appName:     name,
-				}))
+			if application.Expose {
+				// We emit a change if the app is not exposed
+				// OR the app is already exposed but the
+				// current expose params do not match the
+				// incoming params.
+				if !existingApp.Exposed || (existingApp.Exposed && !equalExposeParams(existingApp, application)) {
+					add(newExposeChange(ExposeParams{
+						Application:      name,
+						ExposedEndpoints: application.ExposedEndpoints,
+						ExposeToSpaces:   application.ExposeToSpaces,
+						ExposeToCIDRs:    application.ExposeToCIDRs,
+						appName:          name,
+					}))
+				}
 			}
 
 			if r.bundle.Type == kubernetes && existingApp.Scale != application.NumUnits {
@@ -198,6 +211,29 @@ func (r *resolver) handleApplications() (map[string]string, error) {
 		}
 	}
 	return addedApplications, nil
+}
+
+func equalExposeParams(cur *Application, incoming *charm.ApplicationSpec) bool {
+	return equalStringSlice(cur.ExposedEndpoints, incoming.ExposedEndpoints) &&
+		equalStringSlice(cur.ExposeToSpaces, incoming.ExposeToSpaces) &&
+		equalStringSlice(cur.ExposeToCIDRs, incoming.ExposeToCIDRs)
+}
+
+func equalStringSlice(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	sort.Strings(a)
+	sort.Strings(b)
+
+	for i, aEntry := range a {
+		if aEntry != b[i] {
+			return false
+		}
+	}
+
+	return true
 }
 
 // handleMachines populates the change set with "addMachines" records.

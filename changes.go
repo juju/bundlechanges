@@ -118,8 +118,9 @@ type Change interface {
 	// GUIArgs returns positional arguments to pass to the method, suitable for
 	// being JSON-serialized and sent to the Juju GUI.
 	GUIArgs() []interface{}
-	// Description returns a human readable summary of the change.
-	Description() string
+	// Description returns a human readable, potentially multi-line summary
+	// of the change.
+	Description() []string
 	// Args returns a map of arguments that are named.
 	Args() (map[string]interface{}, error)
 	// setId is used to set the identifier for the change.
@@ -188,7 +189,7 @@ func (ch *AddCharmChange) Args() (map[string]interface{}, error) {
 }
 
 // Description implements Change.
-func (ch *AddCharmChange) Description() string {
+func (ch *AddCharmChange) Description() []string {
 	var series, channel string
 	if ch.Params.Series != "" {
 		series = " for series " + ch.Params.Series
@@ -197,7 +198,7 @@ func (ch *AddCharmChange) Description() string {
 		channel = " from channel " + ch.Params.Channel
 	}
 
-	return fmt.Sprintf("upload charm %s%s%s", ch.Params.Charm, series, channel)
+	return []string{fmt.Sprintf("upload charm %s%s%s", ch.Params.Charm, series, channel)}
 }
 
 // AddCharmParams holds parameters for adding a charm to the environment.
@@ -242,12 +243,12 @@ func (ch *UpgradeCharmChange) Args() (map[string]interface{}, error) {
 }
 
 // Description implements Change.
-func (ch *UpgradeCharmChange) Description() string {
+func (ch *UpgradeCharmChange) Description() []string {
 	series := ""
 	if ch.Params.Series != "" {
 		series = " for series " + ch.Params.Series
 	}
-	return fmt.Sprintf("upgrade %s to use charm %s%s", ch.Params.Application, ch.Params.charmURL, series)
+	return []string{fmt.Sprintf("upgrade %s to use charm %s%s", ch.Params.Application, ch.Params.charmURL, series)}
 }
 
 // UpgradeCharmParams holds parameters for adding a charm to the environment.
@@ -305,7 +306,7 @@ func (ch *AddMachineChange) Args() (map[string]interface{}, error) {
 }
 
 // Description implements Change.
-func (ch *AddMachineChange) Description() string {
+func (ch *AddMachineChange) Description() []string {
 	machine := "new machine"
 	if ch.Params.existing {
 		machine = "existing machine"
@@ -318,7 +319,7 @@ func (ch *AddMachineChange) Description() string {
 	if ch.Params.ContainerType != "" {
 		machine = ch.Params.ContainerType + " container " + ch.Params.containerMachineID + " on " + machine
 	}
-	return fmt.Sprintf("add %s", machine)
+	return []string{fmt.Sprintf("add %s", machine)}
 }
 
 // AddMachineOptions holds GUI options for adding a machine or container.
@@ -382,8 +383,8 @@ func (ch *AddRelationChange) Args() (map[string]interface{}, error) {
 }
 
 // Description implements Change.
-func (ch *AddRelationChange) Description() string {
-	return fmt.Sprintf("add relation %s - %s", ch.Params.applicationEndpoint1, ch.Params.applicationEndpoint2)
+func (ch *AddRelationChange) Description() []string {
+	return []string{fmt.Sprintf("add relation %s - %s", ch.Params.applicationEndpoint1, ch.Params.applicationEndpoint2)}
 }
 
 // AddRelationParams holds parameters for adding a relation between two applications.
@@ -476,7 +477,7 @@ func (ch *AddApplicationChange) GUIArgs() []interface{} {
 }
 
 // Description implements Change.
-func (ch *AddApplicationChange) Description() string {
+func (ch *AddApplicationChange) Description() []string {
 	series := ""
 	if ch.Params.Series != "" {
 		series = " on " + ch.Params.Series
@@ -489,7 +490,7 @@ func (ch *AddApplicationChange) Description() string {
 		}
 		unitsInfo = fmt.Sprintf(" with %d unit%s", ch.Params.NumUnits, plural)
 	}
-	return fmt.Sprintf("deploy application %s%s%s using %s", ch.Params.Application, unitsInfo, series, ch.Params.charmURL)
+	return []string{fmt.Sprintf("deploy application %s%s%s using %s", ch.Params.Application, unitsInfo, series, ch.Params.charmURL)}
 }
 
 // AddApplicationParams holds parameters for deploying a Juju application.
@@ -560,7 +561,7 @@ func (ch *AddUnitChange) Args() (map[string]interface{}, error) {
 }
 
 // Description implements Change.
-func (ch *AddUnitChange) Description() string {
+func (ch *AddUnitChange) Description() []string {
 	placement := "new machine"
 	if ch.Params.baseMachine != "" {
 		placement = placement + " " + ch.Params.baseMachine
@@ -572,7 +573,7 @@ func (ch *AddUnitChange) Description() string {
 		placement += " to satisfy [" + ch.Params.directive + "]"
 	}
 
-	return fmt.Sprintf("add unit %s to %s", ch.Params.unitName, placement)
+	return []string{fmt.Sprintf("add unit %s to %s", ch.Params.unitName, placement)}
 }
 
 // AddUnitParams holds parameters for adding an application unit.
@@ -620,7 +621,7 @@ func (ch *ExposeChange) Args() (map[string]interface{}, error) {
 }
 
 // Description implements Change.
-func (ch *ExposeChange) Description() string {
+func (ch *ExposeChange) Description() []string {
 	var descr bytes.Buffer
 	fmt.Fprint(&descr, "expose ")
 
@@ -649,7 +650,7 @@ func (ch *ExposeChange) Description() string {
 
 	}
 
-	return descr.String()
+	return []string{descr.String()}
 }
 
 // ExposeParams holds parameters for exposing an application.
@@ -703,8 +704,8 @@ func (ch *ScaleChange) Args() (map[string]interface{}, error) {
 }
 
 // Description implements Change.
-func (ch *ScaleChange) Description() string {
-	return fmt.Sprintf("scale %s to %d units", ch.Params.appName, ch.Params.Scale)
+func (ch *ScaleChange) Description() []string {
+	return []string{fmt.Sprintf("scale %s to %d units", ch.Params.appName, ch.Params.Scale)}
 }
 
 // ScaleParams holds parameters for scaling an application.
@@ -748,8 +749,8 @@ func (ch *SetAnnotationsChange) Args() (map[string]interface{}, error) {
 }
 
 // Description implements Change.
-func (ch *SetAnnotationsChange) Description() string {
-	return fmt.Sprintf("set annotations for %s", ch.Params.target)
+func (ch *SetAnnotationsChange) Description() []string {
+	return []string{fmt.Sprintf("set annotations for %s", ch.Params.target)}
 }
 
 // EntityType holds entity types ("application" or "machine").
@@ -802,8 +803,8 @@ func (ch *SetOptionsChange) Args() (map[string]interface{}, error) {
 }
 
 // Description implements Change.
-func (ch *SetOptionsChange) Description() string {
-	return fmt.Sprintf("set application options for %s", ch.Params.Application)
+func (ch *SetOptionsChange) Description() []string {
+	return []string{fmt.Sprintf("set application options for %s", ch.Params.Application)}
 }
 
 // SetOptionsParams holds parameters for setting options.
@@ -842,8 +843,8 @@ func (ch *SetConstraintsChange) Args() (map[string]interface{}, error) {
 }
 
 // Description implements Change.
-func (ch *SetConstraintsChange) Description() string {
-	return fmt.Sprintf("set constraints for %s to %q", ch.Params.Application, ch.Params.Constraints)
+func (ch *SetConstraintsChange) Description() []string {
+	return []string{fmt.Sprintf("set constraints for %s to %q", ch.Params.Application, ch.Params.Constraints)}
 }
 
 // SetConstraintsParams holds parameters for setting constraints.
@@ -883,8 +884,8 @@ func (ch *CreateOfferChange) Args() (map[string]interface{}, error) {
 }
 
 // Description implements Change.
-func (ch *CreateOfferChange) Description() string {
-	return fmt.Sprintf("create offer %s using %s:%s", ch.Params.OfferName, ch.Params.Application, strings.Join(ch.Params.Endpoints, ","))
+func (ch *CreateOfferChange) Description() []string {
+	return []string{fmt.Sprintf("create offer %s using %s:%s", ch.Params.OfferName, ch.Params.Application, strings.Join(ch.Params.Endpoints, ","))}
 }
 
 // CreateOfferParams holds parameters for creating an application offer.
@@ -925,8 +926,8 @@ func (ch *ConsumeOfferChange) Args() (map[string]interface{}, error) {
 }
 
 // Description implements Change.
-func (ch *ConsumeOfferChange) Description() string {
-	return fmt.Sprintf("consume offer %s at %s", ch.Params.ApplicationName, ch.Params.URL)
+func (ch *ConsumeOfferChange) Description() []string {
+	return []string{fmt.Sprintf("consume offer %s at %s", ch.Params.ApplicationName, ch.Params.URL)}
 }
 
 // ConsumeOfferParams holds the parameters for consuming an offer.
@@ -965,8 +966,8 @@ func (ch *GrantOfferAccessChange) Args() (map[string]interface{}, error) {
 }
 
 // Description implements Change.
-func (ch *GrantOfferAccessChange) Description() string {
-	return fmt.Sprintf("grant user %s %s access to offer %s", ch.Params.User, ch.Params.Access, ch.Params.Offer)
+func (ch *GrantOfferAccessChange) Description() []string {
+	return []string{fmt.Sprintf("grant user %s %s access to offer %s", ch.Params.User, ch.Params.Access, ch.Params.Offer)}
 }
 
 func paramsToArgs(params interface{}) (map[string]interface{}, error) {

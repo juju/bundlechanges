@@ -4930,7 +4930,9 @@ func (s *changesSuite) checkBundleImpl(c *gc.C, bundleContent string, existingMo
 			c.Log(change.Description())
 			//c.Logf("  %s %v", change.Method(), change.GUIArgs())
 
-			obtained = append(obtained, change.Description())
+			for _, descr := range change.Description() {
+				obtained = append(obtained, descr)
+			}
 		}
 		c.Check(obtained, jc.DeepEquals, expectedChanges)
 	}

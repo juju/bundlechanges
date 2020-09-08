@@ -113,12 +113,10 @@ func (r *resolver) handleApplications() (map[string]string, error) {
 			addedApplications[name] = id
 
 			// Expose the application if required.
-			if application.Expose {
+			if application.Expose || len(application.ExposedEndpoints) != 0 {
 				add(newExposeChange(ExposeParams{
 					Application:      placeholder(id),
-					ExposedEndpoints: application.ExposedEndpoints,
-					ExposeToSpaces:   application.ExposeToSpaces,
-					ExposeToCIDRs:    application.ExposeToCIDRs,
+					ExposedEndpoints: mapExposedEndpointSpec(application.ExposedEndpoints),
 					appName:          name,
 				}, id))
 			}
@@ -159,18 +157,17 @@ func (r *resolver) handleApplications() (map[string]string, error) {
 
 			// We never do the negative. We will expose if necessary, but
 			// never unexpose.
-			if application.Expose {
+			if application.Expose || len(application.ExposedEndpoints) != 0 {
 				// We emit a change if the app is not exposed
 				// OR the app is already exposed but the
-				// current expose params do not match the
-				// incoming params.
+				// current expose endpoint params do not match
+				// the incoming params.
 				if !existingApp.Exposed || (existingApp.Exposed && !equalExposeParams(existingApp, application)) {
 					add(newExposeChange(ExposeParams{
 						Application:      name,
-						ExposedEndpoints: application.ExposedEndpoints,
-						ExposeToSpaces:   application.ExposeToSpaces,
-						ExposeToCIDRs:    application.ExposeToCIDRs,
+						ExposedEndpoints: mapExposedEndpointSpec(application.ExposedEndpoints),
 						appName:          name,
+						alreadyExposed:   existingApp.Exposed,
 					}))
 				}
 			}
@@ -213,10 +210,39 @@ func (r *resolver) handleApplications() (map[string]string, error) {
 	return addedApplications, nil
 }
 
+func mapExposedEndpointSpec(specs map[string]charm.ExposedEndpointSpec) map[string]*ExposedEndpointParams {
+	if len(specs) == 0 {
+		return nil
+	}
+
+	out := make(map[string]*ExposedEndpointParams)
+	for epName, spec := range specs {
+		out[epName] = &ExposedEndpointParams{
+			ExposeToSpaces: spec.ExposeToSpaces,
+			ExposeToCIDRs:  spec.ExposeToCIDRs,
+		}
+	}
+	return out
+}
+
 func equalExposeParams(cur *Application, incoming *charm.ApplicationSpec) bool {
-	return equalStringSlice(cur.ExposedEndpoints, incoming.ExposedEndpoints) &&
-		equalStringSlice(cur.ExposeToSpaces, incoming.ExposeToSpaces) &&
-		equalStringSlice(cur.ExposeToCIDRs, incoming.ExposeToCIDRs)
+	if len(cur.ExposedEndpoints) != len(incoming.ExposedEndpoints) {
+		return false
+	}
+
+	for epName, expDetails := range cur.ExposedEndpoints {
+		incDetails, found := incoming.ExposedEndpoints[epName]
+		if !found {
+			return false
+		}
+
+		if !equalStringSlice(expDetails.ExposeToSpaces, incDetails.ExposeToSpaces) ||
+			!equalStringSlice(expDetails.ExposeToCIDRs, incDetails.ExposeToCIDRs) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func equalStringSlice(a, b []string) bool {

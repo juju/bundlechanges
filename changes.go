@@ -612,7 +612,10 @@ type ExposeChange struct {
 
 // GUIArgs implements Change.GUIArgs.
 func (ch *ExposeChange) GUIArgs() []interface{} {
-	return []interface{}{ch.Params.Application, ch.Params.ExposedEndpoints, ch.Params.ExposeToSpaces, ch.Params.ExposeToCIDRs}
+	if len(ch.Params.ExposedEndpoints) == 0 {
+		return []interface{}{ch.Params.Application, nil}
+	}
+	return []interface{}{ch.Params.Application, ch.Params.ExposedEndpoints}
 }
 
 // Args implements Change.Args.
@@ -622,35 +625,111 @@ func (ch *ExposeChange) Args() (map[string]interface{}, error) {
 
 // Description implements Change.
 func (ch *ExposeChange) Description() []string {
-	var descr bytes.Buffer
-	fmt.Fprint(&descr, "expose ")
-
-	if len(ch.Params.ExposedEndpoints) != 0 {
-		sort.Strings(ch.Params.ExposedEndpoints)
-		fmt.Fprintf(&descr, "endpoint(s) %s of ", strings.Join(ch.Params.ExposedEndpoints, ","))
+	// Easy case: all application gets exposed and no endpoint-specific
+	// parameters are provided.
+	if len(ch.Params.ExposedEndpoints) == 0 {
+		return []string{fmt.Sprintf("expose all endpoints of %s and allow access from CIDR 0.0.0.0/0", ch.Params.appName)}
 	}
 
-	fmt.Fprintf(&descr, "%s", ch.Params.appName)
-
-	if spaceCount, cidrCount := len(ch.Params.ExposeToSpaces), len(ch.Params.ExposeToCIDRs); spaceCount+cidrCount != 0 {
-		fmt.Fprintf(&descr, " to ")
-		if spaceCount != 0 {
-			sort.Strings(ch.Params.ExposeToSpaces)
-			fmt.Fprintf(&descr, "space(s) %s", strings.Join(ch.Params.ExposeToSpaces, ","))
+	var (
+		descr  bytes.Buffer
+		output []string
+	)
+	for _, exposedGroup := range groupByExposedEndpointParams(ch.Params.ExposedEndpoints) {
+		if exposedGroup.endpointNames[0] == "" {
+			fmt.Fprint(&descr, "expose all endpoints")
+		} else {
+			plural := ""
+			if len(exposedGroup.endpointNames) > 1 {
+				plural = "s"
+			}
+			fmt.Fprintf(&descr, "override expose settings for endpoint%s %s", plural, strings.Join(exposedGroup.endpointNames, ","))
 		}
 
-		if spaceCount != 0 && cidrCount != 0 {
-			fmt.Fprint(&descr, " and ")
+		fmt.Fprintf(&descr, " of %s and allow access from ", ch.Params.appName)
+
+		if spaceCount, cidrCount := len(exposedGroup.params.ExposeToSpaces), len(exposedGroup.params.ExposeToCIDRs); spaceCount+cidrCount != 0 {
+			if spaceCount != 0 {
+				plural := ""
+				if spaceCount > 1 {
+					plural = "s"
+				}
+				sort.Strings(exposedGroup.params.ExposeToSpaces)
+				fmt.Fprintf(&descr, "space%s %s", plural, strings.Join(exposedGroup.params.ExposeToSpaces, ","))
+			}
+
+			if spaceCount != 0 && cidrCount != 0 {
+				fmt.Fprint(&descr, " and ")
+			}
+
+			if cidrCount != 0 {
+				plural := ""
+				if cidrCount > 1 {
+					plural = "s"
+				}
+
+				sort.Strings(exposedGroup.params.ExposeToCIDRs)
+				fmt.Fprintf(&descr, "CIDR%s %s", plural, strings.Join(exposedGroup.params.ExposeToCIDRs, ","))
+			}
+		} else {
+			fmt.Fprint(&descr, "CIDR 0.0.0.0/0")
 		}
 
-		if cidrCount != 0 {
-			sort.Strings(ch.Params.ExposeToCIDRs)
-			fmt.Fprintf(&descr, "CIDR(s) %s", strings.Join(ch.Params.ExposeToCIDRs, ","))
+		output = append(output, descr.String())
+		descr.Reset()
+	}
+	return output
+}
+
+type exposedEndpointGroup struct {
+	endpointNames []string
+	params        *ExposedEndpointParams
+}
+
+// groupByExposedEndpointParams groups together any endpoints that have the same
+// set of exposed endpoint parameters and returns them as a slice of
+// exposedEndpointGroup entries sorted by endpoint name.
+func groupByExposedEndpointParams(exposedEndpoints map[string]*ExposedEndpointParams) []exposedEndpointGroup {
+	groups := make(map[*ExposedEndpointParams][]string)
+
+nextEndpoint:
+	for epName, expDetails := range exposedEndpoints {
+		if epName == "" {
+			continue
 		}
 
+		for grpKey := range groups {
+			if grpKey.equalTo(expDetails) {
+				groups[grpKey] = append(groups[grpKey], epName)
+				continue nextEndpoint
+			}
+		}
+
+		groups[expDetails] = []string{epName}
 	}
 
-	return []string{descr.String()}
+	// Add entry for wildcard endpoint (if present)
+	if expDetails, found := exposedEndpoints[""]; found {
+		groups[expDetails] = []string{""}
+	}
+
+	// Ensure all endpoints are sorted and convert into a list
+	groupList := make([]exposedEndpointGroup, 0, len(groups))
+	for expDetails, epList := range groups {
+		sort.Strings(epList)
+		groupList = append(groupList, exposedEndpointGroup{
+			endpointNames: epList,
+			params:        expDetails,
+		})
+	}
+
+	sort.Slice(groupList, func(i, j int) bool {
+		// Each list entry has at least one endpoint name and the ones
+		// with multiple names are pre-sorted by name.
+		return groupList[i].endpointNames[0] < groupList[j].endpointNames[0]
+	})
+
+	return groupList
 }
 
 // ExposeParams holds parameters for exposing an application.
@@ -662,8 +741,15 @@ type ExposeParams struct {
 	// are used to select the set of open ports that should be accessible
 	// if the application is exposed. An empty value indicates that all
 	// open ports should be made accessible.
-	ExposedEndpoints []string `json:"exposed-endpoints,omitempty"`
+	ExposedEndpoints map[string]*ExposedEndpointParams `json:"exposed-endpoints,omitempty"`
 
+	appName        string
+	alreadyExposed bool
+}
+
+// ExpoExposedEndpoint encapsulates the expose-related parameters for a
+// particular endpoint.
+type ExposedEndpointParams struct {
 	// ExposeToSpaces contains a list of spaces that should be able to
 	// access the application ports if the application is exposed.
 	ExposeToSpaces []string `json:"expose-to-spaces,omitempty"`
@@ -671,8 +757,21 @@ type ExposeParams struct {
 	// ExposeToCIDRs contains a list of CIDRs that should be able to
 	// access the application ports if the application is exposed.
 	ExposeToCIDRs []string `json:"expose-to-cidrs,omitempty"`
+}
 
-	appName string
+func (exp *ExposedEndpointParams) equalTo(other *ExposedEndpointParams) bool {
+	return equalStringSlices(exp.ExposeToSpaces, other.ExposeToSpaces) &&
+		equalStringSlices(exp.ExposeToCIDRs, other.ExposeToCIDRs)
+}
+
+func equalStringSlices(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	setA := set.NewStrings(a...)
+	setB := set.NewStrings(b...)
+	return setA.Difference(setB).IsEmpty()
 }
 
 // newScaleChange creates a new change for scaling a Kubernetes application.

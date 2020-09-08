@@ -198,9 +198,7 @@ type Application struct {
 	Annotations      map[string]string
 	Constraints      string // TODO: not updated yet.
 	Exposed          bool
-	ExposedEndpoints []string
-	ExposeToSpaces   []string
-	ExposeToCIDRs    []string
+	ExposedEndpoints map[string]ExposedEndpoint
 	SubordinateTo    []string
 	Series           string
 	Placement        string
@@ -211,6 +209,14 @@ type Application struct {
 	Units []Unit
 }
 
+// ExpoExposedEndpoint encapsulates the expose-related parameters for a
+// particular endpoint.
+type ExposedEndpoint struct {
+	ExposeToSpaces []string
+	ExposeToCIDRs  []string
+}
+
+// Unit represents a unit in the model.
 type Unit struct {
 	Name    string
 	Machine string

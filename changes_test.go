@@ -267,6 +267,9 @@ saas:
 applications:
   apache2:
     charm: "cs:apache2-26"
+--- #overlay
+applications:
+  apache2:
     offers:
       offer1:
         endpoints:
@@ -355,6 +358,9 @@ func (s *changesSuite) TestMinimalBundleWithOfferAndPreDeployedApp(c *gc.C) {
 applications:
   apache2:
     charm: "cs:apache2-26"
+--- #overlay
+applications:
+  apache2:
     offers:
       offer1:
         endpoints:
@@ -404,6 +410,9 @@ func (s *changesSuite) TestMinimalBundleWithOfferACL(c *gc.C) {
 applications:
   apache2:
     charm: "cs:apache2-26"
+--- #overlay
+applications:
+  apache2:
     offers:
       offer1:
         endpoints:
@@ -579,12 +588,6 @@ func (s *changesSuite) TestSimpleBundle(c *gc.C) {
                 charm: cs:precise/mediawiki-10
                 num_units: 1
                 expose: true
-                exposed-endpoints:
-                  - www
-                expose-to-spaces:
-                  - dmz
-                expose-to-cidrs:
-                  - 13.37.0.0/16
                 options:
                     debug: false
                 annotations:
@@ -651,17 +654,11 @@ func (s *changesSuite) TestSimpleBundle(c *gc.C) {
 		Id:     "expose-2",
 		Method: "expose",
 		Params: bundlechanges.ExposeParams{
-			Application:      "$deploy-1",
-			ExposedEndpoints: []string{"www"},
-			ExposeToSpaces:   []string{"dmz"},
-			ExposeToCIDRs:    []string{"13.37.0.0/16"},
+			Application: "$deploy-1",
 		},
-		GUIArgs: []interface{}{"$deploy-1", []string{"www"}, []string{"dmz"}, []string{"13.37.0.0/16"}},
+		GUIArgs: []interface{}{"$deploy-1", nil},
 		Args: map[string]interface{}{
-			"application":       "$deploy-1",
-			"exposed-endpoints": []interface{}{"www"},
-			"expose-to-spaces":  []interface{}{"dmz"},
-			"expose-to-cidrs":   []interface{}{"13.37.0.0/16"},
+			"application": "$deploy-1",
 		},
 		Requires: []string{"deploy-1"},
 	}, {
@@ -843,7 +840,7 @@ func (s *changesSuite) TestSimpleBundleWithDevices(c *gc.C) {
 		Params: bundlechanges.ExposeParams{
 			Application: "$deploy-1",
 		},
-		GUIArgs: []interface{}{"$deploy-1", []string(nil), []string(nil), []string(nil)},
+		GUIArgs: []interface{}{"$deploy-1", nil},
 		Args: map[string]interface{}{
 			"application": "$deploy-1",
 		},
@@ -1032,7 +1029,7 @@ func (s *changesSuite) TestKubernetesBundle(c *gc.C) {
 		Params: bundlechanges.ExposeParams{
 			Application: "$deploy-1",
 		},
-		GUIArgs: []interface{}{"$deploy-1", []string(nil), []string(nil), []string(nil)},
+		GUIArgs: []interface{}{"$deploy-1", nil},
 		Args: map[string]interface{}{
 			"application": "$deploy-1",
 		},
@@ -1328,7 +1325,7 @@ func (s *changesSuite) TestMachinesAndUnitsPlacementWithBindings(c *gc.C) {
 		Params: bundlechanges.ExposeParams{
 			Application: "$deploy-3",
 		},
-		GUIArgs: []interface{}{"$deploy-3", []string(nil), []string(nil), []string(nil)},
+		GUIArgs: []interface{}{"$deploy-3", nil},
 		Args: map[string]interface{}{
 			"application": "$deploy-3",
 		},
@@ -2945,6 +2942,81 @@ func (s *changesSuite) TestApplicationWithEndpointBindings(c *gc.C) {
 	s.assertParseData(c, content, expected)
 }
 
+func (s *changesSuite) TestApplicationWithExposeParams(c *gc.C) {
+	content := `
+applications:
+    django:
+      charm: django
+--- #overlay
+applications:
+    django:
+      exposed-endpoints:	
+        "":
+          expose-to-cidrs:
+            - 0.0.0.0/0
+        `
+	expected := []record{{
+		Id:     "addCharm-0",
+		Method: "addCharm",
+		Params: bundlechanges.AddCharmParams{
+			Charm: "django",
+		},
+		GUIArgs: []interface{}{"django", "", ""},
+		Args: map[string]interface{}{
+			"charm": "django",
+		},
+	}, {
+		Id:     "deploy-1",
+		Method: "deploy",
+		Params: bundlechanges.AddApplicationParams{
+			Charm:       "$addCharm-0",
+			Application: "django",
+		},
+		GUIArgs: []interface{}{
+			"$addCharm-0",
+			"",
+			"django",
+			map[string]interface{}{},
+			"",
+			map[string]string{},
+			map[string]string{},
+			map[string]int{},
+			0,
+		},
+		Args: map[string]interface{}{
+			"application": "django",
+			"charm":       "$addCharm-0",
+		},
+		Requires: []string{"addCharm-0"},
+	}, {
+		Id:     "expose-2",
+		Method: "expose",
+		Params: bundlechanges.ExposeParams{
+			Application: "$deploy-1",
+			ExposedEndpoints: map[string]*bundlechanges.ExposedEndpointParams{
+				"": {
+					ExposeToCIDRs: []string{"0.0.0.0/0"},
+				},
+			},
+		},
+		GUIArgs: []interface{}{"$deploy-1", map[string]*bundlechanges.ExposedEndpointParams{
+			"": {
+				ExposeToCIDRs: []string{"0.0.0.0/0"},
+			},
+		}},
+		Args: map[string]interface{}{
+			"application": "$deploy-1",
+			"exposed-endpoints": map[string]interface{}{
+				"": map[string]interface{}{
+					"expose-to-cidrs": []interface{}{"0.0.0.0/0"},
+				},
+			},
+		},
+		Requires: []string{"deploy-1"},
+	}}
+
+	s.assertParseData(c, content, expected)
+}
 func (s *changesSuite) TestApplicationWithNonDefaultSeriesAndPlacements(c *gc.C) {
 	content := `
 series: trusty
@@ -3100,8 +3172,10 @@ func (s *changesSuite) assertParseData(c *gc.C, content string, expected []recor
 }
 
 func (s *changesSuite) assertParseDataWithModel(c *gc.C, model *bundlechanges.Model, content string, expected []record) {
-	// Retrieve and validate the bundle data.
-	data, err := charm.ReadBundleData(strings.NewReader(content))
+	// Retrieve and validate the bundle data merging any overlays in the bundle contents.
+	bundleSrc, err := charm.StreamBundleDataSource(strings.NewReader(content), "./")
+	c.Assert(err, jc.ErrorIsNil)
+	data, err := charm.ReadAndMergeBundleData(bundleSrc)
 	c.Assert(err, jc.ErrorIsNil)
 	err = data.Verify(nil, nil, nil)
 	c.Assert(err, jc.ErrorIsNil)
@@ -3329,13 +3403,6 @@ func (s *changesSuite) TestSimpleBundleEmptyModel(c *gc.C) {
                     django:
                         charm: cs:django-4
                         expose: true
-                        exposed-endpoints:
-                          - www
-                          - admin
-                        expose-to-spaces:
-                          - dmz
-                        expose-to-cidrs:
-                          - 13.37.0.0/16
                         num_units: 1
                         options:
                             key-1: value-1
@@ -3347,7 +3414,7 @@ func (s *changesSuite) TestSimpleBundleEmptyModel(c *gc.C) {
 	expectedChanges := []string{
 		"upload charm cs:django-4",
 		"deploy application django using cs:django-4",
-		"expose endpoint(s) admin,www of django to space(s) dmz and CIDR(s) 13.37.0.0/16",
+		"expose all endpoints of django and allow access from CIDR 0.0.0.0/0",
 		"set annotations for django",
 		"add unit django/0 to new machine 0",
 	}
@@ -3361,9 +3428,6 @@ func (s *changesSuite) TestKubernetesBundleEmptyModel(c *gc.C) {
                     django:
                         charm: cs:django-4
                         expose: yes
-                        expose-to-spaces:
-                          - dmz
-                          - public
                         num_units: 1
                         options:
                             key-1: value-1
@@ -3378,7 +3442,7 @@ func (s *changesSuite) TestKubernetesBundleEmptyModel(c *gc.C) {
 	expectedChanges := []string{
 		"upload charm cs:django-4 for series kubernetes",
 		"deploy application django with 1 unit on kubernetes using cs:django-4",
-		"expose django to space(s) dmz,public",
+		"expose all endpoints of django and allow access from CIDR 0.0.0.0/0",
 		"set annotations for django",
 		"upload charm cs:mariadb-5 for series kubernetes",
 		"deploy application mariadb with 2 units on kubernetes using cs:mariadb-5",
@@ -3393,8 +3457,6 @@ func (s *changesSuite) TestCharmInUseByAnotherApplication(c *gc.C) {
                         charm: cs:django-4
                         num_units: 1
                         expose: yes
-                        expose-to-cidrs:
-                          - 13.37.0.0/16
             `
 	existingModel := &bundlechanges.Model{
 		Applications: map[string]*bundlechanges.Application{
@@ -3405,40 +3467,126 @@ func (s *changesSuite) TestCharmInUseByAnotherApplication(c *gc.C) {
 	}
 	expectedChanges := []string{
 		"deploy application django using cs:django-4",
-		"expose django to CIDR(s) 13.37.0.0/16",
+		"expose all endpoints of django and allow access from CIDR 0.0.0.0/0",
 		"add unit django/0 to new machine 0",
 	}
 	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
 }
 
-func (s *changesSuite) TestExposeWithDifferentParameters(c *gc.C) {
+func (s *changesSuite) TestExposeOverlayParameters(c *gc.C) {
 	bundleContent := `
-                bundle: kubernetes
-                applications:
-                    django:
-                        charm: cs:django-4
-                        num_units: 2
-                        expose: yes
-                        expose-to-cidrs:
-                          - 13.37.0.0/16
-                          - 0.0.0.0/0
+bundle: kubernetes
+applications:
+    django:
+      charm: cs:django-4
+      num_units: 2
+--- #overlay
+applications:
+    django:
+      exposed-endpoints:	
+        "":
+          expose-to-cidrs:
+            - 0.0.0.0/0
+        www:
+          expose-to-cidrs:
+            - 13.37.0.0/16
+            - 192.168.0.0/16
+        admin:
+          expose-to-cidrs:
+            - 13.37.0.0/16
+            - 192.168.0.0/16
+        dmz:
+          expose-to-spaces:
+            - public
+          expose-to-cidrs:
+            - 13.37.0.0/16
             `
 	existingModel := &bundlechanges.Model{
 		Applications: map[string]*bundlechanges.Application{
 			"django": {
-				Charm:         "cs:django-4",
-				Scale:         3,
-				Exposed:       true,
-				ExposeToCIDRs: []string{"0.0.0.0/0"},
+				Charm:   "cs:django-4",
+				Scale:   3,
+				Exposed: true,
 			},
 		},
 	}
 	expectedChanges := []string{
-		"expose django to CIDR(s) 0.0.0.0/0,13.37.0.0/16",
+		"expose all endpoints of django and allow access from CIDR 0.0.0.0/0",
+		"override expose settings for endpoints admin,www of django and allow access from CIDRs 13.37.0.0/16,192.168.0.0/16",
+		"override expose settings for endpoint dmz of django and allow access from space public and CIDR 13.37.0.0/16",
 		"scale django to 2 units",
 	}
 	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
 }
+
+func (s *changesSuite) TestExposeOverlayParametersForNonCurrentlyExposedApp(c *gc.C) {
+	// Here, we expose a single endpoint for an application that is NOT
+	// currently exposed. The change description should be slightly
+	// different to indicate to the operator that the application is marked
+	// as "exposed".
+	bundleContent := `
+bundle: kubernetes
+applications:
+    django:
+      charm: cs:django-4
+      num_units: 2
+--- #overlay
+applications:
+    django:
+      exposed-endpoints:	
+        www:
+          expose-to-cidrs:
+            - 13.37.0.0/16
+            - 192.168.0.0/16
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"django": {
+				Charm:   "cs:django-4",
+				Scale:   3,
+				Exposed: false,
+			},
+		},
+	}
+	expectedChanges := []string{
+		"override expose settings for endpoint www of django and allow access from CIDRs 13.37.0.0/16,192.168.0.0/16",
+		"scale django to 2 units",
+	}
+	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
+
+func (s *changesSuite) TestExposeOverlayParametersWithOnlyWildcardEntry(c *gc.C) {
+	bundleContent := `
+bundle: kubernetes
+applications:
+    django:
+      charm: cs:django-4
+      num_units: 2
+--- #overlay
+applications:
+    django:
+      exposed-endpoints:	
+        "":
+          expose-to-cidrs:
+            - 13.37.0.0/16
+            - 192.168.0.0/16
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"django": {
+				Charm:   "cs:django-4",
+				Scale:   3,
+				Exposed: true,
+			},
+		},
+	}
+	expectedChanges := []string{
+		"expose all endpoints of django and allow access from CIDRs 13.37.0.0/16,192.168.0.0/16",
+		"scale django to 2 units",
+	}
+	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
+
 func (s *changesSuite) TestCharmUpgrade(c *gc.C) {
 	bundleContent := `
                 applications:
@@ -4271,7 +4419,7 @@ func (s *changesSuite) TestMostAppOptions(c *gc.C) {
 	expectedChanges := []string{
 		"upload charm cs:precise/mediawiki-10 for series precise",
 		"deploy application mediawiki on precise using cs:precise/mediawiki-10",
-		"expose mediawiki",
+		"expose all endpoints of mediawiki and allow access from CIDR 0.0.0.0/0",
 		"set annotations for mediawiki",
 		"upload charm cs:precise/mysql-28 for series precise",
 		"deploy application mysql on precise using cs:precise/mysql-28",
@@ -4910,7 +5058,10 @@ func (s *changesSuite) checkBundleError(c *gc.C, bundleContent string, errMatch 
 }
 
 func (s *changesSuite) checkBundleImpl(c *gc.C, bundleContent string, existingModel *bundlechanges.Model, expectedChanges []string, errMatch string) {
-	data, err := charm.ReadBundleData(strings.NewReader(bundleContent))
+	// Retrieve and validate the bundle data merging any overlays in the bundle contents.
+	bundleSrc, err := charm.StreamBundleDataSource(strings.NewReader(bundleContent), "./")
+	c.Assert(err, jc.ErrorIsNil)
+	data, err := charm.ReadAndMergeBundleData(bundleSrc)
 	c.Assert(err, jc.ErrorIsNil)
 	err = data.Verify(nil, nil, nil)
 	c.Assert(err, jc.ErrorIsNil)

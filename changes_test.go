@@ -18,7 +18,7 @@ import (
 	jc "github.com/juju/testing/checkers"
 	gc "gopkg.in/check.v1"
 
-	"github.com/juju/bundlechanges/v2"
+	"github.com/juju/bundlechanges/v3"
 )
 
 type changesSuite struct {

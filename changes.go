@@ -118,8 +118,9 @@ type Change interface {
 	// GUIArgs returns positional arguments to pass to the method, suitable for
 	// being JSON-serialized and sent to the Juju GUI.
 	GUIArgs() []interface{}
-	// Description returns a human readable summary of the change.
-	Description() string
+	// Description returns a human readable, potentially multi-line summary
+	// of the change.
+	Description() []string
 	// Args returns a map of arguments that are named.
 	Args() (map[string]interface{}, error)
 	// setId is used to set the identifier for the change.
@@ -188,7 +189,7 @@ func (ch *AddCharmChange) Args() (map[string]interface{}, error) {
 }
 
 // Description implements Change.
-func (ch *AddCharmChange) Description() string {
+func (ch *AddCharmChange) Description() []string {
 	var series, channel string
 	if ch.Params.Series != "" {
 		series = " for series " + ch.Params.Series
@@ -197,7 +198,7 @@ func (ch *AddCharmChange) Description() string {
 		channel = " from channel " + ch.Params.Channel
 	}
 
-	return fmt.Sprintf("upload charm %s%s%s", ch.Params.Charm, series, channel)
+	return []string{fmt.Sprintf("upload charm %s%s%s", ch.Params.Charm, series, channel)}
 }
 
 // AddCharmParams holds parameters for adding a charm to the environment.
@@ -242,12 +243,12 @@ func (ch *UpgradeCharmChange) Args() (map[string]interface{}, error) {
 }
 
 // Description implements Change.
-func (ch *UpgradeCharmChange) Description() string {
+func (ch *UpgradeCharmChange) Description() []string {
 	series := ""
 	if ch.Params.Series != "" {
 		series = " for series " + ch.Params.Series
 	}
-	return fmt.Sprintf("upgrade %s to use charm %s%s", ch.Params.Application, ch.Params.charmURL, series)
+	return []string{fmt.Sprintf("upgrade %s to use charm %s%s", ch.Params.Application, ch.Params.charmURL, series)}
 }
 
 // UpgradeCharmParams holds parameters for adding a charm to the environment.
@@ -305,7 +306,7 @@ func (ch *AddMachineChange) Args() (map[string]interface{}, error) {
 }
 
 // Description implements Change.
-func (ch *AddMachineChange) Description() string {
+func (ch *AddMachineChange) Description() []string {
 	machine := "new machine"
 	if ch.Params.existing {
 		machine = "existing machine"
@@ -318,7 +319,7 @@ func (ch *AddMachineChange) Description() string {
 	if ch.Params.ContainerType != "" {
 		machine = ch.Params.ContainerType + " container " + ch.Params.containerMachineID + " on " + machine
 	}
-	return fmt.Sprintf("add %s", machine)
+	return []string{fmt.Sprintf("add %s", machine)}
 }
 
 // AddMachineOptions holds GUI options for adding a machine or container.
@@ -382,8 +383,8 @@ func (ch *AddRelationChange) Args() (map[string]interface{}, error) {
 }
 
 // Description implements Change.
-func (ch *AddRelationChange) Description() string {
-	return fmt.Sprintf("add relation %s - %s", ch.Params.applicationEndpoint1, ch.Params.applicationEndpoint2)
+func (ch *AddRelationChange) Description() []string {
+	return []string{fmt.Sprintf("add relation %s - %s", ch.Params.applicationEndpoint1, ch.Params.applicationEndpoint2)}
 }
 
 // AddRelationParams holds parameters for adding a relation between two applications.
@@ -476,7 +477,7 @@ func (ch *AddApplicationChange) GUIArgs() []interface{} {
 }
 
 // Description implements Change.
-func (ch *AddApplicationChange) Description() string {
+func (ch *AddApplicationChange) Description() []string {
 	series := ""
 	if ch.Params.Series != "" {
 		series = " on " + ch.Params.Series
@@ -489,7 +490,7 @@ func (ch *AddApplicationChange) Description() string {
 		}
 		unitsInfo = fmt.Sprintf(" with %d unit%s", ch.Params.NumUnits, plural)
 	}
-	return fmt.Sprintf("deploy application %s%s%s using %s", ch.Params.Application, unitsInfo, series, ch.Params.charmURL)
+	return []string{fmt.Sprintf("deploy application %s%s%s using %s", ch.Params.Application, unitsInfo, series, ch.Params.charmURL)}
 }
 
 // AddApplicationParams holds parameters for deploying a Juju application.
@@ -560,7 +561,7 @@ func (ch *AddUnitChange) Args() (map[string]interface{}, error) {
 }
 
 // Description implements Change.
-func (ch *AddUnitChange) Description() string {
+func (ch *AddUnitChange) Description() []string {
 	placement := "new machine"
 	if ch.Params.baseMachine != "" {
 		placement = placement + " " + ch.Params.baseMachine
@@ -572,7 +573,7 @@ func (ch *AddUnitChange) Description() string {
 		placement += " to satisfy [" + ch.Params.directive + "]"
 	}
 
-	return fmt.Sprintf("add unit %s to %s", ch.Params.unitName, placement)
+	return []string{fmt.Sprintf("add unit %s to %s", ch.Params.unitName, placement)}
 }
 
 // AddUnitParams holds parameters for adding an application unit.
@@ -611,7 +612,10 @@ type ExposeChange struct {
 
 // GUIArgs implements Change.GUIArgs.
 func (ch *ExposeChange) GUIArgs() []interface{} {
-	return []interface{}{ch.Params.Application, ch.Params.ExposedEndpoints, ch.Params.ExposeToSpaces, ch.Params.ExposeToCIDRs}
+	if len(ch.Params.ExposedEndpoints) == 0 {
+		return []interface{}{ch.Params.Application, nil}
+	}
+	return []interface{}{ch.Params.Application, ch.Params.ExposedEndpoints}
 }
 
 // Args implements Change.Args.
@@ -620,36 +624,112 @@ func (ch *ExposeChange) Args() (map[string]interface{}, error) {
 }
 
 // Description implements Change.
-func (ch *ExposeChange) Description() string {
-	var descr bytes.Buffer
-	fmt.Fprint(&descr, "expose ")
-
-	if len(ch.Params.ExposedEndpoints) != 0 {
-		sort.Strings(ch.Params.ExposedEndpoints)
-		fmt.Fprintf(&descr, "endpoint(s) %s of ", strings.Join(ch.Params.ExposedEndpoints, ","))
+func (ch *ExposeChange) Description() []string {
+	// Easy case: all application gets exposed and no endpoint-specific
+	// parameters are provided.
+	if len(ch.Params.ExposedEndpoints) == 0 {
+		return []string{fmt.Sprintf("expose all endpoints of %s and allow access from CIDR 0.0.0.0/0", ch.Params.appName)}
 	}
 
-	fmt.Fprintf(&descr, "%s", ch.Params.appName)
-
-	if spaceCount, cidrCount := len(ch.Params.ExposeToSpaces), len(ch.Params.ExposeToCIDRs); spaceCount+cidrCount != 0 {
-		fmt.Fprintf(&descr, " to ")
-		if spaceCount != 0 {
-			sort.Strings(ch.Params.ExposeToSpaces)
-			fmt.Fprintf(&descr, "space(s) %s", strings.Join(ch.Params.ExposeToSpaces, ","))
+	var (
+		descr  bytes.Buffer
+		output []string
+	)
+	for _, exposedGroup := range groupByExposedEndpointParams(ch.Params.ExposedEndpoints) {
+		if exposedGroup.endpointNames[0] == "" {
+			fmt.Fprint(&descr, "expose all endpoints")
+		} else {
+			plural := ""
+			if len(exposedGroup.endpointNames) > 1 {
+				plural = "s"
+			}
+			fmt.Fprintf(&descr, "override expose settings for endpoint%s %s", plural, strings.Join(exposedGroup.endpointNames, ","))
 		}
 
-		if spaceCount != 0 && cidrCount != 0 {
-			fmt.Fprint(&descr, " and ")
+		fmt.Fprintf(&descr, " of %s and allow access from ", ch.Params.appName)
+
+		if spaceCount, cidrCount := len(exposedGroup.params.ExposeToSpaces), len(exposedGroup.params.ExposeToCIDRs); spaceCount+cidrCount != 0 {
+			if spaceCount != 0 {
+				plural := ""
+				if spaceCount > 1 {
+					plural = "s"
+				}
+				sort.Strings(exposedGroup.params.ExposeToSpaces)
+				fmt.Fprintf(&descr, "space%s %s", plural, strings.Join(exposedGroup.params.ExposeToSpaces, ","))
+			}
+
+			if spaceCount != 0 && cidrCount != 0 {
+				fmt.Fprint(&descr, " and ")
+			}
+
+			if cidrCount != 0 {
+				plural := ""
+				if cidrCount > 1 {
+					plural = "s"
+				}
+
+				sort.Strings(exposedGroup.params.ExposeToCIDRs)
+				fmt.Fprintf(&descr, "CIDR%s %s", plural, strings.Join(exposedGroup.params.ExposeToCIDRs, ","))
+			}
+		} else {
+			fmt.Fprint(&descr, "CIDR 0.0.0.0/0")
 		}
 
-		if cidrCount != 0 {
-			sort.Strings(ch.Params.ExposeToCIDRs)
-			fmt.Fprintf(&descr, "CIDR(s) %s", strings.Join(ch.Params.ExposeToCIDRs, ","))
+		output = append(output, descr.String())
+		descr.Reset()
+	}
+	return output
+}
+
+type exposedEndpointGroup struct {
+	endpointNames []string
+	params        *ExposedEndpointParams
+}
+
+// groupByExposedEndpointParams groups together any endpoints that have the same
+// set of exposed endpoint parameters and returns them as a slice of
+// exposedEndpointGroup entries sorted by endpoint name.
+func groupByExposedEndpointParams(exposedEndpoints map[string]*ExposedEndpointParams) []exposedEndpointGroup {
+	groups := make(map[*ExposedEndpointParams][]string)
+
+nextEndpoint:
+	for epName, expDetails := range exposedEndpoints {
+		if epName == "" {
+			continue
 		}
 
+		for grpKey := range groups {
+			if grpKey.equalTo(expDetails) {
+				groups[grpKey] = append(groups[grpKey], epName)
+				continue nextEndpoint
+			}
+		}
+
+		groups[expDetails] = []string{epName}
 	}
 
-	return descr.String()
+	// Add entry for wildcard endpoint (if present)
+	if expDetails, found := exposedEndpoints[""]; found {
+		groups[expDetails] = []string{""}
+	}
+
+	// Ensure all endpoints are sorted and convert into a list
+	groupList := make([]exposedEndpointGroup, 0, len(groups))
+	for expDetails, epList := range groups {
+		sort.Strings(epList)
+		groupList = append(groupList, exposedEndpointGroup{
+			endpointNames: epList,
+			params:        expDetails,
+		})
+	}
+
+	sort.Slice(groupList, func(i, j int) bool {
+		// Each list entry has at least one endpoint name and the ones
+		// with multiple names are pre-sorted by name.
+		return groupList[i].endpointNames[0] < groupList[j].endpointNames[0]
+	})
+
+	return groupList
 }
 
 // ExposeParams holds parameters for exposing an application.
@@ -661,8 +741,15 @@ type ExposeParams struct {
 	// are used to select the set of open ports that should be accessible
 	// if the application is exposed. An empty value indicates that all
 	// open ports should be made accessible.
-	ExposedEndpoints []string `json:"exposed-endpoints,omitempty"`
+	ExposedEndpoints map[string]*ExposedEndpointParams `json:"exposed-endpoints,omitempty"`
 
+	appName        string
+	alreadyExposed bool
+}
+
+// ExpoExposedEndpoint encapsulates the expose-related parameters for a
+// particular endpoint.
+type ExposedEndpointParams struct {
 	// ExposeToSpaces contains a list of spaces that should be able to
 	// access the application ports if the application is exposed.
 	ExposeToSpaces []string `json:"expose-to-spaces,omitempty"`
@@ -670,8 +757,21 @@ type ExposeParams struct {
 	// ExposeToCIDRs contains a list of CIDRs that should be able to
 	// access the application ports if the application is exposed.
 	ExposeToCIDRs []string `json:"expose-to-cidrs,omitempty"`
+}
 
-	appName string
+func (exp *ExposedEndpointParams) equalTo(other *ExposedEndpointParams) bool {
+	return equalStringSlices(exp.ExposeToSpaces, other.ExposeToSpaces) &&
+		equalStringSlices(exp.ExposeToCIDRs, other.ExposeToCIDRs)
+}
+
+func equalStringSlices(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	setA := set.NewStrings(a...)
+	setB := set.NewStrings(b...)
+	return setA.Difference(setB).IsEmpty()
 }
 
 // newScaleChange creates a new change for scaling a Kubernetes application.
@@ -703,8 +803,8 @@ func (ch *ScaleChange) Args() (map[string]interface{}, error) {
 }
 
 // Description implements Change.
-func (ch *ScaleChange) Description() string {
-	return fmt.Sprintf("scale %s to %d units", ch.Params.appName, ch.Params.Scale)
+func (ch *ScaleChange) Description() []string {
+	return []string{fmt.Sprintf("scale %s to %d units", ch.Params.appName, ch.Params.Scale)}
 }
 
 // ScaleParams holds parameters for scaling an application.
@@ -748,8 +848,8 @@ func (ch *SetAnnotationsChange) Args() (map[string]interface{}, error) {
 }
 
 // Description implements Change.
-func (ch *SetAnnotationsChange) Description() string {
-	return fmt.Sprintf("set annotations for %s", ch.Params.target)
+func (ch *SetAnnotationsChange) Description() []string {
+	return []string{fmt.Sprintf("set annotations for %s", ch.Params.target)}
 }
 
 // EntityType holds entity types ("application" or "machine").
@@ -802,8 +902,8 @@ func (ch *SetOptionsChange) Args() (map[string]interface{}, error) {
 }
 
 // Description implements Change.
-func (ch *SetOptionsChange) Description() string {
-	return fmt.Sprintf("set application options for %s", ch.Params.Application)
+func (ch *SetOptionsChange) Description() []string {
+	return []string{fmt.Sprintf("set application options for %s", ch.Params.Application)}
 }
 
 // SetOptionsParams holds parameters for setting options.
@@ -842,8 +942,8 @@ func (ch *SetConstraintsChange) Args() (map[string]interface{}, error) {
 }
 
 // Description implements Change.
-func (ch *SetConstraintsChange) Description() string {
-	return fmt.Sprintf("set constraints for %s to %q", ch.Params.Application, ch.Params.Constraints)
+func (ch *SetConstraintsChange) Description() []string {
+	return []string{fmt.Sprintf("set constraints for %s to %q", ch.Params.Application, ch.Params.Constraints)}
 }
 
 // SetConstraintsParams holds parameters for setting constraints.
@@ -883,8 +983,8 @@ func (ch *CreateOfferChange) Args() (map[string]interface{}, error) {
 }
 
 // Description implements Change.
-func (ch *CreateOfferChange) Description() string {
-	return fmt.Sprintf("create offer %s using %s:%s", ch.Params.OfferName, ch.Params.Application, strings.Join(ch.Params.Endpoints, ","))
+func (ch *CreateOfferChange) Description() []string {
+	return []string{fmt.Sprintf("create offer %s using %s:%s", ch.Params.OfferName, ch.Params.Application, strings.Join(ch.Params.Endpoints, ","))}
 }
 
 // CreateOfferParams holds parameters for creating an application offer.
@@ -925,8 +1025,8 @@ func (ch *ConsumeOfferChange) Args() (map[string]interface{}, error) {
 }
 
 // Description implements Change.
-func (ch *ConsumeOfferChange) Description() string {
-	return fmt.Sprintf("consume offer %s at %s", ch.Params.ApplicationName, ch.Params.URL)
+func (ch *ConsumeOfferChange) Description() []string {
+	return []string{fmt.Sprintf("consume offer %s at %s", ch.Params.ApplicationName, ch.Params.URL)}
 }
 
 // ConsumeOfferParams holds the parameters for consuming an offer.
@@ -965,8 +1065,8 @@ func (ch *GrantOfferAccessChange) Args() (map[string]interface{}, error) {
 }
 
 // Description implements Change.
-func (ch *GrantOfferAccessChange) Description() string {
-	return fmt.Sprintf("grant user %s %s access to offer %s", ch.Params.User, ch.Params.Access, ch.Params.Offer)
+func (ch *GrantOfferAccessChange) Description() []string {
+	return []string{fmt.Sprintf("grant user %s %s access to offer %s", ch.Params.User, ch.Params.Access, ch.Params.Offer)}
 }
 
 func paramsToArgs(params interface{}) (map[string]interface{}, error) {

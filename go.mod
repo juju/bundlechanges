@@ -1,4 +1,4 @@
-module github.com/juju/bundlechanges/v2
+module github.com/juju/bundlechanges/v3
 
 go 1.14
 
@@ -6,7 +6,7 @@ require (
 	github.com/gobwas/glob v0.2.4-0.20181002190808-e7a84e9525fe // indirect
 	github.com/golang/protobuf v1.3.1 // indirect
 	github.com/juju/bundlechanges v1.0.0 // indirect
-	github.com/juju/charm/v8 v8.0.0-20200904115755-136f6163c203
+	github.com/juju/charm/v8 v8.0.0-20200908083540-3ea1a8c7a8df
 	github.com/juju/charmrepo/v6 v6.0.0-20200817155725-120bd7a8b1ed
 	github.com/juju/collections v0.0.0-20180717171555-9be91dc79b7c
 	github.com/juju/errors v0.0.0-20200330140219-3fe23663418f

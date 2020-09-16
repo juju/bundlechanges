@@ -44,6 +44,96 @@ func (s *diffSuite) TestApplicationsNotEmpty(c *gc.C) {
 	c.Assert(diff.Empty(), jc.IsFalse)
 }
 
+func (s *diffSuite) TestApplicationExposedEndpointsDiff(c *gc.C) {
+	bundleContent := `
+applications:
+  prometheus:
+    charm: cs:xenial/prometheus-7
+    exposed-endpoints:
+      foo:
+        expose-to-spaces:
+        - outer
+        expose-to-cidrs:
+        - 10.0.0.0/24
+      bar:
+        expose-to-spaces:
+        - outer
+        expose-to-cidrs:
+        - 42.0.0.0/8
+      baz:
+        expose-to-cidrs:
+        - 42.0.0.0/8
+      bundle-only:
+        expose-to-spaces:
+        - dmz
+    `
+	model := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"prometheus": {
+				Name:  "prometheus",
+				Charm: "cs:xenial/prometheus-7",
+				ExposedEndpoints: map[string]bundlechanges.ExposedEndpoint{
+					"foo": { // Same space and CIDRs
+						ExposeToSpaces: []string{"outer"},
+						ExposeToCIDRs:  []string{"10.0.0.0/24"},
+					},
+					"bar": { // Different space; same CIDRs
+						ExposeToSpaces: []string{"inner"},
+						ExposeToCIDRs:  []string{"10.0.0.0/24"},
+					},
+					"baz": { // Different CIDRs
+						ExposeToCIDRs: []string{"192.168.0.0/24"},
+					},
+					"model-only": { // Only exists in model
+						ExposeToSpaces: []string{"twisted"},
+						ExposeToCIDRs:  []string{"10.0.0.0/24"},
+					},
+				},
+			},
+		},
+	}
+	expectedDiff := &bundlechanges.BundleDiff{
+		Applications: map[string]*bundlechanges.ApplicationDiff{
+			"prometheus": {
+				ExposedEndpoints: map[string]bundlechanges.ExposedEndpointDiff{
+					"bar": {
+						Bundle: &bundlechanges.ExposedEndpoint{
+							ExposeToSpaces: []string{"outer"},
+							ExposeToCIDRs:  []string{"42.0.0.0/8"},
+						},
+						Model: &bundlechanges.ExposedEndpoint{
+							ExposeToSpaces: []string{"inner"},
+							ExposeToCIDRs:  []string{"10.0.0.0/24"},
+						},
+					},
+					"baz": {
+						Bundle: &bundlechanges.ExposedEndpoint{
+							ExposeToCIDRs: []string{"42.0.0.0/8"},
+						},
+						Model: &bundlechanges.ExposedEndpoint{
+							ExposeToCIDRs: []string{"192.168.0.0/24"},
+						},
+					},
+					"bundle-only": {
+						Bundle: &bundlechanges.ExposedEndpoint{
+							ExposeToSpaces: []string{"dmz"},
+						},
+						Model: nil,
+					},
+					"model-only": {
+						Bundle: nil,
+						Model: &bundlechanges.ExposedEndpoint{
+							ExposeToSpaces: []string{"twisted"},
+							ExposeToCIDRs:  []string{"10.0.0.0/24"},
+						},
+					},
+				},
+			},
+		},
+	}
+	s.checkDiff(c, bundleContent, model, expectedDiff)
+}
+
 func (s *diffSuite) TestMachinesNotEmpty(c *gc.C) {
 	diff := &bundlechanges.BundleDiff{
 		Machines: make(map[string]*bundlechanges.MachineDiff),

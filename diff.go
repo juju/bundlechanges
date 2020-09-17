@@ -105,12 +105,21 @@ func (d *differ) diffApplication(name string) *ApplicationDiff {
 	if !found {
 		return &ApplicationDiff{Missing: ModelSide}
 	}
+
+	// To avoid potential security issues, exported bundles with explicit
+	// per-endpoint expose settings do not include the "exposed:true" flag.
+	// To this end, we must calculate an effective exposed value to use for
+	// the comparison.
+	effectiveBundleExpose := bundle.Expose || len(bundle.ExposedEndpoints) != 0
+	effectiveModelExpose := model.Exposed || len(model.ExposedEndpoints) != 0
+
 	result := &ApplicationDiff{
-		Charm:       d.diffStrings(bundle.Charm, model.Charm),
-		Expose:      d.diffBools(bundle.Expose, model.Exposed),
-		Series:      d.diffStrings(bundle.Series, model.Series),
-		Constraints: d.diffStrings(bundle.Constraints, model.Constraints),
-		Options:     d.diffOptions(bundle.Options, model.Options),
+		Charm:            d.diffStrings(bundle.Charm, model.Charm),
+		Expose:           d.diffBools(effectiveBundleExpose, effectiveModelExpose),
+		ExposedEndpoints: d.diffExposedEndpoints(bundle.ExposedEndpoints, model.ExposedEndpoints),
+		Series:           d.diffStrings(bundle.Series, model.Series),
+		Constraints:      d.diffStrings(bundle.Constraints, model.Constraints),
+		Options:          d.diffOptions(bundle.Options, model.Options),
 	}
 
 	if d.config.IncludeAnnotations {
@@ -278,6 +287,42 @@ func (d *differ) diffOptions(bundle, model map[string]interface{}) map[string]Op
 	return result
 }
 
+func (d *differ) diffExposedEndpoints(bundle map[string]charm.ExposedEndpointSpec, model map[string]ExposedEndpoint) map[string]ExposedEndpointDiff {
+	allEndpoints := set.NewStrings()
+	for name := range bundle {
+		allEndpoints.Add(name)
+	}
+	for name := range model {
+		allEndpoints.Add(name)
+	}
+	result := make(map[string]ExposedEndpointDiff)
+
+	for _, name := range allEndpoints.Values() {
+		bundleValue, foundInBundle := bundle[name]
+		modelValue, foundInModel := model[name]
+		if !reflect.DeepEqual(bundleValue.ExposeToSpaces, modelValue.ExposeToSpaces) ||
+			!reflect.DeepEqual(bundleValue.ExposeToCIDRs, modelValue.ExposeToCIDRs) ||
+			foundInBundle != foundInModel {
+
+			expDiff := ExposedEndpointDiff{}
+			if foundInBundle {
+				expDiff.Bundle = &ExposedEndpoint{
+					ExposeToSpaces: bundleValue.ExposeToSpaces,
+					ExposeToCIDRs:  bundleValue.ExposeToCIDRs,
+				}
+			}
+			if foundInModel {
+				expDiff.Model = &modelValue
+			}
+			result[name] = expDiff
+		}
+	}
+	if len(result) == 0 {
+		return nil
+	}
+	return result
+}
+
 func (d *differ) diffStrings(bundle, model string) *StringDiff {
 	if bundle == model {
 		return nil
@@ -316,16 +361,17 @@ func (d *BundleDiff) Empty() bool {
 
 // ApplicationDiff stores differences between an application in a bundle and a model.
 type ApplicationDiff struct {
-	Missing     DiffSide              `yaml:"missing,omitempty"`
-	Charm       *StringDiff           `yaml:"charm,omitempty"`
-	Series      *StringDiff           `yaml:"series,omitempty"`
-	Placement   *StringDiff           `yaml:"placement,omitempty"`
-	NumUnits    *IntDiff              `yaml:"num_units,omitempty"`
-	Scale       *IntDiff              `yaml:"scale,omitempty"`
-	Expose      *BoolDiff             `yaml:"expose,omitempty"`
-	Options     map[string]OptionDiff `yaml:"options,omitempty"`
-	Annotations map[string]StringDiff `yaml:"annotations,omitempty"`
-	Constraints *StringDiff           `yaml:"constraints,omitempty"`
+	Missing          DiffSide                       `yaml:"missing,omitempty"`
+	Charm            *StringDiff                    `yaml:"charm,omitempty"`
+	Series           *StringDiff                    `yaml:"series,omitempty"`
+	Placement        *StringDiff                    `yaml:"placement,omitempty"`
+	NumUnits         *IntDiff                       `yaml:"num_units,omitempty"`
+	Scale            *IntDiff                       `yaml:"scale,omitempty"`
+	Expose           *BoolDiff                      `yaml:"expose,omitempty"`
+	ExposedEndpoints map[string]ExposedEndpointDiff `yaml:"exposed_endpoints,omitempty"`
+	Options          map[string]OptionDiff          `yaml:"options,omitempty"`
+	Annotations      map[string]StringDiff          `yaml:"annotations,omitempty"`
+	Constraints      *StringDiff                    `yaml:"constraints,omitempty"`
 
 	// TODO (bundlediff): resources, storage, devices, endpoint
 	// bindings
@@ -341,6 +387,7 @@ func (d *ApplicationDiff) Empty() bool {
 		d.NumUnits == nil &&
 		d.Scale == nil &&
 		d.Expose == nil &&
+		len(d.ExposedEndpoints) == 0 &&
 		len(d.Options) == 0 &&
 		len(d.Annotations) == 0 &&
 		d.Constraints == nil
@@ -477,4 +524,12 @@ func toRelationSlices(relations []Relation) [][]string {
 		}
 	}
 	return result
+}
+
+// ExposedEndpointDiff stores different bundle and model values for the expose
+// settings for a particular endpoint. Nil values indicate that the value
+// was not present in the bundle or model.
+type ExposedEndpointDiff struct {
+	Bundle *ExposedEndpoint `yaml:"bundle"`
+	Model  *ExposedEndpoint `yaml:"model"`
 }

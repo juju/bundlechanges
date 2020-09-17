@@ -25,6 +25,8 @@ const (
 
 	// ModelSide represents the model side of a diff.
 	ModelSide DiffSide = "model"
+
+	allEndpoints = ""
 )
 
 // DiffConfig provides the values and configuration needed to diff the
@@ -112,6 +114,26 @@ func (d *differ) diffApplication(name string) *ApplicationDiff {
 	// the comparison.
 	effectiveBundleExpose := bundle.Expose || len(bundle.ExposedEndpoints) != 0
 	effectiveModelExpose := model.Exposed || len(model.ExposedEndpoints) != 0
+
+	// If any of the sides is exposed but lacks any expose endpoint details
+	// assume an implicit expose "" to 0.0.0.0/0 for comparison purposes.
+	// This allows us to compute correct diffs with bundles that only
+	// specify the "exposed:true" flag. This matches the expose behavior on
+	// pre 2.9 controllers.
+	if effectiveBundleExpose && len(bundle.ExposedEndpoints) == 0 {
+		bundle.ExposedEndpoints = map[string]charm.ExposedEndpointSpec{
+			allEndpoints: {
+				ExposeToCIDRs: []string{"0.0.0.0/0"},
+			},
+		}
+	}
+	if effectiveModelExpose && len(model.ExposedEndpoints) == 0 {
+		model.ExposedEndpoints = map[string]ExposedEndpoint{
+			allEndpoints: {
+				ExposeToCIDRs: []string{"0.0.0.0/0"},
+			},
+		}
+	}
 
 	result := &ApplicationDiff{
 		Charm:            d.diffStrings(bundle.Charm, model.Charm),

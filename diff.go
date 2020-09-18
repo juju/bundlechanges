@@ -328,13 +328,16 @@ func (d *differ) diffExposedEndpoints(bundle map[string]charm.ExposedEndpointSpe
 
 			expDiff := ExposedEndpointDiff{}
 			if foundInBundle {
-				expDiff.Bundle = &ExposedEndpoint{
+				expDiff.Bundle = &ExposedEndpointDiffEntry{
 					ExposeToSpaces: bundleValue.ExposeToSpaces,
 					ExposeToCIDRs:  bundleValue.ExposeToCIDRs,
 				}
 			}
 			if foundInModel {
-				expDiff.Model = &modelValue
+				expDiff.Model = &ExposedEndpointDiffEntry{
+					ExposeToSpaces: modelValue.ExposeToSpaces,
+					ExposeToCIDRs:  modelValue.ExposeToCIDRs,
+				}
 			}
 			result[name] = expDiff
 		}
@@ -552,6 +555,13 @@ func toRelationSlices(relations []Relation) [][]string {
 // settings for a particular endpoint. Nil values indicate that the value
 // was not present in the bundle or model.
 type ExposedEndpointDiff struct {
-	Bundle *ExposedEndpoint `yaml:"bundle"`
-	Model  *ExposedEndpoint `yaml:"model"`
+	Bundle *ExposedEndpointDiffEntry `yaml:"bundle"`
+	Model  *ExposedEndpointDiffEntry `yaml:"model"`
+}
+
+// ExpoExposedEndpointDiffEntry stores the exposed endpoint parameters for
+// an ExposedEndpointDiff entry.
+type ExposedEndpointDiffEntry struct {
+	ExposeToSpaces []string `yaml:"expose_to_spaces,omitempty"`
+	ExposeToCIDRs  []string `yaml:"expose_to_cidrs,omitempty"`
 }

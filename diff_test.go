@@ -97,32 +97,32 @@ applications:
 			"prometheus": {
 				ExposedEndpoints: map[string]bundlechanges.ExposedEndpointDiff{
 					"bar": {
-						Bundle: &bundlechanges.ExposedEndpoint{
+						Bundle: &bundlechanges.ExposedEndpointDiffEntry{
 							ExposeToSpaces: []string{"outer"},
 							ExposeToCIDRs:  []string{"42.0.0.0/8"},
 						},
-						Model: &bundlechanges.ExposedEndpoint{
+						Model: &bundlechanges.ExposedEndpointDiffEntry{
 							ExposeToSpaces: []string{"inner"},
 							ExposeToCIDRs:  []string{"10.0.0.0/24"},
 						},
 					},
 					"baz": {
-						Bundle: &bundlechanges.ExposedEndpoint{
+						Bundle: &bundlechanges.ExposedEndpointDiffEntry{
 							ExposeToCIDRs: []string{"42.0.0.0/8"},
 						},
-						Model: &bundlechanges.ExposedEndpoint{
+						Model: &bundlechanges.ExposedEndpointDiffEntry{
 							ExposeToCIDRs: []string{"192.168.0.0/24"},
 						},
 					},
 					"bundle-only": {
-						Bundle: &bundlechanges.ExposedEndpoint{
+						Bundle: &bundlechanges.ExposedEndpointDiffEntry{
 							ExposeToSpaces: []string{"dmz"},
 						},
 						Model: nil,
 					},
 					"model-only": {
 						Bundle: nil,
-						Model: &bundlechanges.ExposedEndpoint{
+						Model: &bundlechanges.ExposedEndpointDiffEntry{
 							ExposeToSpaces: []string{"twisted"},
 							ExposeToCIDRs:  []string{"10.0.0.0/24"},
 						},
@@ -675,7 +675,7 @@ func (s *diffSuite) TestApplicationExpose(c *gc.C) {
 				// is *not* exposed.
 				ExposedEndpoints: map[string]bundlechanges.ExposedEndpointDiff{
 					"": {
-						Model: &bundlechanges.ExposedEndpoint{
+						Model: &bundlechanges.ExposedEndpointDiffEntry{
 							ExposeToCIDRs: []string{"0.0.0.0/0"},
 						},
 					},
@@ -724,11 +724,11 @@ func (s *diffSuite) TestApplicationExposeImplicitCIDRs(c *gc.C) {
 				// endpoints are implicitly exposed to 0.0.0.0/0.
 				ExposedEndpoints: map[string]bundlechanges.ExposedEndpointDiff{
 					"": {
-						Bundle: &bundlechanges.ExposedEndpoint{
+						Bundle: &bundlechanges.ExposedEndpointDiffEntry{
 							// Implicit CIDR as the bundle specifies "expose: true"
 							ExposeToCIDRs: []string{"0.0.0.0/0"},
 						},
-						Model: &bundlechanges.ExposedEndpoint{
+						Model: &bundlechanges.ExposedEndpointDiffEntry{
 							ExposeToCIDRs: []string{"10.0.0.0/24"},
 						},
 					},

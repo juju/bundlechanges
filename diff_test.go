@@ -669,6 +669,70 @@ func (s *diffSuite) TestApplicationExpose(c *gc.C) {
 					Bundle: false,
 					Model:  true,
 				},
+				// Since the model specifies "expose:true", all
+				// endpoints are exposed to 0.0.0.0/0 which
+				// will show up in the diff given that the bundle
+				// is *not* exposed.
+				ExposedEndpoints: map[string]bundlechanges.ExposedEndpointDiff{
+					"": {
+						Model: &bundlechanges.ExposedEndpoint{
+							ExposeToCIDRs: []string{"0.0.0.0/0"},
+						},
+					},
+				},
+			},
+		},
+	}
+	s.checkDiff(c, bundleContent, model, expectedDiff)
+}
+
+func (s *diffSuite) TestApplicationExposeImplicitCIDRs(c *gc.C) {
+	bundleContent := `
+        applications:
+            prometheus:
+                charm: cs:xenial/prometheus-7
+                num_units: 1
+                expose: true
+                to: [0]
+        machines:
+            0:
+            `
+	model := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"prometheus": {
+				Name:    "prometheus",
+				Charm:   "cs:xenial/prometheus-7",
+				Exposed: true,
+				ExposedEndpoints: map[string]bundlechanges.ExposedEndpoint{
+					"": {
+						ExposeToCIDRs: []string{"10.0.0.0/24"},
+					},
+				},
+				Units: []bundlechanges.Unit{
+					{Name: "prometheus/0", Machine: "0"},
+				},
+			},
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			"0": {ID: "0"},
+		},
+	}
+	expectedDiff := &bundlechanges.BundleDiff{
+		Applications: map[string]*bundlechanges.ApplicationDiff{
+			"prometheus": {
+				// Since the model specifies "expose:true", all
+				// endpoints are implicitly exposed to 0.0.0.0/0.
+				ExposedEndpoints: map[string]bundlechanges.ExposedEndpointDiff{
+					"": {
+						Bundle: &bundlechanges.ExposedEndpoint{
+							// Implicit CIDR as the bundle specifies "expose: true"
+							ExposeToCIDRs: []string{"0.0.0.0/0"},
+						},
+						Model: &bundlechanges.ExposedEndpoint{
+							ExposeToCIDRs: []string{"10.0.0.0/24"},
+						},
+					},
+				},
 			},
 		},
 	}

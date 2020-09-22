@@ -670,13 +670,13 @@ func (s *diffSuite) TestApplicationExpose(c *gc.C) {
 					Model:  true,
 				},
 				// Since the model specifies "expose:true", all
-				// endpoints are exposed to 0.0.0.0/0 which
-				// will show up in the diff given that the bundle
-				// is *not* exposed.
+				// endpoints are exposed to 0.0.0.0/0 and ::/0
+				// which will show up in the diff given that
+				// the bundle is *not* exposed.
 				ExposedEndpoints: map[string]bundlechanges.ExposedEndpointDiff{
 					"": {
 						Model: &bundlechanges.ExposedEndpointDiffEntry{
-							ExposeToCIDRs: []string{"0.0.0.0/0"},
+							ExposeToCIDRs: []string{"0.0.0.0/0", "::/0"},
 						},
 					},
 				},
@@ -725,8 +725,8 @@ func (s *diffSuite) TestApplicationExposeImplicitCIDRs(c *gc.C) {
 				ExposedEndpoints: map[string]bundlechanges.ExposedEndpointDiff{
 					"": {
 						Bundle: &bundlechanges.ExposedEndpointDiffEntry{
-							// Implicit CIDR as the bundle specifies "expose: true"
-							ExposeToCIDRs: []string{"0.0.0.0/0"},
+							// Implicit CIDRs as the bundle specifies "expose: true"
+							ExposeToCIDRs: []string{"0.0.0.0/0", "::/0"},
 						},
 						Model: &bundlechanges.ExposedEndpointDiffEntry{
 							ExposeToCIDRs: []string{"10.0.0.0/24"},

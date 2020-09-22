@@ -123,14 +123,14 @@ func (d *differ) diffApplication(name string) *ApplicationDiff {
 	if effectiveBundleExpose && len(bundle.ExposedEndpoints) == 0 {
 		bundle.ExposedEndpoints = map[string]charm.ExposedEndpointSpec{
 			allEndpoints: {
-				ExposeToCIDRs: []string{"0.0.0.0/0"},
+				ExposeToCIDRs: []string{"0.0.0.0/0", "::/0"},
 			},
 		}
 	}
 	if effectiveModelExpose && len(model.ExposedEndpoints) == 0 {
 		model.ExposedEndpoints = map[string]ExposedEndpoint{
 			allEndpoints: {
-				ExposeToCIDRs: []string{"0.0.0.0/0"},
+				ExposeToCIDRs: []string{"0.0.0.0/0", "::/0"},
 			},
 		}
 	}

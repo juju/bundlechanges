@@ -628,7 +628,7 @@ func (ch *ExposeChange) Description() []string {
 	// Easy case: all application gets exposed and no endpoint-specific
 	// parameters are provided.
 	if len(ch.Params.ExposedEndpoints) == 0 {
-		return []string{fmt.Sprintf("expose all endpoints of %s and allow access from CIDR 0.0.0.0/0", ch.Params.appName)}
+		return []string{fmt.Sprintf("expose all endpoints of %s and allow access from CIDRs 0.0.0.0/0 and ::/0", ch.Params.appName)}
 	}
 
 	var (
@@ -672,7 +672,7 @@ func (ch *ExposeChange) Description() []string {
 				fmt.Fprintf(&descr, "CIDR%s %s", plural, strings.Join(exposedGroup.params.ExposeToCIDRs, ","))
 			}
 		} else {
-			fmt.Fprint(&descr, "CIDR 0.0.0.0/0")
+			fmt.Fprint(&descr, "CIDRs 0.0.0.0/0 and ::/0")
 		}
 
 		output = append(output, descr.String())

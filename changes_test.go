@@ -3414,7 +3414,7 @@ func (s *changesSuite) TestSimpleBundleEmptyModel(c *gc.C) {
 	expectedChanges := []string{
 		"upload charm cs:django-4",
 		"deploy application django using cs:django-4",
-		"expose all endpoints of django and allow access from CIDR 0.0.0.0/0",
+		"expose all endpoints of django and allow access from CIDRs 0.0.0.0/0 and ::/0",
 		"set annotations for django",
 		"add unit django/0 to new machine 0",
 	}
@@ -3442,7 +3442,7 @@ func (s *changesSuite) TestKubernetesBundleEmptyModel(c *gc.C) {
 	expectedChanges := []string{
 		"upload charm cs:django-4 for series kubernetes",
 		"deploy application django with 1 unit on kubernetes using cs:django-4",
-		"expose all endpoints of django and allow access from CIDR 0.0.0.0/0",
+		"expose all endpoints of django and allow access from CIDRs 0.0.0.0/0 and ::/0",
 		"set annotations for django",
 		"upload charm cs:mariadb-5 for series kubernetes",
 		"deploy application mariadb with 2 units on kubernetes using cs:mariadb-5",
@@ -3467,7 +3467,7 @@ func (s *changesSuite) TestCharmInUseByAnotherApplication(c *gc.C) {
 	}
 	expectedChanges := []string{
 		"deploy application django using cs:django-4",
-		"expose all endpoints of django and allow access from CIDR 0.0.0.0/0",
+		"expose all endpoints of django and allow access from CIDRs 0.0.0.0/0 and ::/0",
 		"add unit django/0 to new machine 0",
 	}
 	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
@@ -4419,7 +4419,7 @@ func (s *changesSuite) TestMostAppOptions(c *gc.C) {
 	expectedChanges := []string{
 		"upload charm cs:precise/mediawiki-10 for series precise",
 		"deploy application mediawiki on precise using cs:precise/mediawiki-10",
-		"expose all endpoints of mediawiki and allow access from CIDR 0.0.0.0/0",
+		"expose all endpoints of mediawiki and allow access from CIDRs 0.0.0.0/0 and ::/0",
 		"set annotations for mediawiki",
 		"upload charm cs:precise/mysql-28 for series precise",
 		"deploy application mysql on precise using cs:precise/mysql-28",

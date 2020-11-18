@@ -1,6 +1,6 @@
 # Makefile for the bundlechanges library.
 
-PROJECT := github.com/juju/bundlechanges
+PROJECT := github.com/juju/bundlechanges/v3
 
 default: check
 

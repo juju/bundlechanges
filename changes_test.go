@@ -1122,21 +1122,21 @@ func (s *changesSuite) TestSameCharmReused(c *gc.C) {
 	content := `
         applications:
             mediawiki:
-                charm: precise/mediawiki-10
+                charm: cs:precise/mediawiki-10
                 num_units: 1
             otherwiki:
-                charm: precise/mediawiki-10
+                charm: cs:precise/mediawiki-10
         `
 	expected := []record{{
 		Id:     "addCharm-0",
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
-			Charm:  "precise/mediawiki-10",
+			Charm:  "cs:precise/mediawiki-10",
 			Series: "precise",
 		},
-		GUIArgs: []interface{}{"precise/mediawiki-10", "precise", ""},
+		GUIArgs: []interface{}{"cs:precise/mediawiki-10", "precise", ""},
 		Args: map[string]interface{}{
-			"charm":  "precise/mediawiki-10",
+			"charm":  "cs:precise/mediawiki-10",
 			"series": "precise",
 		},
 	}, {
@@ -2012,7 +2012,7 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
                     - lxc:memcached/2
                     - kvm:ror
             ror:
-                charm: vivid/rails
+                charm: cs:vivid/rails
                 num_units: 2
                 to:
                     - new
@@ -2099,12 +2099,12 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 		Id:     "addCharm-4",
 		Method: "addCharm",
 		Params: bundlechanges.AddCharmParams{
-			Charm:  "vivid/rails",
+			Charm:  "cs:vivid/rails",
 			Series: "vivid",
 		},
-		GUIArgs: []interface{}{"vivid/rails", "vivid", ""},
+		GUIArgs: []interface{}{"cs:vivid/rails", "vivid", ""},
 		Args: map[string]interface{}{
-			"charm":  "vivid/rails",
+			"charm":  "cs:vivid/rails",
 			"series": "vivid",
 		},
 	}, {

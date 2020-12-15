@@ -18,7 +18,7 @@ import (
 	jc "github.com/juju/testing/checkers"
 	gc "gopkg.in/check.v1"
 
-	"github.com/juju/bundlechanges/v3"
+	"github.com/juju/bundlechanges/v4"
 )
 
 type changesSuite struct {
@@ -3412,8 +3412,8 @@ func (s *changesSuite) TestSimpleBundleEmptyModel(c *gc.C) {
                             gui-y: "50"
             `
 	expectedChanges := []string{
-		"upload charm cs:django-4",
-		"deploy application django using cs:django-4",
+		"upload charm django from charm-store",
+		"deploy application django from charm-store",
 		"expose all endpoints of django and allow access from CIDRs 0.0.0.0/0 and ::/0",
 		"set annotations for django",
 		"add unit django/0 to new machine 0",
@@ -3440,12 +3440,12 @@ func (s *changesSuite) TestKubernetesBundleEmptyModel(c *gc.C) {
                         num_units: 2
             `
 	expectedChanges := []string{
-		"upload charm cs:django-4 for series kubernetes",
-		"deploy application django with 1 unit on kubernetes using cs:django-4",
+		"upload charm django from charm-store for series kubernetes",
+		"deploy application django from charm-store with 1 unit on kubernetes",
 		"expose all endpoints of django and allow access from CIDRs 0.0.0.0/0 and ::/0",
 		"set annotations for django",
-		"upload charm cs:mariadb-5 for series kubernetes",
-		"deploy application mariadb with 2 units on kubernetes using cs:mariadb-5",
+		"upload charm mariadb from charm-store for series kubernetes",
+		"deploy application mariadb from charm-store with 2 units on kubernetes",
 	}
 	s.checkBundle(c, bundleContent, expectedChanges)
 }
@@ -3466,7 +3466,7 @@ func (s *changesSuite) TestCharmInUseByAnotherApplication(c *gc.C) {
 		},
 	}
 	expectedChanges := []string{
-		"deploy application django using cs:django-4",
+		"deploy application django from charm-store",
 		"expose all endpoints of django and allow access from CIDRs 0.0.0.0/0 and ::/0",
 		"add unit django/0 to new machine 0",
 	}
@@ -3605,8 +3605,8 @@ func (s *changesSuite) TestCharmUpgrade(c *gc.C) {
 		},
 	}
 	expectedChanges := []string{
-		"upload charm cs:django-6",
-		"upgrade django to use charm cs:django-6",
+		"upload charm django from charm-store",
+		"upgrade django from charm-store using charm django",
 	}
 	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
 }
@@ -3801,8 +3801,8 @@ func (s *changesSuite) TestNewMachineAnnotationsAndPlacement(c *gc.C) {
                             bar: "50"
             `
 	expectedChanges := []string{
-		"upload charm cs:django-4",
-		"deploy application django using cs:django-4",
+		"upload charm django from charm-store",
+		"deploy application django from charm-store",
 		"add new machine 0 (bundle machine 1)",
 		"set annotations for new machine 0",
 		"add unit django/0 to new machine 0",
@@ -3821,8 +3821,8 @@ func (s *changesSuite) TestFinalPlacementNotReusedIfSpecifiesMachine(c *gc.C) {
                     1:
             `
 	expectedChanges := []string{
-		"upload charm cs:django-4",
-		"deploy application django using cs:django-4",
+		"upload charm django from charm-store",
+		"deploy application django from charm-store",
 		"add new machine 0 (bundle machine 1)",
 		"add unit django/0 to new machine 0",
 		// NOTE: new machine, not put on $1.
@@ -3843,10 +3843,10 @@ func (s *changesSuite) TestFinalPlacementNotReusedIfSpecifiesUnit(c *gc.C) {
                         to: ["django/0"]
             `
 	expectedChanges := []string{
-		"upload charm cs:django-4",
-		"deploy application django using cs:django-4",
-		"upload charm cs:nginx",
-		"deploy application nginx using cs:nginx",
+		"upload charm django from charm-store",
+		"deploy application django from charm-store",
+		"upload charm nginx from charm-store",
+		"deploy application nginx from charm-store",
 		"add unit django/0 to new machine 0",
 		"add unit nginx/0 to new machine 0 to satisfy [django/0]",
 		// NOTE: new machine, not put on $0.
@@ -3876,10 +3876,10 @@ func (s *changesSuite) TestUnitPlaceNextToOtherNewUnitOnExistingMachine(c *gc.C)
 		MachineMap: map[string]string{"1": "0"},
 	}
 	expectedChanges := []string{
-		"upload charm cs:django-4",
-		"deploy application django using cs:django-4",
-		"upload charm cs:nginx",
-		"deploy application nginx using cs:nginx",
+		"upload charm django from charm-store",
+		"deploy application django from charm-store",
+		"upload charm nginx from charm-store",
+		"deploy application nginx from charm-store",
 		"add unit django/0 to existing machine 0",
 		"add unit nginx/0 to existing machine 0 to satisfy [django/0]",
 	}
@@ -3898,10 +3898,10 @@ func (s *changesSuite) TestApplicationPlacementNotEnoughUnits(c *gc.C) {
                         to: [django]
             `
 	expectedChanges := []string{
-		"upload charm cs:django-4",
-		"deploy application django using cs:django-4",
-		"upload charm cs:nginx",
-		"deploy application nginx using cs:nginx",
+		"upload charm django from charm-store",
+		"deploy application django from charm-store",
+		"upload charm nginx from charm-store",
+		"deploy application nginx from charm-store",
 		"add unit django/0 to new machine 0",
 		"add unit django/1 to new machine 1",
 		"add unit django/2 to new machine 2",
@@ -3943,8 +3943,8 @@ func (s *changesSuite) TestApplicationPlacementSomeExisting(c *gc.C) {
 		},
 	}
 	expectedChanges := []string{
-		"upload charm cs:nginx",
-		"deploy application nginx using cs:nginx",
+		"upload charm nginx from charm-store",
+		"deploy application nginx from charm-store",
 		"add unit django/4 to new machine 4",
 		"add unit django/5 to new machine 5",
 		"add unit nginx/0 to existing machine 0 to satisfy [django]",
@@ -4018,10 +4018,10 @@ func (s *changesSuite) TestWeirdUnitDeployedNoExistingModel(c *gc.C) {
                     0:
             `
 	expectedChanges := []string{
-		"upload charm cs:keystone",
-		"deploy application keystone using cs:keystone",
-		"upload charm cs:mysql",
-		"deploy application mysql using cs:mysql",
+		"upload charm keystone from charm-store",
+		"deploy application keystone from charm-store",
+		"upload charm mysql from charm-store",
+		"deploy application mysql from charm-store",
 		"add new machine 0",
 		"add new machine 1",
 		"add lxd container 0/lxd/0 on new machine 0",
@@ -4068,8 +4068,8 @@ func (s *changesSuite) TestUnitDeployedDefinedMachine(c *gc.C) {
 		},
 	}
 	expectedChanges := []string{
-		"upload charm cs:keystone",
-		"deploy application keystone using cs:keystone",
+		"upload charm keystone from charm-store",
+		"deploy application keystone from charm-store",
 		"add unit keystone/0 to 0/lxd/1 to satisfy [lxd:mysql]",
 		"add new machine 1",
 		"add lxd container 2/lxd/0 on new machine 2",
@@ -4115,8 +4115,8 @@ func (s *changesSuite) TestLXDContainerSequence(c *gc.C) {
 		},
 	}
 	expectedChanges := []string{
-		"upload charm cs:keystone",
-		"deploy application keystone using cs:keystone",
+		"upload charm keystone from charm-store",
+		"deploy application keystone from charm-store",
 		"add unit keystone/0 to 0/lxd/2 to satisfy [lxd:mysql]",
 	}
 	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
@@ -4158,8 +4158,8 @@ func (s *changesSuite) TestMachineMapToExistingMachineSomeDeployed(c *gc.C) {
 		},
 	}
 	expectedChanges := []string{
-		"upload charm cs:keystone",
-		"deploy application keystone using cs:keystone",
+		"upload charm keystone from charm-store",
+		"deploy application keystone from charm-store",
 		// First unit of keystone goes in a container next to the existing mysql.
 		"add unit keystone/0 to 0/lxd/1 to satisfy [lxd:mysql]",
 		// Two more units of mysql are needed, and the "lxd:0" is unsatisfied
@@ -4228,10 +4228,10 @@ func (s *changesSuite) TestSiblingContainers(c *gc.C) {
                         to: ["lxd:mysql"]
             `
 	expectedChanges := []string{
-		"upload charm cs:keystone",
-		"deploy application keystone using cs:keystone",
-		"upload charm cs:mysql",
-		"deploy application mysql using cs:mysql",
+		"upload charm keystone from charm-store",
+		"deploy application keystone from charm-store",
+		"upload charm mysql from charm-store",
+		"deploy application mysql from charm-store",
 		"add lxd container 0/lxd/0 on new machine 0",
 		"add lxd container 1/lxd/0 on new machine 1",
 		"add lxd container 2/lxd/0 on new machine 2",
@@ -4316,10 +4316,10 @@ func (s *changesSuite) TestColocationIntoAContainerUsingUnitPlacement(c *gc.C) {
                         to: [mysql/0, mysql/1, mysql/2]
             `
 	expectedChanges := []string{
-		"upload charm cs:keystone",
-		"deploy application keystone using cs:keystone",
-		"upload charm cs:mysql",
-		"deploy application mysql using cs:mysql",
+		"upload charm keystone from charm-store",
+		"deploy application keystone from charm-store",
+		"upload charm mysql from charm-store",
+		"deploy application mysql from charm-store",
 		"add lxd container 0/lxd/0 on new machine 0",
 		"add lxd container 1/lxd/0 on new machine 1",
 		"add lxd container 2/lxd/0 on new machine 2",
@@ -4346,10 +4346,10 @@ func (s *changesSuite) TestColocationIntoAContainerUsingAppPlacement(c *gc.C) {
                         to: ["mysql"]
             `
 	expectedChanges := []string{
-		"upload charm cs:keystone",
-		"deploy application keystone using cs:keystone",
-		"upload charm cs:mysql",
-		"deploy application mysql using cs:mysql",
+		"upload charm keystone from charm-store",
+		"deploy application keystone from charm-store",
+		"upload charm mysql from charm-store",
+		"deploy application mysql from charm-store",
 		"add lxd container 0/lxd/0 on new machine 0",
 		"add lxd container 1/lxd/0 on new machine 1",
 		"add lxd container 2/lxd/0 on new machine 2",
@@ -4375,10 +4375,10 @@ func (s *changesSuite) TestPlacementDescriptionsForUnitPlacement(c *gc.C) {
                         to: ["lxd:mysql/0", "lxd:mysql/1", "lxd:mysql/2"]
             `
 	expectedChanges := []string{
-		"upload charm cs:keystone",
-		"deploy application keystone using cs:keystone",
-		"upload charm cs:mysql",
-		"deploy application mysql using cs:mysql",
+		"upload charm keystone from charm-store",
+		"deploy application keystone from charm-store",
+		"upload charm mysql from charm-store",
+		"deploy application mysql from charm-store",
 		"add unit mysql/0 to new machine 0",
 		"add unit mysql/1 to new machine 1",
 		"add unit mysql/2 to new machine 2",
@@ -4417,12 +4417,12 @@ func (s *changesSuite) TestMostAppOptions(c *gc.C) {
                       - mysql:db
             `
 	expectedChanges := []string{
-		"upload charm cs:precise/mediawiki-10 for series precise",
-		"deploy application mediawiki on precise using cs:precise/mediawiki-10",
+		"upload charm mediawiki from charm-store for series precise",
+		"deploy application mediawiki from charm-store on precise",
 		"expose all endpoints of mediawiki and allow access from CIDRs 0.0.0.0/0 and ::/0",
 		"set annotations for mediawiki",
-		"upload charm cs:precise/mysql-28 for series precise",
-		"deploy application mysql on precise using cs:precise/mysql-28",
+		"upload charm mysql from charm-store for series precise",
+		"deploy application mysql from charm-store on precise",
 		"add relation mediawiki:db - mysql:db",
 		"add unit mediawiki/0 to new machine 0",
 		"add unit mysql/0 to new machine 1",
@@ -4444,7 +4444,7 @@ func (s *changesSuite) TestUnitOrdering(c *gc.C) {
                             - 1
                             - lxd:memcached
                     ror:
-                        charm: rails
+                        charm: cs:rails
                         num_units: 3
                         to:
                             - 1
@@ -4455,12 +4455,12 @@ func (s *changesSuite) TestUnitOrdering(c *gc.C) {
                     3:
             `
 	expectedChanges := []string{
-		"upload charm cs:xenial/django-42 for series xenial",
-		"deploy application django on xenial using cs:xenial/django-42",
-		"upload charm cs:xenial/mem-47 for series xenial",
-		"deploy application memcached on xenial using cs:xenial/mem-47",
-		"upload charm rails",
-		"deploy application ror using rails",
+		"upload charm django from charm-store for series xenial",
+		"deploy application django from charm-store on xenial",
+		"upload charm mem from charm-store for series xenial",
+		"deploy application memcached from charm-store on xenial using mem",
+		"upload charm rails from charm-store",
+		"deploy application ror from charm-store using rails",
 		"add new machine 0 (bundle machine 1)",
 		"add new machine 1 (bundle machine 2)",
 		"add new machine 2 (bundle machine 3)",
@@ -4505,8 +4505,8 @@ func (s *changesSuite) TestMachineNaturalSorting(c *gc.C) {
                     12:
             `
 	expectedChanges := []string{
-		"upload charm cs:ubuntu",
-		"deploy application ubu using cs:ubuntu",
+		"upload charm ubuntu from charm-store",
+		"deploy application ubu from charm-store using ubuntu",
 		"add new machine 0",
 		"add new machine 1",
 		"add new machine 2",
@@ -4750,7 +4750,7 @@ func (s *changesSuite) TestFromJujuMassiveUnitColocation(c *gc.C) {
 		},
 	}
 	expectedChanges := []string{
-		"deploy application node on xenial using cs:xenial/django-42",
+		"deploy application node from charm-store on xenial using django",
 		"add unit node/0 to 0/lxd/0 to satisfy [lxd:memcached]",
 	}
 	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)

@@ -13,7 +13,7 @@ import (
 	gc "gopkg.in/check.v1"
 	"gopkg.in/yaml.v2"
 
-	"github.com/juju/bundlechanges/v3"
+	"github.com/juju/bundlechanges/v4"
 )
 
 type diffSuite struct {

@@ -13,7 +13,7 @@ import (
 	"github.com/juju/charm/v8"
 	"github.com/juju/loggo"
 
-	"github.com/juju/bundlechanges/v3"
+	"github.com/juju/bundlechanges/v4"
 )
 
 func main() {

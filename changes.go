@@ -516,14 +516,14 @@ func (ch *AddApplicationChange) Description() []string {
 	if err == nil {
 		location = storeLocation(curl.Schema)
 		if location != "" {
-			location = fmt.Sprintf(" %s ", location)
+			location = fmt.Sprintf("%s ", location)
 		}
 		if ch.Params.Application != curl.Name {
 			using = fmt.Sprintf(" using %s", curl.Name)
 		}
 	}
 
-	return []string{fmt.Sprintf("deploy%sapplication %s%s%s%s", location, ch.Params.Application, unitsInfo, series, using)}
+	return []string{fmt.Sprintf("deploy %sapplication %s%s%s%s", location, ch.Params.Application, unitsInfo, series, using)}
 }
 
 // AddApplicationParams holds parameters for deploying a Juju application.

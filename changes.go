@@ -200,12 +200,18 @@ func (ch *AddCharmChange) Description() []string {
 
 	// If we fail when parsing the url, we can consider it being a name rather
 	// than a URL.
+	var location string
 	name := ch.Params.Charm
 	if curl, err := charm.ParseURL(name); err == nil {
 		name = curl.Name
+
+		location = storeLocation(curl.Schema)
+		if location != "" {
+			location = fmt.Sprintf(" from %s", location)
+		}
 	}
 
-	return []string{fmt.Sprintf("upload charm %s%s%s", name, series, channel)}
+	return []string{fmt.Sprintf("upload charm %s%s%s%s", name, location, series, channel)}
 }
 
 // AddCharmParams holds parameters for adding a charm to the environment.
@@ -264,10 +270,10 @@ func (ch *UpgradeCharmChange) Description() []string {
 
 		location = storeLocation(curl.Schema)
 		if location != "" {
-			location = fmt.Sprintf(" %s ", location)
+			location = fmt.Sprintf(" from %s ", location)
 		}
 	}
-	return []string{fmt.Sprintf("upgrade %s to use%scharm %s%s", ch.Params.Application, location, name, series)}
+	return []string{fmt.Sprintf("upgrade %s%susing charm %s%s", ch.Params.Application, location, name, series)}
 }
 
 // UpgradeCharmParams holds parameters for adding a charm to the environment.
@@ -516,14 +522,14 @@ func (ch *AddApplicationChange) Description() []string {
 	if err == nil {
 		location = storeLocation(curl.Schema)
 		if location != "" {
-			location = fmt.Sprintf("%s ", location)
+			location = fmt.Sprintf(" from %s", location)
 		}
 		if ch.Params.Application != curl.Name {
 			using = fmt.Sprintf(" using %s", curl.Name)
 		}
 	}
 
-	return []string{fmt.Sprintf("deploy %sapplication %s%s%s%s", location, ch.Params.Application, unitsInfo, series, using)}
+	return []string{fmt.Sprintf("deploy application %s%s%s%s%s", ch.Params.Application, location, unitsInfo, series, using)}
 }
 
 // AddApplicationParams holds parameters for deploying a Juju application.

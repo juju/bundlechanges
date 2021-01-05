@@ -12,13 +12,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/juju/charm/v8"
+	"github.com/juju/charm/v9"
 	"github.com/juju/loggo"
 	jujutesting "github.com/juju/testing"
 	jc "github.com/juju/testing/checkers"
 	gc "gopkg.in/check.v1"
 
-	"github.com/juju/bundlechanges/v4"
+	"github.com/juju/bundlechanges/v5"
 )
 
 type changesSuite struct {
@@ -139,7 +139,7 @@ func (s *changesSuite) TestMinimalBundleWithChannels(c *gc.C) {
 }
 func (s *changesSuite) TestBundleURLAnnotationSet(c *gc.C) {
 	content := `
-        services:
+        applications:
             django:
                 charm: django`
 

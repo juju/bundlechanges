@@ -28,10 +28,10 @@ github.com/google/go-cmp v0.2.1-0.20190312032427-6f77996f0c42 h1:q3pnF5JFBNRz8sR
 github.com/google/go-cmp v0.2.1-0.20190312032427-6f77996f0c42/go.mod h1:8QqcDgzrUqlUb/G2PQTWiueGozuR1884gddMywk6iLU=
 github.com/gorilla/handlers v0.0.0-20170224193955-13d73096a474/go.mod h1:Qkdc/uu4tH4g6mTK6auzZ766c4CA0Ng8+o/OAirnOIQ=
 github.com/juju/ansiterm v0.0.0-20160907234532-b99631de12cf/go.mod h1:UJSiEoRfvx3hP73CvoARgeLjaIOjybY9vj8PUPPFGeU=
-github.com/juju/charm/v8 v8.0.0-20201117030444-62c13a9fe0f0 h1:BuNV5BMVyKI1XUupcAuC/Y2bW/izfV7Tn+uI7jMYjNk=
-github.com/juju/charm/v8 v8.0.0-20201117030444-62c13a9fe0f0/go.mod h1:3gMi15p+v4CxEquVduhcOoPLWM7IaRB+OZB6bT3Glww=
-github.com/juju/charmrepo/v6 v6.0.0-20201118043529-e9fbdc1a746f h1:esltimJsCcUSaC9ahxBpC70Gumqnnmgm0Ah+BLVQBTY=
-github.com/juju/charmrepo/v6 v6.0.0-20201118043529-e9fbdc1a746f/go.mod h1:4V0vrJRD/0oxG+D9j/53elHpXiZ1FoBIXdJGm3Jq4Js=
+github.com/juju/charm/v9 v9.0.0-20210105084816-5204c3802611 h1:LQEQJvPHjeFNNAMgQpjthtF0SRzNz2+H/YCK0HmJxs4=
+github.com/juju/charm/v9 v9.0.0-20210105084816-5204c3802611/go.mod h1:ffLfwuA4E426HlTtqgMvKZdBAWXOwbgeeHye/1ITTLc=
+github.com/juju/charmrepo/v7 v7.0.0-20210105092546-af3d6b52f7de h1:95Or6HY8Lfpv007aWUNMKzw2AnDXPOyqQjlO/N3UfjU=
+github.com/juju/charmrepo/v7 v7.0.0-20210105092546-af3d6b52f7de/go.mod h1:hnCmP2zszIv2WqLZpHyM+4/bkEvDZi5MLHRsvi58Lhs=
 github.com/juju/clock v0.0.0-20180524022203-d293bb356ca4/go.mod h1:nD0vlnrUjcjJhqN5WuCWZyzfd5AHZAC9/ajvbSx69xA=
 github.com/juju/clock v0.0.0-20180808021310-bab88fc67299/go.mod h1:nD0vlnrUjcjJhqN5WuCWZyzfd5AHZAC9/ajvbSx69xA=
 github.com/juju/clock v0.0.0-20190205081909-9c5c9712527c h1:3UvYABOQRhJAApj9MdCN+Ydv841ETSoy6xLzdmmr/9A=

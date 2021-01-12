@@ -20,15 +20,30 @@ type Logger interface {
 	Tracef(string, ...interface{})
 }
 
+// ArchConstraint defines an architecture constraint. This is used to represent
+// a parsed application architecture constraint.
+type ArchConstraint interface {
+	// HasArch returns true if the constraints.Value specifies an architecture.
+	HasArch() bool
+
+	// Arch returns the arch from the constraint.
+	Arch() *string
+}
+
+// ArchConstraintParser represents a architecture constraint parser.
+type ArchConstraintParser func(string) (ArchConstraint, error)
+
 // ChangesConfig is used to provide the required data for determining changes.
 type ChangesConfig struct {
-	Bundle    *charm.BundleData
-	Model     *Model
-	Logger    Logger
-	BundleURL string
+	Bundle               *charm.BundleData
+	Model                *Model
+	Logger               Logger
+	BundleURL            string
+	ArchConstraintParser func(string) (ArchConstraint, error)
 	// TODO: add charm metadata for validation.
 }
 
+// Validate attempts to validate the changes config, before usage.
 func (c *ChangesConfig) Validate() error {
 	if c.Bundle == nil {
 		return errors.NotValidf("nil Bundle")
@@ -56,11 +71,12 @@ func FromData(config ChangesConfig) ([]Change, error) {
 	model.InferMachineMap(config.Bundle)
 	changes := &changeset{}
 	resolver := resolver{
-		bundle:    config.Bundle,
-		model:     model,
-		bundleURL: config.BundleURL,
-		logger:    config.Logger,
-		changes:   changes,
+		bundle:                 config.Bundle,
+		model:                  model,
+		bundleURL:              config.BundleURL,
+		logger:                 config.Logger,
+		archConstraintParserFn: config.ArchConstraintParser,
+		changes:                changes,
 	}
 	addedApplications, err := resolver.handleApplications()
 	if err != nil {
@@ -210,8 +226,12 @@ func (ch *AddCharmChange) Description() []string {
 			location = fmt.Sprintf(" from %s", location)
 		}
 	}
+	var arch string
+	if ch.Params.Architecture != "" {
+		arch = fmt.Sprintf(" with architecture=%s", ch.Params.Architecture)
+	}
 
-	return []string{fmt.Sprintf("upload charm %s%s%s%s", name, location, series, channel)}
+	return []string{fmt.Sprintf("upload charm %s%s%s%s%s", name, location, series, channel, arch)}
 }
 
 // AddCharmParams holds parameters for adding a charm to the environment.
@@ -225,6 +245,9 @@ type AddCharmParams struct {
 	// Channel was added to 2.7 release, use omitempty so we're backwards
 	// compatible with older clients.
 	Channel string `json:"channel,omitempty"`
+	// Architecture holds the preferred charm architecture to deploy the
+	// application with.
+	Architecture string `json:"architecture,omitempty"`
 }
 
 // newUpgradeCharm upgrades an existing charm to a new version.

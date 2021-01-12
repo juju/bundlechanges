@@ -3724,6 +3724,34 @@ func (s *changesSuite) TestAppWithDifferentConstraints(c *gc.C) {
 	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
 }
 
+func (s *changesSuite) TestAppWithArchConstraints(c *gc.C) {
+	bundleContent := `
+                applications:
+                    django:
+                        charm: cs:django-4
+                        constraints: arch=amd64 cpu-cores=4 cpu-power=42
+            `
+	expectedChanges := []string{
+		"upload charm django from charm-store with architecture=amd64",
+		"deploy application django from charm-store",
+	}
+	s.checkBundleWithConstraintsParser(c, bundleContent, expectedChanges, constraintParser)
+}
+
+func (s *changesSuite) TestAppWithArchConstraintsWithNoParser(c *gc.C) {
+	bundleContent := `
+                applications:
+                    django:
+                        charm: cs:django-4
+                        constraints: arch=amd64 cpu-cores=4 cpu-power=42
+            `
+	expectedChanges := []string{
+		"upload charm django from charm-store",
+		"deploy application django from charm-store",
+	}
+	s.checkBundleWithConstraintsParser(c, bundleContent, expectedChanges, nil)
+}
+
 func (s *changesSuite) TestAppExistsWithEnoughUnits(c *gc.C) {
 	bundleContent := `
                 applications:
@@ -4797,7 +4825,7 @@ func (s *changesSuite) TestInconsistentMappingError(c *gc.C) {
 			"3": "3",
 		},
 	}
-	s.checkBundleImpl(c, bundleContent, existingModel, nil, `bundle and machine mapping are inconsistent: need an explicit entry mapping bundle machine "0", perhaps to one of model machines \["2", "3"\] - the target should host \[memcached\]`)
+	s.checkBundleImpl(c, bundleContent, existingModel, nil, `bundle and machine mapping are inconsistent: need an explicit entry mapping bundle machine "0", perhaps to one of model machines \["2", "3"\] - the target should host \[memcached\]`, nil)
 }
 
 func (s *changesSuite) TestConsistentMapping(c *gc.C) {
@@ -4913,7 +4941,7 @@ func (s *changesSuite) TestSingleTarget(c *gc.C) {
 			"2": "2",
 		},
 	}
-	s.checkBundleImpl(c, bundleContent, existingModel, nil, `bundle and machine mapping are inconsistent: need an explicit entry mapping bundle machine "0", perhaps to unreferenced model machine "2" - the target should host \[memcached\]`)
+	s.checkBundleImpl(c, bundleContent, existingModel, nil, `bundle and machine mapping are inconsistent: need an explicit entry mapping bundle machine "0", perhaps to unreferenced model machine "2" - the target should host \[memcached\]`, nil)
 }
 
 func (s *changesSuite) TestMultipleApplications(c *gc.C) {
@@ -4959,7 +4987,7 @@ func (s *changesSuite) TestMultipleApplications(c *gc.C) {
 			"2": "2",
 		},
 	}
-	s.checkBundleImpl(c, bundleContent, existingModel, nil, `bundle and machine mapping are inconsistent: need an explicit entry mapping bundle machine "0", perhaps to unreferenced model machine "2" - the target should host \[memcached, prometheus\]`)
+	s.checkBundleImpl(c, bundleContent, existingModel, nil, `bundle and machine mapping are inconsistent: need an explicit entry mapping bundle machine "0", perhaps to unreferenced model machine "2" - the target should host \[memcached, prometheus\]`, nil)
 }
 
 func (s *changesSuite) TestNoApplications(c *gc.C) {
@@ -5008,7 +5036,7 @@ func (s *changesSuite) TestNoApplications(c *gc.C) {
 	// In this case we can't find any applications for bundle machine
 	// 0 because the applications don't refer to it with simple
 	// placement..
-	s.checkBundleImpl(c, bundleContent, existingModel, nil, `bundle and machine mapping are inconsistent: need an explicit entry mapping bundle machine "0", perhaps to unreferenced model machine "2"`)
+	s.checkBundleImpl(c, bundleContent, existingModel, nil, `bundle and machine mapping are inconsistent: need an explicit entry mapping bundle machine "0", perhaps to unreferenced model machine "2"`, nil)
 }
 
 func (s *changesSuite) TestNoPossibleTargets(c *gc.C) {
@@ -5042,22 +5070,32 @@ func (s *changesSuite) TestNoPossibleTargets(c *gc.C) {
 		},
 	}
 	// There *are* two units, but they're both on machine one.
-	s.checkBundleImpl(c, bundleContent, existingModel, nil, `bundle and machine mapping are inconsistent: need an explicit entry mapping bundle machine "0" - the target should host \[memcached\]`)
+	s.checkBundleImpl(c, bundleContent, existingModel, nil, `bundle and machine mapping are inconsistent: need an explicit entry mapping bundle machine "0" - the target should host \[memcached\]`, nil)
 }
 
 func (s *changesSuite) checkBundle(c *gc.C, bundleContent string, expectedChanges []string) {
-	s.checkBundleImpl(c, bundleContent, nil, expectedChanges, "")
+	s.checkBundleImpl(c, bundleContent, nil, expectedChanges, "", nil)
 }
 
 func (s *changesSuite) checkBundleExistingModel(c *gc.C, bundleContent string, existingModel *bundlechanges.Model, expectedChanges []string) {
-	s.checkBundleImpl(c, bundleContent, existingModel, expectedChanges, "")
+	s.checkBundleImpl(c, bundleContent, existingModel, expectedChanges, "", nil)
 }
 
 func (s *changesSuite) checkBundleError(c *gc.C, bundleContent string, errMatch string) {
-	s.checkBundleImpl(c, bundleContent, nil, nil, errMatch)
+	s.checkBundleImpl(c, bundleContent, nil, nil, errMatch, nil)
 }
 
-func (s *changesSuite) checkBundleImpl(c *gc.C, bundleContent string, existingModel *bundlechanges.Model, expectedChanges []string, errMatch string) {
+func (s *changesSuite) checkBundleWithConstraintsParser(c *gc.C, bundleContent string, expectedChanges []string, parserFn bundlechanges.ArchConstraintParser) {
+	s.checkBundleImpl(c, bundleContent, nil, expectedChanges, "", parserFn)
+}
+
+func (s *changesSuite) checkBundleImpl(c *gc.C,
+	bundleContent string,
+	existingModel *bundlechanges.Model,
+	expectedChanges []string,
+	errMatch string,
+	parserFn bundlechanges.ArchConstraintParser,
+) {
 	// Retrieve and validate the bundle data merging any overlays in the bundle contents.
 	bundleSrc, err := charm.StreamBundleDataSource(strings.NewReader(bundleContent), "./")
 	c.Assert(err, jc.ErrorIsNil)
@@ -5068,9 +5106,10 @@ func (s *changesSuite) checkBundleImpl(c *gc.C, bundleContent string, existingMo
 
 	// Retrieve the changes, and convert them to a sequence of records.
 	changes, err := bundlechanges.FromData(bundlechanges.ChangesConfig{
-		Bundle: data,
-		Model:  existingModel,
-		Logger: loggo.GetLogger("bundlechanges"),
+		Bundle:               data,
+		Model:                existingModel,
+		Logger:               loggo.GetLogger("bundlechanges"),
+		ArchConstraintParser: parserFn,
 	})
 	if errMatch != "" {
 		c.Assert(err, gc.ErrorMatches, errMatch)
@@ -5087,4 +5126,27 @@ func (s *changesSuite) checkBundleImpl(c *gc.C, bundleContent string, existingMo
 		}
 		c.Check(obtained, jc.DeepEquals, expectedChanges)
 	}
+}
+
+type archConstraint struct {
+	arch string
+}
+
+func (c *archConstraint) HasArch() bool {
+	return c.arch != ""
+}
+
+func (c *archConstraint) Arch() *string {
+	return &c.arch
+}
+
+func constraintParser(s string) (bundlechanges.ArchConstraint, error) {
+	parts := strings.Split(s, " ")
+	for _, part := range parts {
+		keyValue := strings.Split(part, "=")
+		if len(keyValue) == 2 && keyValue[0] == "arch" {
+			return &archConstraint{arch: keyValue[1]}, nil
+		}
+	}
+	return &archConstraint{}, nil
 }

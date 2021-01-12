@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/juju/charm/v9"
+	"github.com/juju/errors"
 	"github.com/juju/loggo"
 	jujutesting "github.com/juju/testing"
 	jc "github.com/juju/testing/checkers"
@@ -3738,6 +3739,30 @@ func (s *changesSuite) TestAppWithArchConstraints(c *gc.C) {
 	s.checkBundleWithConstraintsParser(c, bundleContent, expectedChanges, constraintParser)
 }
 
+func (s *changesSuite) TestAppWithArchConstraintsWithNotFoundError(c *gc.C) {
+	bundleContent := `
+                applications:
+                    django:
+                        charm: cs:django-4
+                        constraints: arch=amd64 cpu-cores=4 cpu-power=42
+            `
+	expectedChanges := []string{
+		"upload charm django from charm-store",
+		"deploy application django from charm-store",
+	}
+	s.checkBundleWithConstraintsParser(c, bundleContent, expectedChanges, constraintParserWithError(errors.NotFoundf("arch")))
+}
+
+func (s *changesSuite) TestAppWithArchConstraintsWithError(c *gc.C) {
+	bundleContent := `
+                applications:
+                    django:
+                        charm: cs:django-4
+                        constraints: arch=amd64 cpu-cores=4 cpu-power=42
+            `
+	s.checkBundleWithConstraintsParserError(c, bundleContent, "bad", constraintParserWithError(errors.Errorf("bad")))
+}
+
 func (s *changesSuite) TestAppWithArchConstraintsWithNoParser(c *gc.C) {
 	bundleContent := `
                 applications:
@@ -5085,8 +5110,12 @@ func (s *changesSuite) checkBundleError(c *gc.C, bundleContent string, errMatch 
 	s.checkBundleImpl(c, bundleContent, nil, nil, errMatch, nil)
 }
 
-func (s *changesSuite) checkBundleWithConstraintsParser(c *gc.C, bundleContent string, expectedChanges []string, parserFn bundlechanges.ArchConstraintParser) {
+func (s *changesSuite) checkBundleWithConstraintsParser(c *gc.C, bundleContent string, expectedChanges []string, parserFn bundlechanges.ConstraintGetter) {
 	s.checkBundleImpl(c, bundleContent, nil, expectedChanges, "", parserFn)
+}
+
+func (s *changesSuite) checkBundleWithConstraintsParserError(c *gc.C, bundleContent, errMatch string, parserFn bundlechanges.ConstraintGetter) {
+	s.checkBundleImpl(c, bundleContent, nil, nil, errMatch, parserFn)
 }
 
 func (s *changesSuite) checkBundleImpl(c *gc.C,
@@ -5094,7 +5123,7 @@ func (s *changesSuite) checkBundleImpl(c *gc.C,
 	existingModel *bundlechanges.Model,
 	expectedChanges []string,
 	errMatch string,
-	parserFn bundlechanges.ArchConstraintParser,
+	parserFn bundlechanges.ConstraintGetter,
 ) {
 	// Retrieve and validate the bundle data merging any overlays in the bundle contents.
 	bundleSrc, err := charm.StreamBundleDataSource(strings.NewReader(bundleContent), "./")
@@ -5106,10 +5135,10 @@ func (s *changesSuite) checkBundleImpl(c *gc.C,
 
 	// Retrieve the changes, and convert them to a sequence of records.
 	changes, err := bundlechanges.FromData(bundlechanges.ChangesConfig{
-		Bundle:               data,
-		Model:                existingModel,
-		Logger:               loggo.GetLogger("bundlechanges"),
-		ArchConstraintParser: parserFn,
+		Bundle:           data,
+		Model:            existingModel,
+		Logger:           loggo.GetLogger("bundlechanges"),
+		ConstraintGetter: parserFn,
 	})
 	if errMatch != "" {
 		c.Assert(err, gc.ErrorMatches, errMatch)
@@ -5130,23 +5159,26 @@ func (s *changesSuite) checkBundleImpl(c *gc.C,
 
 type archConstraint struct {
 	arch string
+	err  error
 }
 
-func (c *archConstraint) HasArch() bool {
-	return c.arch != ""
+func (c *archConstraint) Arch() (string, error) {
+	return c.arch, c.err
 }
 
-func (c *archConstraint) Arch() *string {
-	return &c.arch
-}
-
-func constraintParser(s string) (bundlechanges.ArchConstraint, error) {
+func constraintParser(s string) bundlechanges.ArchConstraint {
 	parts := strings.Split(s, " ")
 	for _, part := range parts {
 		keyValue := strings.Split(part, "=")
 		if len(keyValue) == 2 && keyValue[0] == "arch" {
-			return &archConstraint{arch: keyValue[1]}, nil
+			return &archConstraint{arch: keyValue[1]}
 		}
 	}
-	return &archConstraint{}, nil
+	return &archConstraint{}
+}
+
+func constraintParserWithError(err error) bundlechanges.ConstraintGetter {
+	return func(string) bundlechanges.ArchConstraint {
+		return &archConstraint{err: err}
+	}
 }

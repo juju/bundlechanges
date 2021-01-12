@@ -16,12 +16,12 @@ import (
 )
 
 type resolver struct {
-	bundle                 *charm.BundleData
-	model                  *Model
-	bundleURL              string
-	logger                 Logger
-	archConstraintParserFn func(string) (ArchConstraint, error)
-	changes                *changeset
+	bundle           *charm.BundleData
+	model            *Model
+	bundleURL        string
+	logger           Logger
+	constraintGetter ConstraintGetter
+	changes          *changeset
 }
 
 // handleApplications populates the change set with "addCharm"/"addApplication" records.
@@ -57,13 +57,11 @@ func (r *resolver) handleApplications() (map[string]string, error) {
 			// Only parse the architecture constraint once and only if we give
 			// a constraint parser function.
 			var arch string
-			if r.archConstraintParserFn != nil {
-				cons, err := r.archConstraintParserFn(application.Constraints)
-				if err != nil {
+			if r.constraintGetter != nil {
+				cons := r.constraintGetter(application.Constraints)
+				arch, err = cons.Arch()
+				if err != nil && !errors.IsNotFound(err) {
 					return nil, errors.Trace(err)
-				}
-				if cons.HasArch() {
-					arch = *cons.Arch()
 				}
 			}
 

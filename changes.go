@@ -20,26 +20,24 @@ type Logger interface {
 	Tracef(string, ...interface{})
 }
 
-// ArchConstraint defines an architecture constraint. This is used to represent
-// a parsed application architecture constraint.
+// ArchConstraint defines an architecture constraint. This is used to
+// represent a parsed application architecture constraint.
 type ArchConstraint interface {
-	// HasArch returns true if the constraints.Value specifies an architecture.
-	HasArch() bool
-
-	// Arch returns the arch from the constraint.
-	Arch() *string
+	// Arch returns the arch from the constraint or an error satisfying
+	// errors.IsNotFound if the constraint does not include an arch component.
+	Arch() (string, error)
 }
 
-// ArchConstraintParser represents a architecture constraint parser.
-type ArchConstraintParser func(string) (ArchConstraint, error)
+// ConstraintGetter represents a architecture constraint parser.
+type ConstraintGetter func(string) ArchConstraint
 
 // ChangesConfig is used to provide the required data for determining changes.
 type ChangesConfig struct {
-	Bundle               *charm.BundleData
-	Model                *Model
-	Logger               Logger
-	BundleURL            string
-	ArchConstraintParser func(string) (ArchConstraint, error)
+	Bundle           *charm.BundleData
+	Model            *Model
+	Logger           Logger
+	BundleURL        string
+	ConstraintGetter ConstraintGetter
 	// TODO: add charm metadata for validation.
 }
 
@@ -71,12 +69,12 @@ func FromData(config ChangesConfig) ([]Change, error) {
 	model.InferMachineMap(config.Bundle)
 	changes := &changeset{}
 	resolver := resolver{
-		bundle:                 config.Bundle,
-		model:                  model,
-		bundleURL:              config.BundleURL,
-		logger:                 config.Logger,
-		archConstraintParserFn: config.ArchConstraintParser,
-		changes:                changes,
+		bundle:           config.Bundle,
+		model:            model,
+		bundleURL:        config.BundleURL,
+		logger:           config.Logger,
+		constraintGetter: config.ConstraintGetter,
+		changes:          changes,
 	}
 	addedApplications, err := resolver.handleApplications()
 	if err != nil {

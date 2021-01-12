@@ -55,7 +55,7 @@ func (r *resolver) handleApplications() (map[string]string, error) {
 		// Add the addCharm record if one hasn't been added yet.
 		if charms[application.Charm] == "" && !existing.hasCharm(application.Charm) {
 			// Only parse the architecture constraint once and only if we give
-			// a constraint parser function.
+			// a constraint getter function.
 			var arch string
 			if r.constraintGetter != nil {
 				cons := r.constraintGetter(application.Constraints)

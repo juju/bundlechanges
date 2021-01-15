@@ -28,6 +28,10 @@ type Model struct {
 	// hard dependency on the juju constraints package.
 	ConstraintsEqual func(string, string) bool
 
+	// ConstraintsGetter is a function that is able to extract a constraint
+	// for inspection.
+	ConstraintGetter ConstraintGetter
+
 	// Sequence holds a map of names to the next "number" that relates
 	// to the unit or machine. The keys are "application-<name>", the string
 	// "machine", or "machine-id/c" where n is a machine id, and c is a
@@ -123,13 +127,15 @@ func (m *Model) nextUnit(appName string) string {
 	return fmt.Sprintf("%s/%d", appName, value)
 }
 
-func (m *Model) HasRelation(App1, Endpoint1, App2, Endpoint2 string) bool {
+// HasRelation checks to see if the model has a relation between two
+// applications.
+func (m *Model) HasRelation(app1, endpoint1, app2, endpoint2 string) bool {
 	for _, rel := range m.Relations {
 		oneWay := Relation{
-			App1: App1, Endpoint1: Endpoint1, App2: App2, Endpoint2: Endpoint2,
+			App1: app1, Endpoint1: endpoint1, App2: app2, Endpoint2: endpoint2,
 		}
 		other := Relation{
-			App1: App2, Endpoint1: Endpoint2, App2: App1, Endpoint2: Endpoint1,
+			App1: app2, Endpoint1: endpoint2, App2: app1, Endpoint2: endpoint1,
 		}
 		if rel == oneWay || rel == other {
 			return true
@@ -235,6 +241,30 @@ func (m *Model) hasCharm(charm string) bool {
 	}
 	for _, app := range m.Applications {
 		if app.Charm == charm {
+			return true
+		}
+	}
+	return false
+}
+
+func (m *Model) hasCharmWithArchAndSeries(charm, arch, series string) bool {
+	if arch == "" && series == "" {
+		return m.hasCharm(charm)
+	}
+
+	for _, app := range m.Applications {
+		var appArch string
+		if m.ConstraintGetter != nil {
+			// If we can't solve the constraints, then we have to skip this
+			// application.
+			cons := m.ConstraintGetter(app.Constraints)
+			var err error
+			if appArch, err = cons.Arch(); err != nil {
+				continue
+			}
+		}
+
+		if app.Charm == charm && appArch == arch && app.Series == series {
 			return true
 		}
 	}

@@ -4,7 +4,7 @@ go 1.14
 
 require (
 	github.com/gobwas/glob v0.2.4-0.20181002190808-e7a84e9525fe // indirect
-	github.com/juju/charm/v8 v8.0.0-20210115122920-fd52ba4d7144
+	github.com/juju/charm/v8 v8.0.0-20210115142305-1eb0c22cff4e
 	github.com/juju/charmrepo/v6 v6.0.0-20201118043529-e9fbdc1a746f
 	github.com/juju/collections v0.0.0-20200605021417-0d0ec82b7271
 	github.com/juju/errors v0.0.0-20200330140219-3fe23663418f

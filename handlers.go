@@ -52,19 +52,23 @@ func (r *resolver) handleApplications() (map[string]string, error) {
 		if err != nil {
 			return nil, errors.Trace(err)
 		}
-		// Add the addCharm record if one hasn't been added yet.
-		if charms[application.Charm] == "" && !existing.hasCharm(application.Charm) {
-			// Only parse the architecture constraint once and only if we give
-			// a constraint getter function.
-			var arch string
-			if r.constraintGetter != nil {
-				cons := r.constraintGetter(application.Constraints)
-				arch, err = cons.Arch()
-				if err != nil && !errors.IsNotFound(err) {
-					return nil, errors.Trace(err)
-				}
-			}
 
+		// Only parse the architecture constraint once and only if we give
+		// a constraint getter function.
+		var arch string
+		if r.constraintGetter != nil {
+			cons := r.constraintGetter(application.Constraints)
+			arch, err = cons.Arch()
+			if err != nil && !errors.IsNotFound(err) {
+				return nil, errors.Trace(err)
+			}
+		}
+
+		// Add the addCharm record if one hasn't been added yet, this means
+		// if the arch and series differ from an existing charm, then we create
+		// a new charm.
+		key := applicationKey(application.Charm, arch, series)
+		if charms[key] == "" && !existing.hasCharmWithArchAndSeries(application.Charm, arch, series) {
 			change = newAddCharmChange(AddCharmParams{
 				Charm:        application.Charm,
 				Series:       series,
@@ -72,7 +76,7 @@ func (r *resolver) handleApplications() (map[string]string, error) {
 				Architecture: arch,
 			})
 			add(change)
-			charms[application.Charm] = change.Id()
+			charms[key] = change.Id()
 		}
 
 		resources := make(map[string]int)
@@ -96,7 +100,7 @@ func (r *resolver) handleApplications() (map[string]string, error) {
 
 			var requires []string
 			charmOrChange := application.Charm
-			if charmChange := charms[application.Charm]; charmChange != "" {
+			if charmChange := charms[key]; charmChange != "" {
 				requires = append(requires, charmChange)
 				charmOrChange = placeholder(charmChange)
 			}
@@ -137,7 +141,7 @@ func (r *resolver) handleApplications() (map[string]string, error) {
 			// Look for changes.
 			if existingApp.Charm != application.Charm {
 				charmOrChange := application.Charm
-				if charmChange := charms[application.Charm]; charmChange != "" {
+				if charmChange := charms[key]; charmChange != "" {
 					charmOrChange = placeholder(charmChange)
 				}
 
@@ -1092,6 +1096,10 @@ func (err *InconsistentMachineMapError) Error() string {
 
 func placeholder(changeID string) string {
 	return "$" + changeID
+}
+
+func applicationKey(charm, arch, series string) string {
+	return fmt.Sprintf("%s:%s:%s", charm, arch, series)
 }
 
 // getSeries retrieves the series of a application from the ApplicationSpec or from the

@@ -3508,6 +3508,7 @@ applications:
 				Charm:   "cs:django-4",
 				Scale:   3,
 				Exposed: true,
+				Series:  "kubernetes",
 			},
 		},
 	}
@@ -3546,6 +3547,7 @@ applications:
 				Charm:   "cs:django-4",
 				Scale:   3,
 				Exposed: false,
+				Series:  "kubernetes",
 			},
 		},
 	}
@@ -3578,6 +3580,7 @@ applications:
 				Charm:   "cs:django-4",
 				Scale:   3,
 				Exposed: true,
+				Series:  "kubernetes",
 			},
 		},
 	}
@@ -3651,12 +3654,36 @@ func (s *changesSuite) TestAppExistsWithDifferentScale(c *gc.C) {
 	existingModel := &bundlechanges.Model{
 		Applications: map[string]*bundlechanges.Application{
 			"django": {
+				Charm:  "cs:django-4",
+				Scale:  3,
+				Series: "kubernetes",
+			},
+		},
+	}
+	expectedChanges := []string{
+		"scale django to 2 units",
+	}
+	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
+
+func (s *changesSuite) TestAppExistsMissingSeriesWithDifferentScale(c *gc.C) {
+	bundleContent := `
+                bundle: kubernetes
+                applications:
+                    django:
+                        charm: cs:django-4
+                        num_units: 2
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"django": {
 				Charm: "cs:django-4",
 				Scale: 3,
 			},
 		},
 	}
 	expectedChanges := []string{
+		"upload charm django from charm-store for series kubernetes",
 		"scale django to 2 units",
 	}
 	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
@@ -3723,6 +3750,129 @@ func (s *changesSuite) TestAppWithDifferentConstraints(c *gc.C) {
 		`set constraints for django to "cpu-cores=4 cpu-power=42"`,
 	}
 	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
+
+func (s *changesSuite) TestAppsWithArchConstraints(c *gc.C) {
+	bundleContent := `
+                applications:
+                    django-1:
+                        charm: cs:django-4
+                        constraints: arch=amd64 cpu-cores=4 cpu-power=42
+                    django-2:
+                        charm: cs:django-4
+                        constraints: arch=s390x cpu-cores=4 cpu-power=42
+            `
+	expectedChanges := []string{
+		"upload charm django from charm-store with architecture=amd64",
+		"deploy application django-1 from charm-store using django",
+		"upload charm django from charm-store with architecture=s390x",
+		"deploy application django-2 from charm-store using django",
+	}
+	s.checkBundleWithConstraintsParser(c, bundleContent, expectedChanges, constraintParser)
+}
+
+func (s *changesSuite) TestExistingAppsWithArchConstraints(c *gc.C) {
+	bundleContent := `
+                applications:
+                    django-1:
+                        charm: cs:django-4
+                        constraints: arch=amd64 cpu-cores=4 cpu-power=42
+                    django-2:
+                        charm: cs:django-4
+                        constraints: arch=s390x cpu-cores=4 cpu-power=42
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"django-1": {
+				Charm: "cs:django-4",
+				Units: []bundlechanges.Unit{
+					{"django/0", "0"},
+				},
+				Constraints: "arch=amd64",
+			},
+		},
+		ConstraintsEqual: func(string, string) bool {
+			return false
+		},
+		ConstraintGetter: constraintParser,
+		Machines: map[string]*bundlechanges.Machine{
+			// We don't actually look at the content of the machines
+			// for this test, just the keys.
+			"0": nil,
+		},
+	}
+	expectedChanges := []string{
+		`set constraints for django-1 to "arch=amd64 cpu-cores=4 cpu-power=42"`,
+		"upload charm django from charm-store with architecture=s390x",
+		"deploy application django-2 from charm-store using django",
+	}
+	s.checkBundleExistingModelWithConstraintsParser(c, bundleContent, existingModel, expectedChanges, constraintParser)
+}
+
+func (s *changesSuite) TestExistingAppsWithoutArchConstraints(c *gc.C) {
+	bundleContent := `
+                applications:
+                    django-1:
+                        charm: cs:django-4
+                        constraints: arch=amd64 cpu-cores=4 cpu-power=42
+                    django-2:
+                        charm: cs:django-4
+                        constraints: arch=s390x cpu-cores=4 cpu-power=42
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"django-1": {
+				Charm: "cs:django-4",
+				Units: []bundlechanges.Unit{
+					{"django/0", "0"},
+				},
+				Constraints: "",
+			},
+		},
+		ConstraintsEqual: func(string, string) bool {
+			return false
+		},
+		ConstraintGetter: constraintParser,
+		Machines: map[string]*bundlechanges.Machine{
+			// We don't actually look at the content of the machines
+			// for this test, just the keys.
+			"0": nil,
+		},
+	}
+	expectedChanges := []string{
+		"upload charm django from charm-store with architecture=amd64",
+		`set constraints for django-1 to "arch=amd64 cpu-cores=4 cpu-power=42"`,
+		"upload charm django from charm-store with architecture=s390x",
+		"deploy application django-2 from charm-store using django",
+	}
+	s.checkBundleExistingModelWithConstraintsParser(c, bundleContent, existingModel, expectedChanges, constraintParser)
+}
+
+func (s *changesSuite) TestAppsWithSeriesAndArchConstraints(c *gc.C) {
+	bundleContent := `
+                applications:
+                    django-1:
+                        charm: cs:django-4
+                        constraints: arch=amd64 cpu-cores=4 cpu-power=42
+                        series: bionic
+                    django-2:
+                        charm: cs:django-4
+                        constraints: arch=s390x cpu-cores=4 cpu-power=42
+                        series: bionic
+                    django-3:
+                        charm: cs:django-4
+                        constraints: arch=s390x cpu-cores=4 cpu-power=42
+                        series: focal
+            `
+	expectedChanges := []string{
+		"upload charm django from charm-store for series bionic with architecture=amd64",
+		"deploy application django-1 from charm-store on bionic using django",
+		"upload charm django from charm-store for series bionic with architecture=s390x",
+		"deploy application django-2 from charm-store on bionic using django",
+		"upload charm django from charm-store for series focal with architecture=s390x",
+		"deploy application django-3 from charm-store on focal using django",
+	}
+	s.checkBundleWithConstraintsParser(c, bundleContent, expectedChanges, constraintParser)
 }
 
 func (s *changesSuite) TestAppWithArchConstraints(c *gc.C) {
@@ -4611,12 +4761,14 @@ func (s *changesSuite) TestAddUnitToExistingApp(c *gc.C) {
 				Units: []bundlechanges.Unit{
 					{"mediawiki/0", "1"},
 				},
+				Series: "precise",
 			},
 			"mysql": {
 				Charm: "cs:precise/mysql-28",
 				Units: []bundlechanges.Unit{
 					{"mysql/0", "0"},
 				},
+				Series: "precise",
 			},
 		},
 		Machines: map[string]*bundlechanges.Machine{
@@ -4775,6 +4927,7 @@ func (s *changesSuite) TestFromJujuMassiveUnitColocation(c *gc.C) {
 					{Name: "django/0", Machine: "0"},
 					{Name: "django/1", Machine: "0/lxd/0"},
 				},
+				Series: "xenial",
 			},
 			"memcached": {
 				Name:  "memcached",
@@ -4784,6 +4937,7 @@ func (s *changesSuite) TestFromJujuMassiveUnitColocation(c *gc.C) {
 					{Name: "memcached/1", Machine: "1"},
 					{Name: "memcached/2", Machine: "2"},
 				},
+				Series: "xenial",
 			},
 			"ror": {
 				Name:  "ror",
@@ -4793,6 +4947,7 @@ func (s *changesSuite) TestFromJujuMassiveUnitColocation(c *gc.C) {
 					{Name: "ror/1", Machine: "2/kvm/0"},
 					{Name: "ror/2", Machine: "3"},
 				},
+				Series: "xenial",
 			},
 		},
 		Machines: map[string]*bundlechanges.Machine{
@@ -4874,6 +5029,7 @@ func (s *changesSuite) TestConsistentMapping(c *gc.C) {
 					{Name: "memcached/2", Machine: "2"},
 					{Name: "memcached/3", Machine: "3"},
 				},
+				Series: "xenial",
 			},
 		},
 		Machines: map[string]*bundlechanges.Machine{
@@ -4916,6 +5072,7 @@ func (s *changesSuite) TestContainerHosts(c *gc.C) {
 				Units: []bundlechanges.Unit{
 					{Name: "memcached/1", Machine: "1"},
 				},
+				Series: "xenial",
 			},
 		},
 		Machines: map[string]*bundlechanges.Machine{
@@ -5116,6 +5273,10 @@ func (s *changesSuite) checkBundleWithConstraintsParser(c *gc.C, bundleContent s
 
 func (s *changesSuite) checkBundleWithConstraintsParserError(c *gc.C, bundleContent, errMatch string, parserFn bundlechanges.ConstraintGetter) {
 	s.checkBundleImpl(c, bundleContent, nil, nil, errMatch, parserFn)
+}
+
+func (s *changesSuite) checkBundleExistingModelWithConstraintsParser(c *gc.C, bundleContent string, existingModel *bundlechanges.Model, expectedChanges []string, parserFn bundlechanges.ConstraintGetter) {
+	s.checkBundleImpl(c, bundleContent, existingModel, expectedChanges, "", parserFn)
 }
 
 func (s *changesSuite) checkBundleImpl(c *gc.C,

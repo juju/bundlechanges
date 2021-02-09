@@ -88,7 +88,8 @@ func FromData(config ChangesConfig) ([]Change, error) {
 	}
 
 	deployedBundleApps := alreadyDeployedApplicationsFromBundle(model, config.Bundle.Applications)
-	if addedApplications, err = resolver.handleOffers(addedApplications, deployedBundleApps); err != nil {
+	existingModelOffers := existingOffersFromModel(model)
+	if addedApplications, err = resolver.handleOffers(addedApplications, deployedBundleApps, existingModelOffers); err != nil {
 		return nil, err
 	}
 	resolver.handleRelations(addedApplications)
@@ -119,6 +120,19 @@ func alreadyDeployedApplicationsFromBundle(ctrlModel *Model, bundleApps map[stri
 	}
 
 	return deployedSet.Intersection(bundleSet)
+}
+
+func existingOffersFromModel(ctrlModel *Model) map[string]set.Strings {
+	existingOffers := make(map[string]set.Strings)
+	for _, app := range ctrlModel.Applications {
+		if len(app.Offers) == 0 {
+			continue
+		}
+
+		existingOffers[app.Name] = set.NewStrings(app.Offers...)
+	}
+
+	return existingOffers
 }
 
 // Change holds a single change required to deploy a bundle.
@@ -1045,7 +1059,11 @@ func (ch *CreateOfferChange) Args() (map[string]interface{}, error) {
 
 // Description implements Change.
 func (ch *CreateOfferChange) Description() []string {
-	return []string{fmt.Sprintf("create offer %s using %s:%s", ch.Params.OfferName, ch.Params.Application, strings.Join(ch.Params.Endpoints, ","))}
+	verb := "create"
+	if ch.Params.Update {
+		verb = "update"
+	}
+	return []string{fmt.Sprintf("%s offer %s using %s:%s", verb, ch.Params.OfferName, ch.Params.Application, strings.Join(ch.Params.Endpoints, ","))}
 }
 
 // CreateOfferParams holds parameters for creating an application offer.
@@ -1056,6 +1074,8 @@ type CreateOfferParams struct {
 	Endpoints []string `json:"endpoints"`
 	// OfferName describes the offer name.
 	OfferName string `json:"offer-name,omitempty"`
+	// Update is set to true if an existing offer is to be updated.
+	Update bool `json:"update,omitempty"`
 }
 
 // ConsumeOfferChange holds a change for consuming a offer.

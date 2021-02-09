@@ -208,8 +208,8 @@ type Application struct {
 	SubordinateTo    []string
 	Series           string
 	Placement        string
+	Offers           []string
 	// TODO: handle changes in:
-	//   endpoint bindings -- possible even?
 	//   storage
 
 	Units []Unit

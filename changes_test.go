@@ -501,6 +501,58 @@ applications:
 	s.assertParseData(c, content, expected)
 }
 
+func (s *changesSuite) TestMinimalBundleWithOfferUpdate(c *gc.C) {
+	content := `
+applications:
+  apache2:
+    charm: "cs:apache2-26"
+--- #overlay
+applications:
+  apache2:
+    offers:
+      offer1:
+        endpoints:
+          - "apache-website"
+          - "apache-proxy"
+   `
+	expected := []record{
+		{
+			Id:     "createOffer-0",
+			Method: "createOffer",
+			Params: bundlechanges.CreateOfferParams{
+				Application: "apache2",
+				Endpoints: []string{
+					"apache-website",
+					"apache-proxy",
+				},
+				OfferName: "offer1",
+				Update:    true,
+			},
+			GUIArgs: []interface{}{"apache2", []string{"apache-website", "apache-proxy"}, "offer1"},
+			Args: map[string]interface{}{
+				"application": "apache2",
+				"endpoints": []interface{}{
+					"apache-website",
+					"apache-proxy",
+				},
+				"offer-name": "offer1",
+				"update":     true,
+			},
+		},
+	}
+
+	curModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"apache2": {
+				Name:   "apache2",
+				Charm:  "cs:apache2-26",
+				Offers: []string{"offer1"},
+			},
+		},
+	}
+	s.assertParseDataWithModel(c, curModel, content, expected)
+}
+
 func (s *changesSuite) TestMinimalBundleWithOfferAndRelations(c *gc.C) {
 	content := `
 saas:

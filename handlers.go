@@ -316,7 +316,7 @@ func (r *resolver) handleRelations(addedApplications map[string]string) {
 // handleOffers populates the change set with "CreateOffer" records.
 // ensure we pass back handle offers so that if the map resizes we don't lose
 // applications
-func (r *resolver) handleOffers(addedApplications map[string]string, deployedBundleApplications set.Strings) (map[string]string, error) {
+func (r *resolver) handleOffers(addedApplications map[string]string, deployedBundleApplications set.Strings, existingModelOffers map[string]set.Strings) (map[string]string, error) {
 	// the bundle should have been verified before calling handling of types
 	// as saas applications will stamp on existing applications with the same
 	// name.
@@ -349,10 +349,19 @@ func (r *resolver) handleOffers(addedApplications map[string]string, deployedBun
 				return nil, errors.NotFoundf("cannot create offer %s: application %s", offerName, appName)
 			}
 
+			// If we are updating the offer details and the offered
+			// application is already deployed, we don't have any
+			// requirements.
+			updateOffer := existingModelOffers[appName] != nil && existingModelOffers[appName].Contains(offerName)
+			if updateOffer {
+				reqs = nil
+			}
+
 			change := newCreateOfferChange(CreateOfferParams{
 				Application: appName,
 				Endpoints:   offerSpec.Endpoints,
 				OfferName:   offerName,
+				Update:      updateOffer,
 			}, reqs...)
 			r.changes.add(change)
 

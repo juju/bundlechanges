@@ -502,6 +502,92 @@ func (s *diffSuite) TestApplicationConstraints(c *gc.C) {
 	s.checkDiff(c, bundleContent, model, expectedDiff)
 }
 
+func (s *diffSuite) TestBundleSeries(c *gc.C) {
+	bundleContent := `
+        series: focal
+        applications:
+            prometheus:
+                charm: cs:focal/prometheus-7
+                num_units: 1
+                constraints: something
+                to: [0]
+        machines:
+            0:
+            `
+	model := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"prometheus": {
+				Name:        "prometheus",
+				Charm:       "cs:focal/prometheus-7",
+				Series:      "focal",
+				Constraints: "something",
+				Units: []bundlechanges.Unit{
+					{Name: "prometheus/0", Machine: "0"},
+				},
+			},
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			"0": {
+				ID:     "0",
+				Series: "focal",
+			},
+		},
+	}
+	expectedDiff := &bundlechanges.BundleDiff{}
+	s.checkDiff(c, bundleContent, model, expectedDiff)
+}
+
+func (s *diffSuite) TestNoBundleSeries(c *gc.C) {
+	bundleContent := `
+        applications:
+            prometheus:
+                charm: cs:focal/prometheus-7
+                num_units: 1
+                constraints: something
+                to: [0]
+        machines:
+            0:
+            `
+	model := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"prometheus": {
+				Name:        "prometheus",
+				Charm:       "cs:focal/prometheus-7",
+				Series:      "focal",
+				Constraints: "something",
+				Units: []bundlechanges.Unit{
+					{Name: "prometheus/0", Machine: "0"},
+				},
+			},
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			"0": {
+				ID:     "0",
+				Series: "focal",
+			},
+		},
+	}
+	expectedDiff := &bundlechanges.BundleDiff{
+		Applications: map[string]*bundlechanges.ApplicationDiff{
+			"prometheus": {
+				Series: &bundlechanges.StringDiff{
+					Bundle: "",
+					Model:  "focal",
+				},
+			},
+		},
+		Machines: map[string]*bundlechanges.MachineDiff{
+			"0": {
+				Series: &bundlechanges.StringDiff{
+					Bundle: "",
+					Model:  "focal",
+				},
+			},
+		},
+	}
+	s.checkDiff(c, bundleContent, model, expectedDiff)
+}
+
 func (s *diffSuite) TestApplicationOptions(c *gc.C) {
 	bundleContent := `
         applications:

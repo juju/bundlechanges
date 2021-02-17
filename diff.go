@@ -135,11 +135,19 @@ func (d *differ) diffApplication(name string) *ApplicationDiff {
 		}
 	}
 
+	// Use the bundle series as the fallback series if the application doesn't
+	// supply a series. This is the same machinery that Juju itself uses to
+	// apply series for applications.
+	bundleSeries := bundle.Series
+	if bundleSeries == "" {
+		bundleSeries = d.config.Bundle.Series
+	}
+
 	result := &ApplicationDiff{
 		Charm:            d.diffStrings(bundle.Charm, model.Charm),
 		Expose:           d.diffBools(effectiveBundleExpose, effectiveModelExpose),
 		ExposedEndpoints: d.diffExposedEndpoints(bundle.ExposedEndpoints, model.ExposedEndpoints),
-		Series:           d.diffStrings(bundle.Series, model.Series),
+		Series:           d.diffStrings(bundleSeries, model.Series),
 		Constraints:      d.diffStrings(bundle.Constraints, model.Constraints),
 		Options:          d.diffOptions(bundle.Options, model.Options),
 	}
@@ -186,9 +194,18 @@ func (d *differ) diffMachines() map[string]*MachineDiff {
 			results[modelID] = &MachineDiff{Missing: ModelSide}
 			continue
 		}
+
+		// Use the bundle series as the fallback series if the machine doesn't
+		// supply a series. This is the same machinery that Juju itself uses to
+		// apply series for machines.
+		bundleSeries := bundleMachine.Series
+		if bundleSeries == "" {
+			bundleSeries = d.config.Bundle.Series
+		}
+
 		diff := &MachineDiff{
 			Series: d.diffStrings(
-				bundleMachine.Series, modelMachine.Series,
+				bundleSeries, modelMachine.Series,
 			),
 		}
 		if d.config.IncludeAnnotations {

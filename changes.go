@@ -822,7 +822,7 @@ type ExposeParams struct {
 	alreadyExposed bool
 }
 
-// ExpoExposedEndpoint encapsulates the expose-related parameters for a
+// ExposedEndpointParams encapsulates the expose-related parameters for a
 // particular endpoint.
 type ExposedEndpointParams struct {
 	// ExposeToSpaces contains a list of spaces that should be able to

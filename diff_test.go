@@ -338,6 +338,50 @@ func (s *diffSuite) TestApplicationSeries(c *gc.C) {
 	s.checkDiff(c, bundleContent, model, expectedDiff)
 }
 
+func (s *diffSuite) TestApplicationChannel(c *gc.C) {
+	bundleContent := `
+        applications:
+            prometheus:
+                charm: cs:prometheus-7
+                series: bionic
+                channel: 1.0/stable
+                num_units: 2
+                to: [0, 1]
+        machines:
+            0:
+            1:
+            `
+	model := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"prometheus": {
+				Name:    "prometheus",
+				Charm:   "cs:prometheus-7",
+				Channel: "2.0/edge",
+				Series:  "bionic",
+				Units: []bundlechanges.Unit{
+					{Name: "prometheus/0", Machine: "0"},
+					{Name: "prometheus/1", Machine: "1"},
+				},
+			},
+		},
+		Machines: map[string]*bundlechanges.Machine{
+			"0": {ID: "0"},
+			"1": {ID: "1"},
+		},
+	}
+	expectedDiff := &bundlechanges.BundleDiff{
+		Applications: map[string]*bundlechanges.ApplicationDiff{
+			"prometheus": {
+				Channel: &bundlechanges.StringDiff{
+					Bundle: "1.0/stable",
+					Model:  "2.0/edge",
+				},
+			},
+		},
+	}
+	s.checkDiff(c, bundleContent, model, expectedDiff)
+}
+
 func (s *diffSuite) TestApplicationNumUnits(c *gc.C) {
 	bundleContent := `
         applications:

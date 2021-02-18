@@ -207,6 +207,7 @@ type Application struct {
 	ExposedEndpoints map[string]ExposedEndpoint
 	SubordinateTo    []string
 	Series           string
+	Channel          string
 	Placement        string
 	Offers           []string
 	// TODO: handle changes in:
@@ -215,7 +216,7 @@ type Application struct {
 	Units []Unit
 }
 
-// ExpoExposedEndpoint encapsulates the expose-related parameters for a
+// ExposedEndpoint encapsulates the expose-related parameters for a
 // particular endpoint.
 type ExposedEndpoint struct {
 	ExposeToSpaces []string

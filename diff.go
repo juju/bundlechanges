@@ -148,6 +148,7 @@ func (d *differ) diffApplication(name string) *ApplicationDiff {
 		Expose:           d.diffBools(effectiveBundleExpose, effectiveModelExpose),
 		ExposedEndpoints: d.diffExposedEndpoints(bundle.ExposedEndpoints, model.ExposedEndpoints),
 		Series:           d.diffStrings(bundleSeries, model.Series),
+		Channel:          d.diffStrings(bundle.Channel, model.Channel),
 		Constraints:      d.diffStrings(bundle.Constraints, model.Constraints),
 		Options:          d.diffOptions(bundle.Options, model.Options),
 	}
@@ -406,6 +407,7 @@ type ApplicationDiff struct {
 	Missing          DiffSide                       `yaml:"missing,omitempty"`
 	Charm            *StringDiff                    `yaml:"charm,omitempty"`
 	Series           *StringDiff                    `yaml:"series,omitempty"`
+	Channel          *StringDiff                    `yaml:"channel,omitempty"`
 	Placement        *StringDiff                    `yaml:"placement,omitempty"`
 	NumUnits         *IntDiff                       `yaml:"num_units,omitempty"`
 	Scale            *IntDiff                       `yaml:"scale,omitempty"`
@@ -425,6 +427,7 @@ func (d *ApplicationDiff) Empty() bool {
 	return d.Missing == None &&
 		d.Charm == nil &&
 		d.Series == nil &&
+		d.Channel == nil &&
 		d.Placement == nil &&
 		d.NumUnits == nil &&
 		d.Scale == nil &&
@@ -576,7 +579,7 @@ type ExposedEndpointDiff struct {
 	Model  *ExposedEndpointDiffEntry `yaml:"model"`
 }
 
-// ExpoExposedEndpointDiffEntry stores the exposed endpoint parameters for
+// ExposedEndpointDiffEntry stores the exposed endpoint parameters for
 // an ExposedEndpointDiff entry.
 type ExposedEndpointDiffEntry struct {
 	ExposeToSpaces []string `yaml:"expose_to_spaces,omitempty"`

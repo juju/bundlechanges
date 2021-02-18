@@ -48,6 +48,7 @@ type Model struct {
 	logger Logger
 }
 
+// Relation holds the information between two releations.
 type Relation struct {
 	App1      string
 	Endpoint1 string
@@ -153,7 +154,7 @@ func topLevelMachine(machineID string) string {
 }
 
 // InferMachineMap looks at all the machines defined in the bundle
-// and ifers their mapping to the existing machine.
+// and infers their mapping to the existing machine.
 // This method assumes that the units of an application are sorted
 // in the natural sort order, meaning we start at unit zero and work
 // our way up the unit numbers.
@@ -167,7 +168,7 @@ func (m *Model) InferMachineMap(data *charm.BundleData) {
 }
 
 // BundleMachine will return a the existing machine for the specified bundle
-// amchine ID. If there is not a mapping available, nil is returned.
+// machine ID. If there is not a mapping available, nil is returned.
 func (m *Model) BundleMachine(id string) *Machine {
 	if m.Machines == nil {
 		return nil
@@ -248,8 +249,8 @@ func (m *Model) hasCharm(charm string) bool {
 	return false
 }
 
-func (m *Model) hasCharmWithArchAndSeries(charm, arch, series string) bool {
-	if arch == "" && series == "" {
+func (m *Model) matchesCharmPermutation(charm, arch, series, channel string) bool {
+	if arch == "" && series == "" && channel == "" {
 		return m.hasCharm(charm)
 	}
 
@@ -265,7 +266,7 @@ func (m *Model) hasCharmWithArchAndSeries(charm, arch, series string) bool {
 			}
 		}
 
-		if app.Charm == charm && appArch == arch && app.Series == series {
+		if app.Charm == charm && appArch == arch && app.Series == series && app.Channel == channel {
 			return true
 		}
 	}

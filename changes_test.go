@@ -3705,6 +3705,57 @@ func (s *changesSuite) TestCharmUpgrade(c *gc.C) {
 	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
 }
 
+func (s *changesSuite) TestCharmUpgradeWithChannel(c *gc.C) {
+	bundleContent := `
+                applications:
+                    django:
+                        charm: cs:django-6
+                        channel: stable
+                        num_units: 1
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"django": {
+				Charm: "cs:django-4",
+				Units: []bundlechanges.Unit{
+					{"django/0", "0"},
+				},
+			},
+		},
+	}
+	expectedChanges := []string{
+		"upload charm django from charm-store from channel stable",
+		"upgrade django from charm-store using charm django",
+	}
+	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
+
+func (s *changesSuite) TestCharmUpgradeWithExistingChannel(c *gc.C) {
+	bundleContent := `
+                applications:
+                    django:
+                        charm: cs:django-6
+                        channel: stable
+                        num_units: 1
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"django": {
+				Charm:   "cs:django-4",
+				Channel: "edge",
+				Units: []bundlechanges.Unit{
+					{"django/0", "0"},
+				},
+			},
+		},
+	}
+	expectedChanges := []string{
+		"upload charm django from charm-store from channel stable",
+		"upgrade django from charm-store using charm django",
+	}
+	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
+
 func (s *changesSuite) TestAppExistsWithLessUnits(c *gc.C) {
 	bundleContent := `
                 applications:

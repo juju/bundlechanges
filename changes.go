@@ -283,7 +283,12 @@ type UpgradeCharmChange struct {
 
 // GUIArgs implements Change.GUIArgs.
 func (ch *UpgradeCharmChange) GUIArgs() []interface{} {
-	return []interface{}{ch.Params.Charm, ch.Params.Application, ch.Params.Series}
+	return []interface{}{
+		ch.Params.Charm,
+		ch.Params.Application,
+		ch.Params.Series,
+		ch.Params.Channel,
+	}
 }
 
 // Args implements Change.Args.
@@ -293,9 +298,13 @@ func (ch *UpgradeCharmChange) Args() (map[string]interface{}, error) {
 
 // Description implements Change.
 func (ch *UpgradeCharmChange) Description() []string {
-	series := ""
+	var series string
 	if ch.Params.Series != "" {
 		series = " for series " + ch.Params.Series
+	}
+	var channel string
+	if ch.Params.Channel != "" {
+		channel = " for channel " + ch.Params.Channel
 	}
 
 	var location string
@@ -309,7 +318,7 @@ func (ch *UpgradeCharmChange) Description() []string {
 			location = fmt.Sprintf(" from %s ", location)
 		}
 	}
-	return []string{fmt.Sprintf("upgrade %s%susing charm %s%s", ch.Params.Application, location, name, series)}
+	return []string{fmt.Sprintf("upgrade %s%susing charm %s%s%s", ch.Params.Application, location, name, series, channel)}
 }
 
 // UpgradeCharmParams holds parameters for adding a charm to the environment.
@@ -321,13 +330,14 @@ type UpgradeCharmParams struct {
 	// Series holds the series of the charm to be added
 	// if the charm default is not sufficient.
 	Series string `json:"series"`
-
 	// Resources identifies the revision to use for each resource
 	// of the application's charm.
 	Resources map[string]int `json:"resources,omitempty"`
 	// LocalResources identifies the path to the local resource
 	// of the application's charm.
 	LocalResources map[string]string `json:"local-resources,omitempty"`
+	// Channel holds the preferred channel for obtaining the charm.
+	Channel string `json:"channel,omitempty"`
 
 	charmURL string
 }

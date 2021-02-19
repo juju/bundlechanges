@@ -244,7 +244,7 @@ func (r *resolver) allowCharmUpgrade(existingApp *Application, bundleApp *charm.
 		return true, nil
 	}
 	if !r.force && existingApp.Channel != bundleApp.Channel {
-		return false, errors.Errorf("upgrades not supported across channels (existing: %q, requested: %q)", existingApp.Channel, bundleApp.Channel)
+		return false, errors.Errorf("upgrades not supported across channels (existing: %q, requested: %q); use --force to override", existingApp.Channel, bundleApp.Channel)
 	}
 	// No existing revision found, so assume no upgrades are available.
 	if existingApp.Revision == -1 {

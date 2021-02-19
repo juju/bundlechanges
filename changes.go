@@ -32,7 +32,7 @@ type ArchConstraint interface {
 type ConstraintGetter func(string) ArchConstraint
 
 // RevisionGetter resolves the revision of a charm from the list of parameters.
-type RevisionGetter func(string, string, string, string) (int, error)
+type RevisionGetter func(charm string, series string, channel string, arch string) (int, error)
 
 // ChangesConfig is used to provide the required data for determining changes.
 type ChangesConfig struct {

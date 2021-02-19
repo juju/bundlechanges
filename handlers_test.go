@@ -113,7 +113,7 @@ func (s *resolverSuite) TestAllowUpgradeWithDifferentChannel(c *gc.C) {
 
 	r := resolver{}
 	ok, err := r.allowCharmUpgrade(existing, requested, requestedArch)
-	c.Assert(err, gc.ErrorMatches, `^upgrades not supported across channels \(existing: "stable", requested: "edge"\)`)
+	c.Assert(err, gc.ErrorMatches, `^upgrades not supported across channels \(existing: "stable", requested: "edge"\); use --force to override`)
 	c.Assert(ok, jc.IsFalse)
 }
 

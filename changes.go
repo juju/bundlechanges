@@ -524,6 +524,7 @@ func (ch *AddApplicationChange) buildArgs(includeDevices bool) []interface{} {
 		endpointBindings,
 		resources,
 		ch.Params.NumUnits,
+		ch.Params.Channel,
 	}
 	if !includeDevices {
 		// delete devices after storage
@@ -539,11 +540,15 @@ func (ch *AddApplicationChange) GUIArgs() []interface{} {
 
 // Description implements Change.
 func (ch *AddApplicationChange) Description() []string {
-	series := ""
+	var series string
 	if ch.Params.Series != "" {
 		series = " on " + ch.Params.Series
 	}
-	unitsInfo := ""
+	var channel string
+	if ch.Params.Channel != "" {
+		channel = " with " + ch.Params.Channel
+	}
+	var unitsInfo string
 	if ch.Params.NumUnits > 0 {
 		plural := ""
 		if ch.Params.NumUnits > 1 {
@@ -565,7 +570,7 @@ func (ch *AddApplicationChange) Description() []string {
 		}
 	}
 
-	return []string{fmt.Sprintf("deploy application %s%s%s%s%s", ch.Params.Application, location, unitsInfo, series, using)}
+	return []string{fmt.Sprintf("deploy application %s%s%s%s%s%s", ch.Params.Application, location, unitsInfo, series, channel, using)}
 }
 
 // AddApplicationParams holds parameters for deploying a Juju application.
@@ -597,6 +602,8 @@ type AddApplicationParams struct {
 	// LocalResources identifies the path to the local resource
 	// of the application's charm.
 	LocalResources map[string]string `json:"local-resources,omitempty"`
+	// Channel holds the channel of the application to be deployed.
+	Channel string `json:"channel,omitempty"`
 
 	// The public Charm holds either the charmURL of a placeholder for the
 	// add charm change.

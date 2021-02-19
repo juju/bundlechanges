@@ -67,8 +67,8 @@ func (r *resolver) handleApplications() (map[string]string, error) {
 		// Add the addCharm record if one hasn't been added yet, this means
 		// if the arch and series differ from an existing charm, then we create
 		// a new charm.
-		key := applicationKey(application.Charm, arch, series)
-		if charms[key] == "" && !existing.hasCharmWithArchAndSeries(application.Charm, arch, series) {
+		key := applicationKey(application.Charm, arch, series, application.Channel)
+		if charms[key] == "" && !existing.matchesCharmPermutation(application.Charm, arch, series, application.Channel) {
 			change = newAddCharmChange(AddCharmParams{
 				Charm:        application.Charm,
 				Series:       series,
@@ -124,6 +124,7 @@ func (r *resolver) handleApplications() (map[string]string, error) {
 				Resources:        resources,
 				LocalResources:   localResources,
 				charmURL:         application.Charm,
+				Channel:          application.Channel,
 			}, requires...)
 			add(change)
 			id = change.Id()
@@ -210,15 +211,17 @@ func (r *resolver) handleApplications() (map[string]string, error) {
 
 		// Add application annotations.
 		if annotations := existingApp.changedAnnotations(application.Annotations); len(annotations) > 0 {
-			paramId := name
-			var deps []string
+			var (
+				deps    []string
+				paramID = name
+			)
 			if existingApp == nil {
-				paramId = placeholder(id)
+				paramID = placeholder(id)
 				deps = append(deps, id)
 			}
 			add(newSetAnnotationsChange(SetAnnotationsParams{
 				EntityType:  ApplicationType,
-				Id:          paramId,
+				Id:          paramID,
 				Annotations: annotations,
 				target:      name,
 			}, deps...))
@@ -610,7 +613,8 @@ func (p *unitProcessor) placeUnitsForApplication(name string, application *charm
 	p.logger.Tracef("placements: %v", application.To)
 	unsatisfied := p.existing.unsatisfiedMachineAndUnitPlacements(name, application.To)
 	p.logger.Tracef("unsatisfied: %v", unsatisfied)
-	lastChangeId := ""
+
+	var lastChangeID string
 	// unitCount on a nil existingApp returns zero.
 	for i := existingApp.unitCount(); i < application.NumUnits; i++ {
 		directive := lastPlacement
@@ -633,10 +637,10 @@ func (p *unitProcessor) placeUnitsForApplication(name string, application *charm
 		change.Params.directive = placement.directive
 		change.requires = append(change.requires, placement.requires...)
 
-		if lastChangeId != "" {
-			change.requires = append(change.requires, lastChangeId)
+		if lastChangeID != "" {
+			change.requires = append(change.requires, lastChangeID)
 		}
-		lastChangeId = change.id
+		lastChangeID = change.id
 	}
 	return nil
 }
@@ -1107,8 +1111,8 @@ func placeholder(changeID string) string {
 	return "$" + changeID
 }
 
-func applicationKey(charm, arch, series string) string {
-	return fmt.Sprintf("%s:%s:%s", charm, arch, series)
+func applicationKey(charm, arch, series, channel string) string {
+	return fmt.Sprintf("%s:%s:%s:%s", charm, arch, series, channel)
 }
 
 // getSeries retrieves the series of a application from the ApplicationSpec or from the

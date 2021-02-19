@@ -81,6 +81,7 @@ func (s *changesSuite) TestMinimalBundle(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "django",
@@ -117,6 +118,7 @@ func (s *changesSuite) TestMinimalBundleWithChannels(c *gc.C) {
 		Params: bundlechanges.AddApplicationParams{
 			Charm:       "$addCharm-0",
 			Application: "django",
+			Channel:     "edge",
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-0",
@@ -128,10 +130,12 @@ func (s *changesSuite) TestMinimalBundleWithChannels(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"edge",
 		},
 		Args: map[string]interface{}{
 			"application": "django",
 			"charm":       "$addCharm-0",
+			"channel":     "edge",
 		},
 		Requires: []string{"addCharm-0"},
 	}}
@@ -168,6 +172,7 @@ func (s *changesSuite) TestBundleURLAnnotationSet(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -249,6 +254,7 @@ func (s *changesSuite) TestMinimalBundleWithDevices(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "django",
@@ -306,6 +312,7 @@ applications:
 				map[string]string{},
 				map[string]int{},
 				0,
+				"",
 			},
 			Args: map[string]interface{}{
 				"application": "apache2",
@@ -451,6 +458,7 @@ applications:
 				map[string]string{},
 				map[string]int{},
 				0,
+				"",
 			},
 			Args: map[string]interface{}{
 				"application": "apache2",
@@ -594,6 +602,7 @@ relations:
 				map[string]string{},
 				map[string]int{},
 				0,
+				"",
 			},
 			Args: map[string]interface{}{
 				"application": "apache2",
@@ -690,6 +699,7 @@ func (s *changesSuite) TestSimpleBundle(c *gc.C) {
 			map[string]string{},
 			map[string]int{"data": 3},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "mediawiki",
@@ -767,6 +777,7 @@ func (s *changesSuite) TestSimpleBundle(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "mysql",
@@ -874,6 +885,7 @@ func (s *changesSuite) TestSimpleBundleWithDevices(c *gc.C) {
 			map[string]string{},
 			map[string]int{"data": 3},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "mediawiki",
@@ -952,6 +964,7 @@ func (s *changesSuite) TestSimpleBundleWithDevices(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "mysql",
@@ -1062,6 +1075,7 @@ func (s *changesSuite) TestKubernetesBundle(c *gc.C) {
 			map[string]string{},
 			map[string]int{"data": 3},
 			1,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "mediawiki",
@@ -1142,6 +1156,7 @@ func (s *changesSuite) TestKubernetesBundle(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			2,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "mysql",
@@ -1210,6 +1225,7 @@ func (s *changesSuite) TestSameCharmReused(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "mediawiki",
@@ -1235,6 +1251,7 @@ func (s *changesSuite) TestSameCharmReused(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "otherwiki",
@@ -1318,6 +1335,7 @@ func (s *changesSuite) TestMachinesAndUnitsPlacementWithBindings(c *gc.C) {
 			map[string]string{"": "foo", "http": "bar"},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "django",
@@ -1361,6 +1379,7 @@ func (s *changesSuite) TestMachinesAndUnitsPlacementWithBindings(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "haproxy",
@@ -1564,6 +1583,7 @@ func (s *changesSuite) TestMachinesWithConstraintsAndAnnotations(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "django",
@@ -1693,6 +1713,7 @@ func (s *changesSuite) TestEndpointWithoutRelationName(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "mediawiki",
@@ -1731,6 +1752,7 @@ func (s *changesSuite) TestEndpointWithoutRelationName(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "mysql",
@@ -1798,6 +1820,7 @@ func (s *changesSuite) TestUnitPlacedInApplication(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "django",
@@ -1832,6 +1855,7 @@ func (s *changesSuite) TestUnitPlacedInApplication(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "wordpress",
@@ -1944,6 +1968,7 @@ func (s *changesSuite) TestUnitPlacedInApplicationWithDevices(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "django",
@@ -1979,6 +2004,7 @@ func (s *changesSuite) TestUnitPlacedInApplicationWithDevices(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "wordpress",
@@ -2104,6 +2130,7 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "django",
@@ -2141,6 +2168,7 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "memcached",
@@ -2178,6 +2206,7 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "ror",
@@ -2508,6 +2537,7 @@ func (s *changesSuite) TestUnitPlacedToMachines(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "django",
@@ -2723,6 +2753,7 @@ func (s *changesSuite) TestUnitPlacedToNewMachineWithConstraints(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "django",
@@ -2813,6 +2844,7 @@ func (s *changesSuite) TestApplicationWithStorage(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "django",
@@ -2905,6 +2937,7 @@ func (s *changesSuite) TestApplicationWithDevices(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "django",
@@ -2981,6 +3014,7 @@ func (s *changesSuite) TestApplicationWithEndpointBindings(c *gc.C) {
 			map[string]string{"foo": "bar"},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "django",
@@ -3035,6 +3069,7 @@ applications:
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "django",
@@ -3113,6 +3148,7 @@ machines:
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "gui3",
@@ -3341,6 +3377,7 @@ func (s *changesSuite) assertLocalBundleChanges(c *gc.C, charmDir, bundleContent
 			map[string]string{},      // endpoint bindings.
 			map[string]int{},         // resources.
 			0,                        // num_units.
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "django",
@@ -3384,6 +3421,7 @@ func (s *changesSuite) assertLocalBundleChangesWithDevices(c *gc.C, charmDir, bu
 			map[string]string{},      // endpoint bindings.
 			map[string]int{},         // resources.
 			0,                        // num_units.
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "django",

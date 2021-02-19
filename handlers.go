@@ -21,7 +21,9 @@ type resolver struct {
 	bundleURL        string
 	logger           Logger
 	constraintGetter ConstraintGetter
+	revisionGetter   RevisionGetter
 	changes          *changeset
+	force            bool
 }
 
 // handleApplications populates the change set with "addCharm"/"addApplication" records.
@@ -140,7 +142,9 @@ func (r *resolver) handleApplications() (map[string]string, error) {
 			}
 		} else {
 			// Look for changes.
-			if existingApp.Charm != application.Charm {
+			if ok, err := r.allowCharmUpgrade(existingApp, application, arch); err != nil {
+				return nil, errors.Trace(err)
+			} else if ok {
 				charmOrChange := application.Charm
 				if charmChange := charms[key]; charmChange != "" {
 					charmOrChange = placeholder(charmChange)
@@ -150,6 +154,7 @@ func (r *resolver) handleApplications() (map[string]string, error) {
 					Charm:          charmOrChange,
 					Application:    name,
 					Series:         series,
+					Channel:        application.Channel,
 					Resources:      resources,
 					LocalResources: localResources,
 					charmURL:       application.Charm,
@@ -228,6 +233,39 @@ func (r *resolver) handleApplications() (map[string]string, error) {
 		}
 	}
 	return addedApplications, nil
+}
+
+func (r *resolver) allowCharmUpgrade(existingApp *Application, bundleApp *charm.ApplicationSpec, bundleArch string) (bool, error) {
+	// This covers most of v1 charm URL changes, everything else below is to
+	// support channels. Charmstore charms allow channels, but bundles were not
+	// aware of them, with the introduction of Charmhub charms, then we do need
+	// to factor in channels.
+	if existingApp.Charm != bundleApp.Charm {
+		return true, nil
+	}
+	if !r.force && existingApp.Channel != bundleApp.Channel {
+		return false, errors.Errorf("upgrades not supported across channels (existing: %q, requested: %q)", existingApp.Channel, bundleApp.Channel)
+	}
+	// No existing revision found, so assume no upgrades are available.
+	if existingApp.Revision == -1 {
+		return false, nil
+	}
+
+	requestedRev := -1
+	if r.revisionGetter != nil {
+		var err error
+		requestedRev, err = r.revisionGetter(bundleApp.Charm, bundleApp.Series, bundleApp.Channel, bundleArch)
+		if err != nil {
+			return false, errors.Trace(err)
+		}
+	}
+	if requestedRev > existingApp.Revision {
+		return true, nil
+	} else if requestedRev != -1 && requestedRev < existingApp.Revision {
+		return false, errors.Errorf("downgrades are not currently supported")
+	}
+	// Same revision, no upgrade required.
+	return false, nil
 }
 
 func mapExposedEndpointSpec(specs map[string]charm.ExposedEndpointSpec) map[string]*ExposedEndpointParams {

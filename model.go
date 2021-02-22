@@ -209,6 +209,7 @@ type Application struct {
 	SubordinateTo    []string
 	Series           string
 	Channel          string
+	Revision         int
 	Placement        string
 	Offers           []string
 	// TODO: handle changes in:

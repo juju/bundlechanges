@@ -21,7 +21,7 @@ type resolver struct {
 	bundleURL        string
 	logger           Logger
 	constraintGetter ConstraintGetter
-	revisionGetter   RevisionGetter
+	charmResolver    CharmResolver
 	changes          *changeset
 	force            bool
 }
@@ -243,25 +243,32 @@ func (r *resolver) allowCharmUpgrade(existingApp *Application, bundleApp *charm.
 	if existingApp.Charm != bundleApp.Charm {
 		return true, nil
 	}
-	if !r.force && existingApp.Channel != bundleApp.Channel {
-		return false, errors.Errorf("upgrades not supported across channels (existing: %q, requested: %q); use --force to override", existingApp.Channel, bundleApp.Channel)
-	}
 	// No existing revision found, so assume no upgrades are available.
 	if existingApp.Revision == -1 {
 		return false, nil
 	}
 
-	requestedRev := -1
-	if r.revisionGetter != nil {
+	var (
+		resolvedChan = bundleApp.Channel
+		resolvedRev  = -1
+	)
+	if r.charmResolver != nil {
 		var err error
-		requestedRev, err = r.revisionGetter(bundleApp.Charm, bundleApp.Series, bundleApp.Channel, bundleArch)
+		resolvedChan, resolvedRev, err = r.charmResolver(bundleApp.Charm, bundleApp.Series, bundleApp.Channel, bundleArch)
 		if err != nil {
 			return false, errors.Trace(err)
 		}
 	}
-	if requestedRev > existingApp.Revision {
+	if !r.force && existingApp.Channel != resolvedChan {
+		verb := "requested"
+		if bundleApp.Channel == "" {
+			verb = "resolved"
+		}
+		return false, errors.Errorf("upgrades not supported across channels (existing: %q, %s: %q); use --force to override", existingApp.Channel, verb, resolvedChan)
+	}
+	if resolvedRev > existingApp.Revision {
 		return true, nil
-	} else if requestedRev != -1 && requestedRev < existingApp.Revision {
+	} else if resolvedRev != -1 && resolvedRev < existingApp.Revision {
 		// For charmhub charms, we currently don't support downgrades.
 		return false, errors.Errorf("downgrades are not currently supported")
 	}

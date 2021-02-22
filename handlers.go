@@ -247,6 +247,12 @@ func (r *resolver) allowCharmUpgrade(existingApp *Application, bundleApp *charm.
 	if existingApp.Revision == -1 {
 		return false, nil
 	}
+	// This handles the case that the existing application doesn't have a
+	// channel, so we're talking to an older controller. In that situation the
+	// older path way would ignore channel upgrades.
+	if existingApp.Channel == "" {
+		return false, nil
+	}
 
 	var (
 		resolvedChan = bundleApp.Channel

@@ -31,8 +31,9 @@ type ArchConstraint interface {
 // ConstraintGetter represents a architecture constraint parser.
 type ConstraintGetter func(string) ArchConstraint
 
-// RevisionGetter resolves the revision of a charm from the list of parameters.
-type RevisionGetter func(charm string, series string, channel string, arch string) (int, error)
+// CharmResolver resolves the channel and revision of a charm from the list of
+// parameters.
+type CharmResolver func(charm string, series string, channel string, arch string) (string, int, error)
 
 // ChangesConfig is used to provide the required data for determining changes.
 type ChangesConfig struct {
@@ -41,7 +42,7 @@ type ChangesConfig struct {
 	Logger           Logger
 	BundleURL        string
 	ConstraintGetter ConstraintGetter
-	RevisionGetter   RevisionGetter
+	CharmResolver    CharmResolver
 	Force            bool
 	// TODO: add charm metadata for validation.
 }
@@ -80,7 +81,7 @@ func FromData(config ChangesConfig) ([]Change, error) {
 		bundleURL:        config.BundleURL,
 		logger:           config.Logger,
 		constraintGetter: config.ConstraintGetter,
-		revisionGetter:   config.RevisionGetter,
+		charmResolver:    config.CharmResolver,
 		changes:          changes,
 		force:            config.Force,
 	}

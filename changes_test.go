@@ -3779,8 +3779,8 @@ func (s *changesSuite) TestCharmUpgradeWithCharmhubCharmAndExistingChannel(c *gc
 	expectedChanges := []string{
 		"upgrade django from charm-hub using charm django from channel stable",
 	}
-	s.checkBundleExistingModelWithRevisionParser(c, bundleContent, existingModel, expectedChanges, func(string, string, string, string) (int, error) {
-		return 42, nil
+	s.checkBundleExistingModelWithRevisionParser(c, bundleContent, existingModel, expectedChanges, func(string, string, string, string) (string, int, error) {
+		return "stable", 42, nil
 	})
 }
 
@@ -5448,8 +5448,8 @@ func (s *changesSuite) checkBundleWithConstraintsParserError(c *gc.C, bundleCont
 	s.checkBundleImpl(c, bundleContent, nil, nil, errMatch, parserFn, nil)
 }
 
-func (s *changesSuite) checkBundleExistingModelWithRevisionParser(c *gc.C, bundleContent string, existingModel *bundlechanges.Model, expectedChanges []string, revisionFn bundlechanges.RevisionGetter) {
-	s.checkBundleImpl(c, bundleContent, existingModel, expectedChanges, "", nil, revisionFn)
+func (s *changesSuite) checkBundleExistingModelWithRevisionParser(c *gc.C, bundleContent string, existingModel *bundlechanges.Model, expectedChanges []string, charmResolverFn bundlechanges.CharmResolver) {
+	s.checkBundleImpl(c, bundleContent, existingModel, expectedChanges, "", nil, charmResolverFn)
 }
 
 func (s *changesSuite) checkBundleImpl(c *gc.C,
@@ -5458,7 +5458,7 @@ func (s *changesSuite) checkBundleImpl(c *gc.C,
 	expectedChanges []string,
 	errMatch string,
 	parserFn bundlechanges.ConstraintGetter,
-	revisionFn bundlechanges.RevisionGetter,
+	charmResolverFn bundlechanges.CharmResolver,
 ) {
 	// Retrieve and validate the bundle data merging any overlays in the bundle contents.
 	bundleSrc, err := charm.StreamBundleDataSource(strings.NewReader(bundleContent), "./")
@@ -5474,7 +5474,7 @@ func (s *changesSuite) checkBundleImpl(c *gc.C,
 		Model:            existingModel,
 		Logger:           loggo.GetLogger("bundlechanges"),
 		ConstraintGetter: parserFn,
-		RevisionGetter:   revisionFn,
+		CharmResolver:    charmResolverFn,
 	})
 	if errMatch != "" {
 		c.Assert(err, gc.ErrorMatches, errMatch)

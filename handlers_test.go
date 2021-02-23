@@ -168,6 +168,24 @@ func (s *resolverSuite) TestAllowUpgradeWithNoExistingChannel(c *gc.C) {
 
 	r := resolver{}
 	ok, err := r.allowCharmUpgrade(existing, requested, requestedArch)
-	c.Assert(err, jc.ErrorIsNil)
+	c.Assert(err, gc.ErrorMatches, `^upgrades not supported with unknown existing channels; use --force to override`)
 	c.Assert(ok, jc.IsFalse)
+}
+
+func (s *resolverSuite) TestAllowUpgradeWithNoExistingChannelWithForce(c *gc.C) {
+	existing := &Application{
+		Charm: "ch:ubuntu",
+	}
+	requested := &charm.ApplicationSpec{
+		Charm:   "ch:ubuntu",
+		Channel: "stable",
+	}
+	requestedArch := "amd64"
+
+	r := resolver{
+		force: true,
+	}
+	ok, err := r.allowCharmUpgrade(existing, requested, requestedArch)
+	c.Assert(err, jc.ErrorIsNil)
+	c.Assert(ok, jc.IsTrue)
 }

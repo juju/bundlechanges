@@ -248,10 +248,18 @@ func (r *resolver) allowCharmUpgrade(existingApp *Application, bundleApp *charm.
 		return false, nil
 	}
 	// This handles the case that the existing application doesn't have a
-	// channel, so we're talking to an older controller. In that situation the
-	// older path way would ignore channel upgrades.
+	// channel, so we're talking to an older controller.
 	if existingApp.Channel == "" {
-		return false, nil
+		// No upgrade required.
+		if bundleApp.Channel == "" {
+			return false, nil
+		}
+		// If the bundle channel is not empty and we're not using force, then
+		// raise an error asking the user to supply force.
+		if !r.force && bundleApp.Channel != "" {
+			return false, errors.Errorf("upgrades not supported with unknown existing channels; use --force to override")
+		}
+		return true, nil
 	}
 
 	var (

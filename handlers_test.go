@@ -117,7 +117,7 @@ func (s *resolverSuite) TestAllowUpgradeWithDifferentChannel(c *gc.C) {
 	c.Assert(ok, jc.IsFalse)
 }
 
-func (s *resolverSuite) TestAllowUpgradeWithNoChannel(c *gc.C) {
+func (s *resolverSuite) TestAllowUpgradeWithNoBundleChannel(c *gc.C) {
 	existing := &Application{
 		Charm:   "ch:ubuntu",
 		Channel: "stable",
@@ -150,6 +150,40 @@ func (s *resolverSuite) TestAllowUpgradeWithDifferentChannelAndForce(c *gc.C) {
 		charmResolver: func(charm, series, channel, arch string) (string, int, error) {
 			return "stable", 1, nil
 		},
+	}
+	ok, err := r.allowCharmUpgrade(existing, requested, requestedArch)
+	c.Assert(err, jc.ErrorIsNil)
+	c.Assert(ok, jc.IsTrue)
+}
+
+func (s *resolverSuite) TestAllowUpgradeWithNoExistingChannel(c *gc.C) {
+	existing := &Application{
+		Charm: "ch:ubuntu",
+	}
+	requested := &charm.ApplicationSpec{
+		Charm:   "ch:ubuntu",
+		Channel: "stable",
+	}
+	requestedArch := "amd64"
+
+	r := resolver{}
+	ok, err := r.allowCharmUpgrade(existing, requested, requestedArch)
+	c.Assert(err, gc.ErrorMatches, `^upgrades not supported when the channel for the deployed application is unknown; use --force to override`)
+	c.Assert(ok, jc.IsFalse)
+}
+
+func (s *resolverSuite) TestAllowUpgradeWithNoExistingChannelWithForce(c *gc.C) {
+	existing := &Application{
+		Charm: "ch:ubuntu",
+	}
+	requested := &charm.ApplicationSpec{
+		Charm:   "ch:ubuntu",
+		Channel: "stable",
+	}
+	requestedArch := "amd64"
+
+	r := resolver{
+		force: true,
 	}
 	ok, err := r.allowCharmUpgrade(existing, requested, requestedArch)
 	c.Assert(err, jc.ErrorIsNil)

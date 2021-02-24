@@ -31,6 +31,10 @@ type ArchConstraint interface {
 // ConstraintGetter represents a architecture constraint parser.
 type ConstraintGetter func(string) ArchConstraint
 
+// CharmResolver resolves the channel and revision of a charm from the list of
+// parameters.
+type CharmResolver func(charm string, series string, channel string, arch string) (string, int, error)
+
 // ChangesConfig is used to provide the required data for determining changes.
 type ChangesConfig struct {
 	Bundle           *charm.BundleData
@@ -38,6 +42,8 @@ type ChangesConfig struct {
 	Logger           Logger
 	BundleURL        string
 	ConstraintGetter ConstraintGetter
+	CharmResolver    CharmResolver
+	Force            bool
 	// TODO: add charm metadata for validation.
 }
 
@@ -75,7 +81,9 @@ func FromData(config ChangesConfig) ([]Change, error) {
 		bundleURL:        config.BundleURL,
 		logger:           config.Logger,
 		constraintGetter: config.ConstraintGetter,
+		charmResolver:    config.CharmResolver,
 		changes:          changes,
+		force:            config.Force,
 	}
 	addedApplications, err := resolver.handleApplications()
 	if err != nil {
@@ -283,7 +291,12 @@ type UpgradeCharmChange struct {
 
 // GUIArgs implements Change.GUIArgs.
 func (ch *UpgradeCharmChange) GUIArgs() []interface{} {
-	return []interface{}{ch.Params.Charm, ch.Params.Application, ch.Params.Series}
+	return []interface{}{
+		ch.Params.Charm,
+		ch.Params.Application,
+		ch.Params.Series,
+		ch.Params.Channel,
+	}
 }
 
 // Args implements Change.Args.
@@ -293,9 +306,13 @@ func (ch *UpgradeCharmChange) Args() (map[string]interface{}, error) {
 
 // Description implements Change.
 func (ch *UpgradeCharmChange) Description() []string {
-	series := ""
+	var series string
 	if ch.Params.Series != "" {
 		series = " for series " + ch.Params.Series
+	}
+	var channel string
+	if ch.Params.Channel != "" {
+		channel = " from channel " + ch.Params.Channel
 	}
 
 	var location string
@@ -309,7 +326,7 @@ func (ch *UpgradeCharmChange) Description() []string {
 			location = fmt.Sprintf(" from %s ", location)
 		}
 	}
-	return []string{fmt.Sprintf("upgrade %s%susing charm %s%s", ch.Params.Application, location, name, series)}
+	return []string{fmt.Sprintf("upgrade %s%susing charm %s%s%s", ch.Params.Application, location, name, series, channel)}
 }
 
 // UpgradeCharmParams holds parameters for adding a charm to the environment.
@@ -321,13 +338,14 @@ type UpgradeCharmParams struct {
 	// Series holds the series of the charm to be added
 	// if the charm default is not sufficient.
 	Series string `json:"series"`
-
 	// Resources identifies the revision to use for each resource
 	// of the application's charm.
 	Resources map[string]int `json:"resources,omitempty"`
 	// LocalResources identifies the path to the local resource
 	// of the application's charm.
 	LocalResources map[string]string `json:"local-resources,omitempty"`
+	// Channel holds the preferred channel for obtaining the charm.
+	Channel string `json:"channel,omitempty"`
 
 	charmURL string
 }
@@ -524,6 +542,7 @@ func (ch *AddApplicationChange) buildArgs(includeDevices bool) []interface{} {
 		endpointBindings,
 		resources,
 		ch.Params.NumUnits,
+		ch.Params.Channel,
 	}
 	if !includeDevices {
 		// delete devices after storage
@@ -539,11 +558,15 @@ func (ch *AddApplicationChange) GUIArgs() []interface{} {
 
 // Description implements Change.
 func (ch *AddApplicationChange) Description() []string {
-	series := ""
+	var series string
 	if ch.Params.Series != "" {
 		series = " on " + ch.Params.Series
 	}
-	unitsInfo := ""
+	var channel string
+	if ch.Params.Channel != "" {
+		channel = " with " + ch.Params.Channel
+	}
+	var unitsInfo string
 	if ch.Params.NumUnits > 0 {
 		plural := ""
 		if ch.Params.NumUnits > 1 {
@@ -565,7 +588,7 @@ func (ch *AddApplicationChange) Description() []string {
 		}
 	}
 
-	return []string{fmt.Sprintf("deploy application %s%s%s%s%s", ch.Params.Application, location, unitsInfo, series, using)}
+	return []string{fmt.Sprintf("deploy application %s%s%s%s%s%s", ch.Params.Application, location, unitsInfo, series, channel, using)}
 }
 
 // AddApplicationParams holds parameters for deploying a Juju application.
@@ -597,6 +620,8 @@ type AddApplicationParams struct {
 	// LocalResources identifies the path to the local resource
 	// of the application's charm.
 	LocalResources map[string]string `json:"local-resources,omitempty"`
+	// Channel holds the channel of the application to be deployed.
+	Channel string `json:"channel,omitempty"`
 
 	// The public Charm holds either the charmURL of a placeholder for the
 	// add charm change.

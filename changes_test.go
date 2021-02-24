@@ -81,6 +81,7 @@ func (s *changesSuite) TestMinimalBundle(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "django",
@@ -117,6 +118,7 @@ func (s *changesSuite) TestMinimalBundleWithChannels(c *gc.C) {
 		Params: bundlechanges.AddApplicationParams{
 			Charm:       "$addCharm-0",
 			Application: "django",
+			Channel:     "edge",
 		},
 		GUIArgs: []interface{}{
 			"$addCharm-0",
@@ -128,10 +130,12 @@ func (s *changesSuite) TestMinimalBundleWithChannels(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"edge",
 		},
 		Args: map[string]interface{}{
 			"application": "django",
 			"charm":       "$addCharm-0",
+			"channel":     "edge",
 		},
 		Requires: []string{"addCharm-0"},
 	}}
@@ -168,6 +172,7 @@ func (s *changesSuite) TestBundleURLAnnotationSet(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Requires: []string{"addCharm-0"},
 	}, {
@@ -249,6 +254,7 @@ func (s *changesSuite) TestMinimalBundleWithDevices(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "django",
@@ -306,6 +312,7 @@ applications:
 				map[string]string{},
 				map[string]int{},
 				0,
+				"",
 			},
 			Args: map[string]interface{}{
 				"application": "apache2",
@@ -451,6 +458,7 @@ applications:
 				map[string]string{},
 				map[string]int{},
 				0,
+				"",
 			},
 			Args: map[string]interface{}{
 				"application": "apache2",
@@ -594,6 +602,7 @@ relations:
 				map[string]string{},
 				map[string]int{},
 				0,
+				"",
 			},
 			Args: map[string]interface{}{
 				"application": "apache2",
@@ -690,6 +699,7 @@ func (s *changesSuite) TestSimpleBundle(c *gc.C) {
 			map[string]string{},
 			map[string]int{"data": 3},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "mediawiki",
@@ -767,6 +777,7 @@ func (s *changesSuite) TestSimpleBundle(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "mysql",
@@ -874,6 +885,7 @@ func (s *changesSuite) TestSimpleBundleWithDevices(c *gc.C) {
 			map[string]string{},
 			map[string]int{"data": 3},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "mediawiki",
@@ -952,6 +964,7 @@ func (s *changesSuite) TestSimpleBundleWithDevices(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "mysql",
@@ -1062,6 +1075,7 @@ func (s *changesSuite) TestKubernetesBundle(c *gc.C) {
 			map[string]string{},
 			map[string]int{"data": 3},
 			1,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "mediawiki",
@@ -1142,6 +1156,7 @@ func (s *changesSuite) TestKubernetesBundle(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			2,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "mysql",
@@ -1210,6 +1225,7 @@ func (s *changesSuite) TestSameCharmReused(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "mediawiki",
@@ -1235,6 +1251,7 @@ func (s *changesSuite) TestSameCharmReused(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "otherwiki",
@@ -1318,6 +1335,7 @@ func (s *changesSuite) TestMachinesAndUnitsPlacementWithBindings(c *gc.C) {
 			map[string]string{"": "foo", "http": "bar"},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "django",
@@ -1361,6 +1379,7 @@ func (s *changesSuite) TestMachinesAndUnitsPlacementWithBindings(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "haproxy",
@@ -1564,6 +1583,7 @@ func (s *changesSuite) TestMachinesWithConstraintsAndAnnotations(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "django",
@@ -1693,6 +1713,7 @@ func (s *changesSuite) TestEndpointWithoutRelationName(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "mediawiki",
@@ -1731,6 +1752,7 @@ func (s *changesSuite) TestEndpointWithoutRelationName(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "mysql",
@@ -1798,6 +1820,7 @@ func (s *changesSuite) TestUnitPlacedInApplication(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "django",
@@ -1832,6 +1855,7 @@ func (s *changesSuite) TestUnitPlacedInApplication(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "wordpress",
@@ -1944,6 +1968,7 @@ func (s *changesSuite) TestUnitPlacedInApplicationWithDevices(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "django",
@@ -1979,6 +2004,7 @@ func (s *changesSuite) TestUnitPlacedInApplicationWithDevices(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "wordpress",
@@ -2104,6 +2130,7 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "django",
@@ -2141,6 +2168,7 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "memcached",
@@ -2178,6 +2206,7 @@ func (s *changesSuite) TestUnitColocationWithOtherUnits(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "ror",
@@ -2508,6 +2537,7 @@ func (s *changesSuite) TestUnitPlacedToMachines(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "django",
@@ -2723,6 +2753,7 @@ func (s *changesSuite) TestUnitPlacedToNewMachineWithConstraints(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "django",
@@ -2813,6 +2844,7 @@ func (s *changesSuite) TestApplicationWithStorage(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "django",
@@ -2905,6 +2937,7 @@ func (s *changesSuite) TestApplicationWithDevices(c *gc.C) {
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "django",
@@ -2981,6 +3014,7 @@ func (s *changesSuite) TestApplicationWithEndpointBindings(c *gc.C) {
 			map[string]string{"foo": "bar"},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "django",
@@ -3035,6 +3069,7 @@ applications:
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "django",
@@ -3113,6 +3148,7 @@ machines:
 			map[string]string{},
 			map[string]int{},
 			0,
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "gui3",
@@ -3341,6 +3377,7 @@ func (s *changesSuite) assertLocalBundleChanges(c *gc.C, charmDir, bundleContent
 			map[string]string{},      // endpoint bindings.
 			map[string]int{},         // resources.
 			0,                        // num_units.
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "django",
@@ -3384,6 +3421,7 @@ func (s *changesSuite) assertLocalBundleChangesWithDevices(c *gc.C, charmDir, bu
 			map[string]string{},      // endpoint bindings.
 			map[string]int{},         // resources.
 			0,                        // num_units.
+			"",
 		},
 		Args: map[string]interface{}{
 			"application": "django",
@@ -3665,6 +3703,85 @@ func (s *changesSuite) TestCharmUpgrade(c *gc.C) {
 		"upgrade django from charm-store using charm django",
 	}
 	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
+
+func (s *changesSuite) TestCharmUpgradeWithChannel(c *gc.C) {
+	bundleContent := `
+                applications:
+                    django:
+                        charm: cs:django-6
+                        channel: stable
+                        num_units: 1
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"django": {
+				Charm: "cs:django-4",
+				Units: []bundlechanges.Unit{
+					{"django/0", "0"},
+				},
+			},
+		},
+	}
+	expectedChanges := []string{
+		"upload charm django from charm-store from channel stable",
+		"upgrade django from charm-store using charm django from channel stable",
+	}
+	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
+
+func (s *changesSuite) TestCharmUpgradeWithExistingChannel(c *gc.C) {
+	bundleContent := `
+                applications:
+                    django:
+                        charm: cs:django-6
+                        channel: stable
+                        num_units: 1
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"django": {
+				Charm:   "cs:django-4",
+				Channel: "edge",
+				Units: []bundlechanges.Unit{
+					{"django/0", "0"},
+				},
+			},
+		},
+	}
+	expectedChanges := []string{
+		"upload charm django from charm-store from channel stable",
+		"upgrade django from charm-store using charm django from channel stable",
+	}
+	s.checkBundleExistingModel(c, bundleContent, existingModel, expectedChanges)
+}
+
+func (s *changesSuite) TestCharmUpgradeWithCharmhubCharmAndExistingChannel(c *gc.C) {
+	bundleContent := `
+                applications:
+                    django:
+                        charm: ch:django
+                        channel: stable
+                        num_units: 1
+            `
+	existingModel := &bundlechanges.Model{
+		Applications: map[string]*bundlechanges.Application{
+			"django": {
+				Charm:    "ch:django",
+				Channel:  "stable",
+				Revision: 1,
+				Units: []bundlechanges.Unit{
+					{"django/0", "0"},
+				},
+			},
+		},
+	}
+	expectedChanges := []string{
+		"upgrade django from charm-hub using charm django from channel stable",
+	}
+	s.checkBundleExistingModelWithRevisionParser(c, bundleContent, existingModel, expectedChanges, func(string, string, string, string) (string, int, error) {
+		return "stable", 42, nil
+	})
 }
 
 func (s *changesSuite) TestAppExistsWithLessUnits(c *gc.C) {
@@ -5057,7 +5174,7 @@ func (s *changesSuite) TestInconsistentMappingError(c *gc.C) {
 			"3": "3",
 		},
 	}
-	s.checkBundleImpl(c, bundleContent, existingModel, nil, `bundle and machine mapping are inconsistent: need an explicit entry mapping bundle machine "0", perhaps to one of model machines \["2", "3"\] - the target should host \[memcached\]`, nil)
+	s.checkBundleImpl(c, bundleContent, existingModel, nil, `bundle and machine mapping are inconsistent: need an explicit entry mapping bundle machine "0", perhaps to one of model machines \["2", "3"\] - the target should host \[memcached\]`, nil, nil)
 }
 
 func (s *changesSuite) TestConsistentMapping(c *gc.C) {
@@ -5175,7 +5292,7 @@ func (s *changesSuite) TestSingleTarget(c *gc.C) {
 			"2": "2",
 		},
 	}
-	s.checkBundleImpl(c, bundleContent, existingModel, nil, `bundle and machine mapping are inconsistent: need an explicit entry mapping bundle machine "0", perhaps to unreferenced model machine "2" - the target should host \[memcached\]`, nil)
+	s.checkBundleImpl(c, bundleContent, existingModel, nil, `bundle and machine mapping are inconsistent: need an explicit entry mapping bundle machine "0", perhaps to unreferenced model machine "2" - the target should host \[memcached\]`, nil, nil)
 }
 
 func (s *changesSuite) TestMultipleApplications(c *gc.C) {
@@ -5221,7 +5338,7 @@ func (s *changesSuite) TestMultipleApplications(c *gc.C) {
 			"2": "2",
 		},
 	}
-	s.checkBundleImpl(c, bundleContent, existingModel, nil, `bundle and machine mapping are inconsistent: need an explicit entry mapping bundle machine "0", perhaps to unreferenced model machine "2" - the target should host \[memcached, prometheus\]`, nil)
+	s.checkBundleImpl(c, bundleContent, existingModel, nil, `bundle and machine mapping are inconsistent: need an explicit entry mapping bundle machine "0", perhaps to unreferenced model machine "2" - the target should host \[memcached, prometheus\]`, nil, nil)
 }
 
 func (s *changesSuite) TestNoApplications(c *gc.C) {
@@ -5270,7 +5387,7 @@ func (s *changesSuite) TestNoApplications(c *gc.C) {
 	// In this case we can't find any applications for bundle machine
 	// 0 because the applications don't refer to it with simple
 	// placement..
-	s.checkBundleImpl(c, bundleContent, existingModel, nil, `bundle and machine mapping are inconsistent: need an explicit entry mapping bundle machine "0", perhaps to unreferenced model machine "2"`, nil)
+	s.checkBundleImpl(c, bundleContent, existingModel, nil, `bundle and machine mapping are inconsistent: need an explicit entry mapping bundle machine "0", perhaps to unreferenced model machine "2"`, nil, nil)
 }
 
 func (s *changesSuite) TestNoPossibleTargets(c *gc.C) {
@@ -5304,31 +5421,35 @@ func (s *changesSuite) TestNoPossibleTargets(c *gc.C) {
 		},
 	}
 	// There *are* two units, but they're both on machine one.
-	s.checkBundleImpl(c, bundleContent, existingModel, nil, `bundle and machine mapping are inconsistent: need an explicit entry mapping bundle machine "0" - the target should host \[memcached\]`, nil)
+	s.checkBundleImpl(c, bundleContent, existingModel, nil, `bundle and machine mapping are inconsistent: need an explicit entry mapping bundle machine "0" - the target should host \[memcached\]`, nil, nil)
 }
 
 func (s *changesSuite) checkBundle(c *gc.C, bundleContent string, expectedChanges []string) {
-	s.checkBundleImpl(c, bundleContent, nil, expectedChanges, "", nil)
+	s.checkBundleImpl(c, bundleContent, nil, expectedChanges, "", nil, nil)
 }
 
 func (s *changesSuite) checkBundleExistingModel(c *gc.C, bundleContent string, existingModel *bundlechanges.Model, expectedChanges []string) {
-	s.checkBundleImpl(c, bundleContent, existingModel, expectedChanges, "", nil)
+	s.checkBundleImpl(c, bundleContent, existingModel, expectedChanges, "", nil, nil)
 }
 
 func (s *changesSuite) checkBundleError(c *gc.C, bundleContent string, errMatch string) {
-	s.checkBundleImpl(c, bundleContent, nil, nil, errMatch, nil)
+	s.checkBundleImpl(c, bundleContent, nil, nil, errMatch, nil, nil)
 }
 
 func (s *changesSuite) checkBundleWithConstraintsParser(c *gc.C, bundleContent string, expectedChanges []string, parserFn bundlechanges.ConstraintGetter) {
-	s.checkBundleImpl(c, bundleContent, nil, expectedChanges, "", parserFn)
-}
-
-func (s *changesSuite) checkBundleWithConstraintsParserError(c *gc.C, bundleContent, errMatch string, parserFn bundlechanges.ConstraintGetter) {
-	s.checkBundleImpl(c, bundleContent, nil, nil, errMatch, parserFn)
+	s.checkBundleImpl(c, bundleContent, nil, expectedChanges, "", parserFn, nil)
 }
 
 func (s *changesSuite) checkBundleExistingModelWithConstraintsParser(c *gc.C, bundleContent string, existingModel *bundlechanges.Model, expectedChanges []string, parserFn bundlechanges.ConstraintGetter) {
-	s.checkBundleImpl(c, bundleContent, existingModel, expectedChanges, "", parserFn)
+	s.checkBundleImpl(c, bundleContent, existingModel, expectedChanges, "", parserFn, nil)
+}
+
+func (s *changesSuite) checkBundleWithConstraintsParserError(c *gc.C, bundleContent, errMatch string, parserFn bundlechanges.ConstraintGetter) {
+	s.checkBundleImpl(c, bundleContent, nil, nil, errMatch, parserFn, nil)
+}
+
+func (s *changesSuite) checkBundleExistingModelWithRevisionParser(c *gc.C, bundleContent string, existingModel *bundlechanges.Model, expectedChanges []string, charmResolverFn bundlechanges.CharmResolver) {
+	s.checkBundleImpl(c, bundleContent, existingModel, expectedChanges, "", nil, charmResolverFn)
 }
 
 func (s *changesSuite) checkBundleImpl(c *gc.C,
@@ -5337,6 +5458,7 @@ func (s *changesSuite) checkBundleImpl(c *gc.C,
 	expectedChanges []string,
 	errMatch string,
 	parserFn bundlechanges.ConstraintGetter,
+	charmResolverFn bundlechanges.CharmResolver,
 ) {
 	// Retrieve and validate the bundle data merging any overlays in the bundle contents.
 	bundleSrc, err := charm.StreamBundleDataSource(strings.NewReader(bundleContent), "./")
@@ -5352,6 +5474,7 @@ func (s *changesSuite) checkBundleImpl(c *gc.C,
 		Model:            existingModel,
 		Logger:           loggo.GetLogger("bundlechanges"),
 		ConstraintGetter: parserFn,
+		CharmResolver:    charmResolverFn,
 	})
 	if errMatch != "" {
 		c.Assert(err, gc.ErrorMatches, errMatch)

@@ -21,7 +21,9 @@ type resolver struct {
 	bundleURL        string
 	logger           Logger
 	constraintGetter ConstraintGetter
+	charmResolver    CharmResolver
 	changes          *changeset
+	force            bool
 }
 
 // handleApplications populates the change set with "addCharm"/"addApplication" records.
@@ -67,8 +69,8 @@ func (r *resolver) handleApplications() (map[string]string, error) {
 		// Add the addCharm record if one hasn't been added yet, this means
 		// if the arch and series differ from an existing charm, then we create
 		// a new charm.
-		key := applicationKey(application.Charm, arch, series)
-		if charms[key] == "" && !existing.hasCharmWithArchAndSeries(application.Charm, arch, series) {
+		key := applicationKey(application.Charm, arch, series, application.Channel)
+		if charms[key] == "" && !existing.matchesCharmPermutation(application.Charm, arch, series, application.Channel) {
 			change = newAddCharmChange(AddCharmParams{
 				Charm:        application.Charm,
 				Series:       series,
@@ -124,6 +126,7 @@ func (r *resolver) handleApplications() (map[string]string, error) {
 				Resources:        resources,
 				LocalResources:   localResources,
 				charmURL:         application.Charm,
+				Channel:          application.Channel,
 			}, requires...)
 			add(change)
 			id = change.Id()
@@ -139,7 +142,9 @@ func (r *resolver) handleApplications() (map[string]string, error) {
 			}
 		} else {
 			// Look for changes.
-			if existingApp.Charm != application.Charm {
+			if ok, err := r.allowCharmUpgrade(existingApp, application, arch); err != nil {
+				return nil, errors.Trace(err)
+			} else if ok {
 				charmOrChange := application.Charm
 				if charmChange := charms[key]; charmChange != "" {
 					charmOrChange = placeholder(charmChange)
@@ -149,6 +154,7 @@ func (r *resolver) handleApplications() (map[string]string, error) {
 					Charm:          charmOrChange,
 					Application:    name,
 					Series:         series,
+					Channel:        application.Channel,
 					Resources:      resources,
 					LocalResources: localResources,
 					charmURL:       application.Charm,
@@ -210,21 +216,78 @@ func (r *resolver) handleApplications() (map[string]string, error) {
 
 		// Add application annotations.
 		if annotations := existingApp.changedAnnotations(application.Annotations); len(annotations) > 0 {
-			paramId := name
-			var deps []string
+			var (
+				deps    []string
+				paramID = name
+			)
 			if existingApp == nil {
-				paramId = placeholder(id)
+				paramID = placeholder(id)
 				deps = append(deps, id)
 			}
 			add(newSetAnnotationsChange(SetAnnotationsParams{
 				EntityType:  ApplicationType,
-				Id:          paramId,
+				Id:          paramID,
 				Annotations: annotations,
 				target:      name,
 			}, deps...))
 		}
 	}
 	return addedApplications, nil
+}
+
+func (r *resolver) allowCharmUpgrade(existingApp *Application, bundleApp *charm.ApplicationSpec, bundleArch string) (bool, error) {
+	// This covers most of v1 charm URL changes, everything else below is to
+	// support channels. Charmstore charms allow channels, but bundles were not
+	// aware of them, with the introduction of Charmhub charms, then we do need
+	// to factor in channels.
+	if existingApp.Charm != bundleApp.Charm {
+		return true, nil
+	}
+	// No existing revision found, so assume no upgrades are available.
+	if existingApp.Revision == -1 {
+		return false, nil
+	}
+	// This handles the case that the existing application doesn't have a
+	// channel, so we're talking to an older controller.
+	if existingApp.Channel == "" {
+		// No upgrade required.
+		if bundleApp.Channel == "" {
+			return false, nil
+		}
+		// If the bundle channel is not empty and we're not using force, then
+		// raise an error asking the user to supply force.
+		if !r.force && bundleApp.Channel != "" {
+			return false, errors.Errorf("upgrades not supported when the channel for the deployed application is unknown; use --force to override")
+		}
+		return true, nil
+	}
+
+	var (
+		resolvedChan = bundleApp.Channel
+		resolvedRev  = -1
+	)
+	if r.charmResolver != nil {
+		var err error
+		resolvedChan, resolvedRev, err = r.charmResolver(bundleApp.Charm, bundleApp.Series, bundleApp.Channel, bundleArch)
+		if err != nil {
+			return false, errors.Trace(err)
+		}
+	}
+	if !r.force && existingApp.Channel != resolvedChan {
+		verb := "requested"
+		if bundleApp.Channel == "" {
+			verb = "resolved"
+		}
+		return false, errors.Errorf("upgrades not supported across channels (existing: %q, %s: %q); use --force to override", existingApp.Channel, verb, resolvedChan)
+	}
+	if resolvedRev > existingApp.Revision {
+		return true, nil
+	} else if resolvedRev != -1 && resolvedRev < existingApp.Revision {
+		// For charmhub charms, we currently don't support downgrades.
+		return false, errors.Errorf("downgrades are not currently supported")
+	}
+	// Same revision, no upgrade required.
+	return false, nil
 }
 
 func mapExposedEndpointSpec(specs map[string]charm.ExposedEndpointSpec) map[string]*ExposedEndpointParams {
@@ -610,7 +673,8 @@ func (p *unitProcessor) placeUnitsForApplication(name string, application *charm
 	p.logger.Tracef("placements: %v", application.To)
 	unsatisfied := p.existing.unsatisfiedMachineAndUnitPlacements(name, application.To)
 	p.logger.Tracef("unsatisfied: %v", unsatisfied)
-	lastChangeId := ""
+
+	var lastChangeID string
 	// unitCount on a nil existingApp returns zero.
 	for i := existingApp.unitCount(); i < application.NumUnits; i++ {
 		directive := lastPlacement
@@ -633,10 +697,10 @@ func (p *unitProcessor) placeUnitsForApplication(name string, application *charm
 		change.Params.directive = placement.directive
 		change.requires = append(change.requires, placement.requires...)
 
-		if lastChangeId != "" {
-			change.requires = append(change.requires, lastChangeId)
+		if lastChangeID != "" {
+			change.requires = append(change.requires, lastChangeID)
 		}
-		lastChangeId = change.id
+		lastChangeID = change.id
 	}
 	return nil
 }
@@ -1107,8 +1171,8 @@ func placeholder(changeID string) string {
 	return "$" + changeID
 }
 
-func applicationKey(charm, arch, series string) string {
-	return fmt.Sprintf("%s:%s:%s", charm, arch, series)
+func applicationKey(charm, arch, series, channel string) string {
+	return fmt.Sprintf("%s:%s:%s:%s", charm, arch, series, channel)
 }
 
 // getSeries retrieves the series of a application from the ApplicationSpec or from the
